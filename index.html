@@ -678,6 +678,11 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .rostwho > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .rostrow .pill{font-size:12px;padding:1px 8px}
 .rostbtn{display:flex;gap:6px}
+.adrow{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:14px}
+.adrow .rostwho{flex:1 1 180px}
+.adrow .pill,.btn .pill{font-size:12px;padding:1px 8px}
+.admsg{font-size:14px;padding:8px 12px;border-radius:10px;background:var(--soft);white-space:pre-wrap}
+@media (max-width:620px){.adrow{flex-wrap:wrap}}
 .invform{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 @media (max-width:620px){.invform{grid-template-columns:1fr}}
 @media (max-width:600px){.rostrow{grid-template-columns:1fr auto}.rostrow select{grid-column:1/-1;grid-row:2}}
@@ -2381,6 +2386,7 @@ async function cloudBoot() {
 function hashGid() { const m = location.hash.match(/g=([\w-]+)/); return m ? m[1] : null; }
 async function route() {
   stopListen(); syncStatus('idle');
+  if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
   const gid = hashGid();
   if (!gid) return homeView();
   $('#view').innerHTML = '<div class="cloud-load"><span class="spin"></span> Obrint el grup...</div>';
@@ -2458,20 +2464,106 @@ function joinView(g, m) {
   });
 }
 
-/* ---------- Els meus grups ---------- */
-async function homeView(msg) {
+/* ---------- Professorat autoritzat (només l'administrador el gestiona) ---------- */
+const ADMIN = () => String(window.FB_ADMIN || '').toLowerCase();
+const isAdmin = () => !!USER && !!ADMIN() && USER.email === ADMIN();
+function bareView() {
   stopListen(); G = null; GID = null; ME = null; dashBtn();
   document.body.classList.add('cloud-msg'); document.body.classList.remove('is-prof', 'is-student');
   $('#tabs').innerHTML = ''; $('#gameName').textContent = ''; $('#quarterTxt').textContent = ''; $('#quarterBar').innerHTML = ''; sideUser();
+}
+function reqCard(req) { // Què veu qui encara no pot crear grups
+  if (req && req.status === 'pending') return `<div class="notice info"><b>Has demanat accés com a professor el ${fmtDay(req.at)}.</b> Quan l'administrador l'aprovi rebràs un correu i aquí mateix podràs crear els teus grups.</div>`;
+  if (req && req.status === 'rejected') return '<div class="notice">La teva sol·licitud d\'accés com a professor no s\'ha aprovat. Si creus que és un error, parla amb l\'administrador de l\'eina.</div>';
+  return card('Ets professor? Demana accés', pad(`<p class="small muted">Per crear grups cal que l'administrador de l'eina t'autoritzi. Envia-li la sol·licitud i rebràs un correu quan l'aprovi.</p>
+    <div class="pfield"><label for="rqName">Nom i cognoms</label><input type="text" id="rqName" maxlength="100" value="${esc(USER.name || '')}"></div>
+    <div class="pfield"><label for="rqMsg">Missatge (opcional)</label><div class="help">Per exemple, el departament o els grups on fas classe.</div><textarea id="rqMsg" rows="2" maxlength="500"></textarea></div>
+    <div id="rqInfo"></div><div class="row"><button type="button" class="btn" id="rqGo">Enviar la sol·licitud</button></div>`));
+}
+function bindReq() {
+  const b = $('#rqGo'); if (!b) return;
+  b.onclick = async () => {
+    const name = $('#rqName').value.trim().slice(0, 100), msg = $('#rqMsg').value.trim().slice(0, 500);
+    if (!name) { $('#rqInfo').innerHTML = '<div class="notice">Escriu el teu nom i cognoms.</div>'; return; }
+    b.disabled = true;
+    try { await FB.set('profreq/' + USER.email, { email: USER.email, name, msg, at: Date.now(), status: 'pending' }); homeView('Sol·licitud enviada. Rebràs un correu quan s\'aprovi.'); }
+    catch (e) { b.disabled = false; $('#rqInfo').innerHTML = `<div class="notice">No s'ha pogut enviar. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; }
+  };
+}
+function okMailUrl(r) {
+  const link = location.origin + location.pathname;
+  const body = `Hola ${String(r.name || '').split(' ')[0]},\n\nHe aprovat la teva sol·licitud: ja pots crear els teus grups a l'eina Emprèn.\n\nEntra amb el teu compte de l'institut (${r.email}) en aquest enllaç:\n${link}\n\nSalutacions,\n${(USER && USER.name) || ''}`;
+  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(r.email) + '&su=' + encodeURIComponent('Accés de professor aprovat · Emprèn') + '&body=' + encodeURIComponent(body);
+}
+function adminView() {
+  bareView();
+  const v = $('#view'); let reqs = null, profs = null;
+  v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
+  const who = x => `<span class="rostwho"><span><b>${esc(x.name || x.email)}</b></span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span>`;
+  const draw = () => {
+    if (!reqs || !profs) return;
+    const keep = { n: ($('#apName') || {}).value || '', m: ($('#apMail') || {}).value || '' };
+    const pend = reqs.filter(r => r.status === 'pending').sort((a, b) => (a.at || 0) - (b.at || 0)), rej = reqs.filter(r => r.status === 'rejected');
+    const ps = profs.slice().sort((a, b) => String(a.name || a.email).localeCompare(String(b.name || b.email), 'ca'));
+    v.innerHTML = `${head('Panell d\'administrador', 'Professorat de l\'eina')}
+      <p class="intro muted">Només tu veus aquest panell. Aquí decideixes qui pot crear grups com a professor. L'alumnat no necessita cap permís: entra amb l'enllaç del seu grup.</p>
+      <div class="row" style="margin-bottom:16px"><a class="btn ghost small" href="#">← Els meus grups</a></div>
+      ${card('Sol·licituds pendents', pad(pend.length ? pend.map(r => `<div class="rost"><div class="adrow">${who(r)}<span class="rostbtn"><button type="button" class="btn small" data-ok="${esc(r.id)}">Aprovar</button><button type="button" class="btn ghost small" data-no="${esc(r.id)}">Rebutjar</button></span></div>
+        <span class="small muted">Enviada el ${fmtDay(r.at)}</span>${r.msg ? `<div class="admsg">${esc(r.msg)}</div>` : ''}</div>`).join('') : '<p class="muted">No hi ha cap sol·licitud pendent.</p>'), pend.length ? pend.length + ' per revisar' : '')}
+      ${card('Professorat autoritzat', pad(`<div class="rost"><div class="adrow">${who({ email: ADMIN(), name: USER.name })}<span class="pill">Administrador</span></div></div>
+        ${ps.map(p => `<div class="rost"><div class="adrow">${who(p)}<span class="rostbtn"><button type="button" class="btn ghost small" data-okmail="${esc(p.id)}" title="Torna a obrir el Gmail amb el correu d'aprovació">Correu</button><button type="button" class="btn ghost small" data-rm="${esc(p.id)}">Treure</button></span></div><span class="small muted">Autoritzat el ${fmtDay(p.at)}</span></div>`).join('')}
+        <p class="small muted" style="margin-top:14px">També pots autoritzar directament un professor sense que t'enviï la sol·licitud:</p>
+        <div class="invform"><div class="pfield"><label for="apName">Nom i cognoms</label><input type="text" id="apName" autocomplete="off" value="${esc(keep.n)}"></div>
+        <div class="pfield"><label for="apMail">Correu de l'institut</label><input type="text" inputmode="email" id="apMail" autocomplete="off" placeholder="nom.cognom@${esc(DOMAINS()[0] || 'institut.cat')}" value="${esc(keep.m)}"></div></div>
+        <div id="apInfo"></div><div class="row"><button type="button" class="btn ghost" id="apAdd">Autoritzar</button></div>`), `${ps.length + 1} professors`)}
+      ${rej.length ? card('Sol·licituds rebutjades', pad(`<p class="small muted">Si n'esborres una, aquella persona podrà tornar a demanar accés.</p>${rej.map(r => `<div class="rost"><div class="adrow">${who(r)}<span class="rostbtn"><button type="button" class="btn ghost small" data-ok="${esc(r.id)}">Aprovar</button><button type="button" class="btn ghost small" data-del="${esc(r.id)}">Esborrar</button></span></div></div>`).join('')}`)) : ''}`;
+    const fail = b => e => { console.warn(e); toast('No s\'ha pogut fer.'); if (b) b.disabled = false; };
+    const approve = (r, b) => { // El Gmail s'obre en el mateix clic perquè el navegador no el bloquegi
+      window.open(okMailUrl(r), '_blank');
+      return FB.batch([{ op: 'set', path: 'profs/' + r.email, data: { email: r.email, name: r.name || '', at: Date.now() } }, { op: 'delete', path: 'profreq/' + r.email }]).then(() => toast('Professor autoritzat. Envia el correu que s\'ha obert al Gmail.'), fail(b));
+    };
+    v.querySelectorAll('[data-ok]').forEach(b => b.onclick = () => { const r = reqs.find(x => x.id === b.dataset.ok); if (r) { b.disabled = true; approve(r, b); } });
+    v.querySelectorAll('[data-no]').forEach(b => b.onclick = () => { b.disabled = true; FB.update('profreq/' + b.dataset.no, { status: 'rejected' }).then(() => toast('Sol·licitud rebutjada.'), fail(b)); });
+    v.querySelectorAll('[data-del]').forEach(b => b.onclick = () => { b.disabled = true; FB.del('profreq/' + b.dataset.del).catch(fail(b)); });
+    v.querySelectorAll('[data-okmail]').forEach(b => b.onclick = () => { const p = profs.find(x => x.id === b.dataset.okmail); if (p) window.open(okMailUrl(p), '_blank'); });
+    v.querySelectorAll('[data-rm]').forEach(b => b.onclick = () => { const p = profs.find(x => x.id === b.dataset.rm), box = b.closest('.rost');
+      if (box.querySelector('[data-rmyes]')) return;
+      box.insertAdjacentHTML('beforeend', `<div class="notice">Segur que vols treure «${esc(p.name || p.email)}»? Ja no podrà crear grups nous, però conservarà els que ja té. <button class="btn small" data-rmyes>Sí, treure</button> <button class="btn ghost small" data-rmno>Cancel·lar</button></div>`);
+      box.querySelector('[data-rmno]').onclick = () => box.querySelector('.notice').remove();
+      box.querySelector('[data-rmyes]').onclick = e => { e.target.disabled = true; FB.del('profs/' + p.id).then(() => toast('Professor tret de la llista.'), fail(e.target)); }; });
+    $('#apAdd').onclick = () => {
+      const name = $('#apName').value.trim(), mail = $('#apMail').value.trim().toLowerCase(), msg = m => { $('#apInfo').innerHTML = `<div class="notice">${m}</div>`; };
+      if (!/^[^\s@\/]+@[^\s@\/]+\.[^\s@\/]+$/.test(mail)) return msg('El correu no sembla correcte.');
+      if (!domainOk(mail)) return msg(`El correu ha de ser de l'institut (${esc(DOMAINS().map(d => '@' + d).join(', '))}).`);
+      if (mail === ADMIN() || profs.some(p => p.id === mail)) return msg('Aquest professor ja està autoritzat.');
+      $('#apName').value = ''; $('#apMail').value = ''; approve({ email: mail, name }, null);
+    };
+  };
+  const err = e => { console.warn(e); v.innerHTML = `${head('Panell d\'administrador', 'Professorat de l\'eina')}<div class="notice">No s'han pogut carregar les dades. Comprova que les regles de seguretat estan publicades.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'error')}</span></div>`; };
+  UNSUB.push(FB.listenCol('profreq', l => { reqs = l; draw(); }, err));
+  UNSUB.push(FB.listenCol('profs', l => { profs = l; draw(); }, err));
+}
+
+/* ---------- Els meus grups ---------- */
+async function homeView(msg) {
+  bareView();
   const v = $('#view');
   v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>';
   let gs = [];
   let listErr = ''; try { gs = await FB.list('groups', ['profs', 'array-contains', USER.email]); } catch (e) { gs = []; listErr = (e && (e.code || e.message)) || 'error'; console.warn(e); }
+  let ok = isAdmin(), req = null, nReq = 0; // Pot crear grups? (administrador o professorat autoritzat)
+  if (ok) { try { nReq = (await FB.list('profreq', ['status', '==', 'pending'])).length; } catch (e) {} }
+  else { try { ok = !!(await FB.get('profs/' + USER.email)); } catch (e) {} if (!ok) try { req = await FB.get('profreq/' + USER.email); } catch (e) {} }
   const now = Date.now(), dead = gs.filter(g => g.expiresAt && g.expiresAt < now);
   if (dead.length) { await Promise.all(dead.map(g => deleteGroupDeep(g.id).catch(() => {}))); gs = gs.filter(g => !dead.includes(g)); }
   gs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const sectors = Object.entries(PE.SECTORS);
-  v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups')}
+  if (!ok && !gs.length) { // Alumne o professor encara sense permís
+    v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('IPO Emprèn · Projecte emprenedor', 'Encara no tens cap grup')}
+      <p class="intro muted"><b>Si ets alumne</b>, obre l'enllaç del grup que t'ha donat el professor. No cal que demanis res.</p>${reqCard(req)}`;
+    bindReq(); return;
+  }
+  v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
     <p class="intro muted">Aquí gestiones tots els teus grups classe. Si ets alumne, obre l'enllaç del grup que t'ha donat el professor.</p>
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length ? `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
@@ -2481,7 +2573,7 @@ async function homeView(msg) {
         <div class="gbar"><span data-st="bar" style="width:0%"></span></div>
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` : '<p class="muted">Encara no tens cap grup. Crea\'n un a sota.</p>'}
-    ${card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
+    ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${sectors.map(([k, s]) => `<option value="${k}">${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
@@ -2498,7 +2590,7 @@ async function homeView(msg) {
       location.hash = 'g=' + gid;
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
-  $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true);
+  if (ok) { $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); } else bindReq();
   v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;

@@ -14,6 +14,17 @@ service cloud.firestore {
     function memberDoc(gid) { return /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid); }
     function inTeam(gid, tid) { return signed() && exists(memberDoc(gid)) && get(memberDoc(gid)).data.team == tid; }
 
+    // ADMINISTRADOR: aprova qui pot crear grups (ha de coincidir amb FB_ADMIN de config.js)
+    function isAdmin() { return signed() && me() == 'solivares@biada.net'; }
+    function canCreate() { return isAdmin() || (signed() && exists(/databases/$(database)/documents/profs/$(me()))); }
+    function reqOk(email) {
+      let r = request.resource.data;
+      return signed() && me() == email && r.keys().hasOnly(['email', 'name', 'msg', 'at', 'status'])
+        && r.email == me() && r.status == 'pending'
+        && r.name is string && r.name.size() > 0 && r.name.size() <= 100
+        && r.msg is string && r.msg.size() <= 500 && r.at is number;
+    }
+
     // APARTATS OBERTS: el grup desa a «w» quan pot escriure l'alumnat cada dada ({ f: des de, u: fins a }, en mil·lisegons).
     // Una dada que no surt a «w» (grups antics o apartats nous) es pot escriure sempre.
     function winOk(w, k) { return !(k in w) || (request.time.toMillis() >= w[k].f && request.time.toMillis() < w[k].u); }
@@ -40,10 +51,22 @@ service cloud.firestore {
         && (winOk(w, 'prototip') || winOk(w, 'marca'));
     }
 
+    // PROFESSORAT AUTORITZAT: el document es diu com el correu
+    match /profs/{email} {
+      allow get: if isAdmin() || (signed() && me() == email);
+      allow list, write: if isAdmin();
+    }
+    // SOL·LICITUDS d'accés com a professor (una per correu)
+    match /profreq/{email} {
+      allow get: if isAdmin() || (signed() && me() == email);
+      allow list, update, delete: if isAdmin();
+      allow create: if reqOk(email);
+    }
+
     match /groups/{gid} {
       allow get: if signed();
       allow list: if signed() && me() in resource.data.profs;
-      allow create: if signed() && request.resource.data.owner == request.auth.uid && me() in request.resource.data.profs;
+      allow create: if canCreate() && request.resource.data.owner == request.auth.uid && me() in request.resource.data.profs;
       allow update: if isProf(gid) && me() in request.resource.data.profs;
       allow delete: if isProf(gid);
 

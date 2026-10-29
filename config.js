@@ -9,3 +9,5 @@ window.FB_CONFIG = {
 };
 // Dominis de correu que poden entrar
 window.FB_DOMAINS = ["biada.net"];
+// Administrador: aprova el professorat que pot crear grups (cal canviar-lo també a firestore.rules)
+window.FB_ADMIN = "solivares@biada.net";
