@@ -997,7 +997,7 @@ const filled = x => typeof x === 'string' ? x.trim().length >= 3 : x != null && 
 const num = PE.num;
 
 function save() { if (CLOUD) return cloudSave(); try { localStorage.setItem(KEY, JSON.stringify({ G, role })); return true; } catch (e) { return false; } }
-function load() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.G && d.G.v === 1) { G = d.G; role = d.role ?? 'prof'; ensureEval(); ensureIds(); G.teams.forEach(t => { if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; }); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k)); return true; } } catch (e) {} return false; }
+function load() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.G && d.G.v === 1) { G = d.G; role = d.role ?? 'prof'; ensureEval(); ensureIds(); G.teams.forEach(t => { if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; }); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k)); return true; } } catch (e) {} return false; }
 
 /* ---------- Model de dades ---------- */
 function emptyData(sector) {
@@ -1031,7 +1031,7 @@ function emptyData(sector) {
       { label: 'Màrqueting i publicitat', type: 'out', amount: '', freq: 'mensual', month: '1' },
       { label: 'Materials i compres', type: 'out', pct: '10' }] },
     viab: { conclusio: '' },
-    marca: { nom: '', eslogan: '', logo: '', color1: '#2bc46f', color2: '#111113', missio: '', visio: '', valors: '' },
+    marca: { nom: '', eslogan: '', esbossos: [], logo: '', justColors: '', justIcones: '', justTipo: '', color1: '#2bc46f', color2: '#111113', missio: '', visio: '', valors: '' },
     p7: o(PE.P7.map(x => x[0])),
     pitch: Object.assign(o(PE.PITCH.map(x => x[0])), { format: '', videoUrl: '' })
   };
@@ -1048,7 +1048,7 @@ function access(k) {
 }
 // Estat de la feina d'un apartat: 'none' (sense fer), 'edit' (en edició), 'sent' (enviat), 'correcte', 'millorar'
 const SEND_SRC = { equip: t => t.members, lean: t => [t.data.lean, ['costosAmb', 'benSocial', 'benAmbiental', 'cicleVida', 'circular'].map(k => t.data.sost[k])], sost: t => [t.data.sost.ods, t.data.sost.odsAccions, t.data.sost.tecnologia], inversio: t => [t.data.inversio, t.data.finan],
-  prototip: t => Object.assign({}, t.data.prototip, { fitxers: (t.data.prototip.fitxers || []).map(f => (f.name || '') + '|' + (f.size || 0)) }), marca: t => Object.assign({}, t.data.marca, { logo: (t.data.marca.logo || '').length ? 1 : 0 }) };
+  prototip: t => Object.assign({}, t.data.prototip, { fitxers: (t.data.prototip.fitxers || []).map(f => (f.name || '') + '|' + (f.size || 0)) }), marca: t => Object.assign({}, t.data.marca, { logo: (t.data.marca.logo || '').length ? 1 : 0, esbossos: (t.data.marca.esbossos || []).map(f => (f.name || '') + '|' + (f.size || 0)) }) };
 function secHash(t, k) { const v = (SEND_SRC[k] || (x => x.data[k]))(t); const s = JSON.stringify(v === undefined ? null : v); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
 const sentOf = (t, k) => ((t.data._meta || {}).sent || {})[k];
 function workState(t, s) {
@@ -1073,9 +1073,10 @@ function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess(['
 
 /* ---------- Seccions ---------- */
 const cnt = (obj, keys) => keys.filter(k => filled(obj[k])).length;
+const ESB_MIN = 3, ESB_MAX = 6; // esbossos del logo: mínim abans del logo final i màxim que es poden pujar
 const SECS = [
   ['ident', 'Identitat corporativa', 'ident', [
-    ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'missio', 'visio', 'valors']), 6]]]],
+    ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['proj', 'El projecte', 'proj', [
     ['inici', 'Inici', '', '', null],
     ['equip', 'Equip i rols', 'Treball en equip', 'Tasca Classroom', t => { const ok = t.members.filter(m => filled(m.name) && m.accio && m.social && m.mental && filled(m.resp)).length; return [ok, Math.max(2, t.members.length)]; }]]],
@@ -1374,7 +1375,7 @@ function bindProtoFiles() {
   const d = T().data.prototip; if (!Array.isArray(d.fitxers)) d.fitxers = [];
   const msg = m => { const el = $('#protoMsg'); if (el) el.textContent = m; };
   const rer = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
-  const readImg = f => new Promise((ok, ko) => { const r = new FileReader(); r.onerror = ko; r.onload = () => { const img = new Image(); img.onerror = ko; img.onload = () => { const s = Math.min(1, 1200 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); const x = c.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height); let data = c.toDataURL('image/jpeg', 0.82); for (let q = 0.7; data.length > FILE_DATA_MAX && q > 0.3; q -= 0.15) data = c.toDataURL('image/jpeg', q); if (data.length > FILE_DATA_MAX) return ko(new Error('big')); ok({ kind: 'img', name: f.name.replace(/\.[^.]+$/, '') + '.jpg', size: Math.round(data.length * 0.75), data }); }; img.src = r.result; }; r.readAsDataURL(f); });
+  const readImg = f => readImgFile(f, 1200);
   const readDoc = f => new Promise((ok, ko) => { const r = new FileReader(); r.onerror = ko; r.onload = () => ok({ kind: 'doc', name: f.name, size: f.size, data: r.result }); r.readAsDataURL(f); });
   inp.onchange = async e => {
     if (access('prototip') !== 'open') return;
@@ -1396,6 +1397,10 @@ function bindProtoFiles() {
     if (get) { const f = d.fitxers[Number(get.dataset.pget)]; const dl = await getDownloads(); if (!dl) { get.textContent = 'No disponible aquí'; return; }
       try { await dl.save({ filename: f.name, data: dataUrlBlob(f.data) }); } catch (err) { get.textContent = err && err.code === 'declined' ? 'Cancel·lat' : 'No s\'ha pogut'; } }
   });
+}
+// Llegeix una imatge, la redueix i la desa en JPG perquè càpiga en una fitxa de Firebase
+function readImgFile(f, maxSide) {
+  return new Promise((ok, ko) => { const r = new FileReader(); r.onerror = ko; r.onload = () => { const img = new Image(); img.onerror = ko; img.onload = () => { const s = Math.min(1, maxSide / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); const x = c.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height); let data = c.toDataURL('image/jpeg', 0.82); for (let q = 0.7; data.length > FILE_DATA_MAX && q > 0.3; q -= 0.15) data = c.toDataURL('image/jpeg', q); if (data.length > FILE_DATA_MAX) return ko(new Error('big')); ok({ kind: 'img', name: f.name.replace(/\.[^.]+$/, '') + '.jpg', size: Math.round(data.length * 0.75), data }); }; img.src = r.result; }; r.readAsDataURL(f); });
 }
 
 /* ---------- L'entorn ---------- */
@@ -1562,16 +1567,40 @@ function vViab(v) {
 
 /* ---------- Màrqueting i comunicació ---------- */
 function vMarca(v) {
-  const d = T().data.marca;
+  const d = T().data.marca; if (!Array.isArray(d.esbossos)) d.esbossos = [];
+  const nEsb = d.esbossos.length, logoOk = nEsb >= ESB_MIN || !!d.logo;
   page(v, 'marca', 'La cultura empresarial és el conjunt de trets que identifiquen la manera de ser de l\'empresa. Definiu el nom, l\'eslògan, el logo i la imatge corporativa, i la missió, la visió i els valors.',
-    `<div class="grid2">${card('Identitat', pad(txt('marca.nom', 'Nom de l\'empresa') + txt('marca.eslogan', 'Eslògan') + `<div class="pfield"><label for="logoIn">Logo</label><div class="help">Pugeu una imatge (PNG o JPG). Podeu crear-lo amb una eina en línia com <a href="https://es.freelogodesign.org/" target="_blank" rel="noopener">FreeLogoDesign</a>.</div><input type="file" id="logoIn" accept="image/*">${d.logo ? '<button type="button" class="btn ghost small" id="logoDel">Treure el logo</button>' : ''}</div>
+    card('Esbossos del logo', pad(`<div class="help">Abans del logo final, dibuixeu i pugeu com a mínim ${ESB_MIN} versions diferents (fotos dels dibuixos a mà o captures de proves fetes a l'ordinador). Proveu colors, icones i tipus de lletra diferents. Màxim ${ESB_MAX}.</div>
+      <label class="upl ${nEsb >= ESB_MAX ? 'off' : ''}" style="margin-top:10px"><input type="file" id="esbIn" multiple accept="image/*">${ico('<path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>')}<span>Pujar esbossos</span></label>
+      <div id="esbMsg" class="small" role="status"></div>
+      ${nEsb ? `<div class="pgal" id="esbFiles">${d.esbossos.map((f, i) => `<figure class="pimg"><img src="${f.data}" alt="Esbós ${i + 1}"><figcaption><span>Versió ${i + 1}</span><button type="button" class="btn ghost small" data-pdel="${i}">Treure</button></figcaption></figure>`).join('')}</div>` : ''}`), nEsb >= ESB_MIN ? `${nEsb} versions` : `${nEsb} de ${ESB_MIN} versions`)
+    + `<div class="grid2">${card('Identitat', pad(txt('marca.nom', 'Nom de l\'empresa') + txt('marca.eslogan', 'Eslògan') + `<div class="pfield"><label for="logoIn">Logo final</label>${logoOk ? `<div class="help">Pugeu la versió definitiva (PNG o JPG). Podeu crear-la amb una eina en línia com <a href="https://es.freelogodesign.org/" target="_blank" rel="noopener">FreeLogoDesign</a>.</div><input type="file" id="logoIn" accept="image/*">${d.logo ? '<button type="button" class="btn ghost small" id="logoDel">Treure el logo</button>' : ''}` : `<div class="help">Primer heu de pujar com a mínim ${ESB_MIN} esbossos. Us en ${ESB_MIN - nEsb === 1 ? 'falta 1' : 'falten ' + (ESB_MIN - nEsb)}.</div><input type="file" id="logoIn" accept="image/*" disabled>`}</div>
       <div class="grid2" style="gap:12px"><div class="pfield"><label for="c1">Color principal</label><input type="color" id="c1" data-path="marca.color1" value="${esc(d.color1)}"></div><div class="pfield"><label for="c2">Color secundari</label><input type="color" id="c2" data-path="marca.color2" value="${esc(d.color2)}"></div></div>`))}
     ${card('Vista prèvia', `<div class="brandprev" id="brandPrev"></div>`)}</div>`
+    + card('Per què aquest logo?', pad(`<div class="help">Expliqueu per què heu triat aquesta versió i no les altres dels esbossos.</div>`
+      + ta('marca.justColors', 'Colors', 'Quins colors heu triat? Què transmeten i per què encaixen amb la vostra empresa i els vostres clients?', 3)
+      + ta('marca.justIcones', 'Icones i formes', 'Quin dibuix, símbol o forma hi apareix? Què representa de la vostra activitat?', 3)
+      + ta('marca.justTipo', 'Tipografia', 'Quin tipus de lletra fa servir (rodona, recta, de pal sec, manuscrita, gruixuda...)? Quina sensació dona i per què l\'heu triada?', 3)))
     + card('Cultura empresarial', pad(ta('marca.missio', 'Missió', 'Per què existeix l\'empresa? Què fa i per a qui?', 2) + ta('marca.visio', 'Visió', 'Què vol arribar a ser l\'empresa d\'aquí a uns anys?', 2) + ta('marca.valors', 'Valors', 'Els principis que guien el comportament de l\'empresa.', 2))));
   const prev = () => { const m = T().data.marca, el = $('#brandPrev'); if (!el) return;
     el.innerHTML = `<div class="bp" style="background:${esc(m.color2)};color:#fff">${logoSrc(m.logo) ? `<img src="${logoSrc(m.logo)}" alt="Logo">` : `<div class="bp-ph" style="background:${esc(m.color1)}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${esc(m.color1)}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
   liveFn = prev; prev();
-  $('#logoIn').onchange = e => { const f = e.target.files[0]; if (!f) return; const bad = () => { e.target.value = ''; toast('No s\'ha pogut afegir el logo: ha de ser una imatge (PNG o JPG).'); };
+  const rer = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  const esbIn = $('#esbIn');
+  if (esbIn) esbIn.onchange = async e => {
+    if (access('marca') !== 'open') return;
+    const skipped = [];
+    for (const f of [...e.target.files]) {
+      if (d.esbossos.length >= ESB_MAX) { skipped.push(`${f.name} (ja n'hi ha ${ESB_MAX})`); continue; }
+      if (!/^image\//.test(f.type)) { skipped.push(`${f.name} (ha de ser una imatge)`); continue; }
+      try { const item = await readImgFile(f, 1000); item.id = newId('f'); d.esbossos.push(item); T().updated = Date.now();
+        if (!save()) { d.esbossos.pop(); save(); skipped.push(`${f.name} (no hi ha prou espai al navegador)`); } }
+      catch (err) { skipped.push(`${f.name} (${err && err.message === 'big' ? 'la imatge és massa pesada' : 'no s\'ha pogut llegir'})`); }
+    }
+    rer(); if (skipped.length) { const el = $('#esbMsg'); if (el) el.textContent = 'No s\'ha afegit: ' + skipped.join('; ') + '.'; }
+  };
+  const ef = $('#esbFiles'); if (ef) ef.onclick = e => { const del = e.target.closest('[data-pdel]'); if (del && access('marca') === 'open') { d.esbossos.splice(Number(del.dataset.pdel), 1); T().updated = Date.now(); save(); rer(); } };
+  $('#logoIn').onchange = e => { const f = e.target.files[0]; if (!f || !(d.esbossos.length >= ESB_MIN || d.logo)) return; const bad = () => { e.target.value = ''; toast('No s\'ha pogut afegir el logo: ha de ser una imatge (PNG o JPG).'); };
     if (!/^image\//.test(f.type)) return bad();
     const r = new FileReader(); r.onerror = bad; r.onload = () => { const img = new Image(); img.onerror = bad; img.onload = () => { const s = Math.min(1, 320 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); d.logo = c.toDataURL('image/png'); save(); render(); }; img.src = r.result; }; r.readAsDataURL(f); };
   const dl = $('#logoDel'); if (dl) dl.onclick = () => { d.logo = ''; save(); render(); };
@@ -1617,7 +1646,7 @@ function pairs(t, k) {
     case 'prestec': { if (d.prestec.cap) return [s('Préstec', 'No en necessitem')]; const L = PE.loan(d.prestec); return L.quota ? [s('Entitat', d.prestec.entitat), s('Import', N(num(d.prestec.import)) + ' €'), s('Interès i termini', `${d.prestec.tin}% · ${d.prestec.anys} anys`), s('Quota mensual', L.quota.toLocaleString('ca-ES', { maximumFractionDigits: 2 }) + ' €'), s('Total d\'interessos', N(L.interest) + ' €')] : []; }
     case 'treso': { const R = PE.treasury(d); return R.sales.some(Boolean) ? [s('Total cobraments del primer any', N(R.inT.reduce((a, b) => a + b, 0)) + ' €'), s('Total pagaments del primer any', N(R.outT.reduce((a, b) => a + b, 0)) + ' €'), s('Saldo al final del mes 12', N(R.fin[11]) + ' €'), s('Mesos amb saldo negatiu', R.negative.length ? R.negative.join(', ') : 'Cap')] : []; }
     case 'viab': { const V = PE.viability(d, d.juridica.forma); return V.revenue ? [s('Vendes previstes', N(V.revenue) + ' €'), s('Resultat previst del primer any', N(V.net) + ' €'), s('Punt mort', isFinite(V.breakEven) ? N(V.breakEven) + ' € a l\'any' : ''), s('Conclusió', d.viab.conclusio)] : [s('Conclusió', d.viab.conclusio)]; }
-    case 'marca': return [s('Nom', d.marca.nom), s('Eslògan', d.marca.eslogan), s('Missió', d.marca.missio), s('Visió', d.marca.visio), s('Valors', d.marca.valors)];
+    case 'marca': return [s('Nom', d.marca.nom), s('Eslògan', d.marca.eslogan), s('Esbossos del logo', (d.marca.esbossos || []).length ? `${d.marca.esbossos.length} versions` : ''), s('Colors', d.marca.justColors), s('Icones i formes', d.marca.justIcones), s('Tipografia', d.marca.justTipo), s('Missió', d.marca.missio), s('Visió', d.marca.visio), s('Valors', d.marca.valors)];
     case 'p7': return PE.P7.map(([k, l]) => s(l, d.p7[k]));
     case 'pitch': return [...PE.PITCH.map(([k, l]) => s(l, d.pitch[k])), s('Format', { classe: 'Presentació a classe', video: 'Vídeo pitch gravat', sites: 'Google Sites', fira: 'Fira o jornada amb empreses' }[d.pitch.format]), s('Enllaç del vídeo', d.pitch.format === 'video' ? (d.pitch.videoUrl || '') : '')];
   }
@@ -1637,7 +1666,7 @@ const SUBS = {
   juridica: [['La vostra elecció', ['Forma jurídica', 'Socis', 'Capital inicial']], ['Arguments tècnics', ['Constitució i gestió', 'Socis i capital', 'Responsabilitat']], ['Guió del vídeo', ['Guió del vídeo']]],
   fiscal: [['Obligacions fiscals', ['Obligacions investigades']], ['Tràmits de constitució i posada en marxa', ['Tràmits investigats']], ['Calendari i observacions', ['Calendari i observacions']]],
   inversio: [['Inversions inicials', [l => !/^Fons de maniobra$|^Necessitat total/.test(l) && !PE.FIN_CATS.some(c => l.startsWith(c[1]))]], ['Finançament', [l => PE.FIN_CATS.some(c => l.startsWith(c[1]))]], ['Resum', ['Fons de maniobra', 'Necessitat total / finançament']]],
-  marca: [['Identitat', ['Nom', 'Eslògan']], ['Missió, visió i valors', ['Missió', 'Visió', 'Valors']]],
+  marca: [['Identitat', ['Nom', 'Eslògan', 'Esbossos del logo']], ['Per què aquest logo', ['Colors', 'Icones i formes', 'Tipografia']], ['Missió, visió i valors', ['Missió', 'Visió', 'Valors']]],
   p7: [['Les 4 P clàssiques', ['Producte (Product)', 'Preu (Price)', 'Distribució (Place)', 'Promoció (Promotion)']], ['Les 3 P dels serveis', ['Persones (People)', 'Procés (Process)', 'Entorn físic (Physical environment)']]],
   pitch: [['Guió del pitch', ['Ganxo', 'Problema', 'Solució', 'Mercat', 'Model de negoci', 'Impacte', 'Equip', 'Crida a l\'acció']], ['Format de la presentació', ['Format', 'Enllaç del vídeo']]]
 };
@@ -1658,6 +1687,7 @@ function secHtml(t, k) {
   let extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
   if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
+  if (k === 'marca' && esbImgs(t).length) extra += `<div class="small muted">Esbossos del logo</div>` + protoFilesHtml(esbImgs(t), false);
   if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
   const row = ([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${esc(x).replace(/\n/g, '<br>')}</div></div>`;
   const gs = groupPairs(k, ps);
@@ -1694,7 +1724,7 @@ const ACTS_DEFAULT = [
   { c: 'Act4', n: 'Golden Circle de la idea', ra: 'RA4', w: 5, ext: false, ca: '4.2 · 5.1', ev: [['idea', L_GC]],
     crit: 'El Why expressa un propòsit clar (què volen aportar i què es perdria el món); el How descriu l\'estratègia i els pilars; el What concreta els productes o serveis; identifica motivacions extrínseques, intrínseques i transcendents.' },
   { c: 'Act10', n: 'Màrqueting: nom, logo, imatge i les 7 P', ra: 'RA4', w: 5, ext: false, ca: '4.10', ev: [['marca'], ['p7']],
-    crit: 'Defineix nom, eslògan, logo, missió, visió i valors coherents amb la idea, i desenvolupa les 7 P del màrqueting mix (producte, preu, distribució, promoció, persones, procés i entorn físic) de manera concreta.' },
+    crit: 'Defineix nom, eslògan, logo, missió, visió i valors coherents amb la idea. Presenta com a mínim tres esbossos del logo abans del definitiu i justifica la tria a partir dels colors, les icones i la tipografia. Desenvolupa les 7 P del màrqueting mix (producte, preu, distribució, promoció, persones, procés i entorn físic) de manera concreta.' },
   { c: 'Pe3', n: 'Qüestionari sobre Design Thinking', ra: 'RA4', w: 10, ext: true, ca: '4.1 · 5.4', ev: [] },
   { c: 'Pe4', n: 'Qüestionari sobre l\'anàlisi de l\'entorn', ra: 'RA4', w: 10, ext: true, ca: '4.6', ev: [['micro'], ['pestel'], ['dafo']],
     crit: 'Analitza el microentorn (competència actual i futura, substitutius, clients, proveïdors, intermediaris) i els sis factors PESTEL amb oportunitats i amenaces concretes, i en fa una síntesi DAFO coherent.' },
@@ -1906,7 +1936,7 @@ function reportBody(t, forStudents) {
   const acts = G.acts.map(a => { const g = t.grades[a.c] || {}, ev = actEvidence(t, a);
     return `<section class="ract ra-${a.ra.toLowerCase()}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
       ${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
-      ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${f.data}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
+      ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${f.data}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${f.data}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(t.name)} · ${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
       ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
     <div class="rgrades"><div class="ra-ra4"><span>RA4</span><b class="${gcls(r4.nota)}">${f1(r4.nota)}</b></div><div class="ra-ra5"><span>RA5</span><b class="${gcls(r5.nota)}">${f1(r5.nota)}</b></div></div>
@@ -2054,6 +2084,7 @@ function merge3(b, l, r) {
   return l;
 }
 const logoSrc = l => /^data:image\//.test(String(l || '')) ? l : '';
+const esbImgs = t => ((t.data.marca || {}).esbossos || []).filter(f => logoSrc(f.data));
 const DOMAINS = () => (window.FB_DOMAINS || []).map(d => d.toLowerCase());
 const domainOk = e => !DOMAINS().length || DOMAINS().some(d => e.endsWith('@' + d));
 function nextExpiry(now = new Date()) { let y = now.getFullYear(); let d = new Date(y, 6, 15, 12); if (now > new Date(d - 30 * 864e5)) d = new Date(y + 1, 6, 15, 12); return d.getTime(); }
@@ -2064,25 +2095,26 @@ const gpath = (...p) => ['groups', GID, ...p].join('/');
 function packSection(t, k) {
   const v = t.data[k];
   if (k === 'prototip') return J(Object.assign({}, v, { fitxers: (v.fitxers || []).map(f => { if (!f.id) f.id = newId('f'); return { id: f.id, kind: f.kind, name: f.name, size: f.size }; }) }));
-  if (k === 'marca') return J(Object.assign({}, v, { logo: v.logo ? (String(v.logo).startsWith('file:') ? v.logo : 'file:' + logoId(v.logo)) : '' }));
+  if (k === 'marca') return J(Object.assign({}, v, { logo: v.logo ? (String(v.logo).startsWith('file:') ? v.logo : 'file:' + logoId(v.logo)) : '', esbossos: (v.esbossos || []).map(f => { if (!f.id) f.id = newId('f'); return { id: f.id, kind: f.kind, name: f.name, size: f.size }; }) }));
   return J(v);
 }
 function teamFiles(t) {
   const out = {};
   ((t.data.prototip && t.data.prototip.fitxers) || []).forEach(f => { if (!f.id) f.id = newId('f'); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
   if (t.data.marca && t.data.marca.logo && String(t.data.marca.logo).startsWith('data:')) out[logoId(t.data.marca.logo)] = { name: 'logo', kind: 'logo', size: 0, data: t.data.marca.logo };
+  ((t.data.marca && t.data.marca.esbossos) || []).forEach(f => { if (!f.id) f.id = newId('f'); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
   return out;
 }
 function unpackSection(t, k, str) {
   const v = P(str); if (v == null) return;
   if (k === 'prototip') v.fitxers = (v.fitxers || []).map(f => Object.assign({}, f, { data: (FILES[t.id] || {})[f.id] || '' }));
-  if (k === 'marca') v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || v.logo) : (v.logo || '');
+  if (k === 'marca') { v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || v.logo) : (v.logo || ''); v.esbossos = (v.esbossos || []).map(f => Object.assign({}, f, { data: (FILES[t.id] || {})[f.id] || '' })); }
   t.data[k] = v;
 }
 const profPart = t => ({ review: J(t.review || {}), grades: J({ grades: t.grades || {}, evals: t.evals || { levels: {}, comment: '' } }), ai: J(t.ai || {}) });
 function teamDocOf(t, exp) { const data = {}; Object.keys(t.data).forEach(k => { data[k] = packSection(t, k); }); return { name: t.name, members: J(t.members || []), data, delivered: t.delivered || null, updated: t.updated || Date.now(), expiresAt: { __ts: exp } }; }
 function snapTeam(t) { const s = { name: t.name, members: J(t.members || []), delivered: J(t.delivered || null), data: {}, prof: profPart(t), files: Object.keys(teamFiles(t)) }; Object.keys(t.data).forEach(k => { s.data[k] = packSection(t, k); }); SNAP.teams[t.id] = s; }
-function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; t.members = t.members || []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
+function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; t.members = t.members || []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
 function teamFromDoc(d) {
   const t = normTeam({ id: d.id, name: d.name, members: P(d.members) || [], delivered: d.delivered || null, updated: d.updated || 0, data: {} });
   Object.keys(d.data || {}).forEach(k => unpackSection(t, k, d.data[k]));
@@ -2188,6 +2220,7 @@ async function needFiles(t, ids) {
   await Promise.all(miss.map(async id => { const f = await FB.get(gpath('teams', t.id, 'files', id)).catch(() => null); if (f) { FILES[t.id] = FILES[t.id] || {}; FILES[t.id][id] = f.data; } }));
   const F = FILES[t.id] || {}, m = t.data.marca;
   (t.data.prototip.fitxers || []).forEach(f => { if (!f.data && F[f.id]) f.data = F[f.id]; });
+  ((m && m.esbossos) || []).forEach(f => { if (!f.data && F[f.id]) f.data = F[f.id]; });
   if (m && String(m.logo || '').startsWith('file:') && F[m.logo.slice(5)]) m.logo = F[m.logo.slice(5)];
   softRender();
 }
@@ -2210,7 +2243,7 @@ function applyTeamDoc(d) {
   if (ch) { softRender(); needFiles(t, s.files); }
 }
 function keepLocalFiles(t) { const fs = teamFiles(t); FILES[t.id] = FILES[t.id] || {}; Object.keys(fs).forEach(id => { FILES[t.id][id] = fs[id].data; }); }
-function fileIdsOf(d) { const pr = P((d.data || {}).prototip) || {}, mk = P((d.data || {}).marca) || {}; return (pr.fitxers || []).map(f => f.id).filter(Boolean).concat(String(mk.logo || '').startsWith('file:') ? [mk.logo.slice(5)] : []); }
+function fileIdsOf(d) { const pr = P((d.data || {}).prototip) || {}, mk = P((d.data || {}).marca) || {}; return (pr.fitxers || []).concat(mk.esbossos || []).map(f => f.id).filter(Boolean).concat(String(mk.logo || '').startsWith('file:') ? [mk.logo.slice(5)] : []); }
 function logoId(s) { let h = 5381; for (let i = 0; i < s.length; i += 7) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 'logo' + (h >>> 0).toString(36) + s.length.toString(36); }
 function applyProf(tid, part, doc) {
   const t = G.teams.find(x => x.id === tid), s = SNAP.teams[tid]; if (!t || !s || !doc) return;
@@ -2473,6 +2506,19 @@ const EX_LOGOS = {
   llampec: svgUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="#111827"/><path d="M68 14L34 66h22l-6 40 36-56H64z" fill="#facc15"/><circle cx="92" cy="28" r="9" fill="#ef4444"/></svg>'),
   llar: svgUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120"><rect width="120" height="120" rx="28" fill="#f4ede4"/><path d="M22 58L60 26l38 32v38a6 6 0 0 1-6 6H28a6 6 0 0 1-6-6z" fill="#c2410c"/><rect x="50" y="70" width="20" height="32" rx="4" fill="#f4ede4"/><path d="M40 52c11-11 29-11 40 0M47 59c7-6 19-6 26 0" stroke="#fff" stroke-width="5" fill="none" stroke-linecap="round"/></svg>')
 };
+// Esbossos d'exemple: dibuix a llapis sobre paper
+const exSketch = (n, draw, txt, font) => ({ id: newId('f'), kind: 'img', name: `esbos-${n}.svg`, size: 1500, data: svgUrl(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300"><rect width="400" height="300" fill="#fbfaf6"/><g fill="none" stroke="#4b5563" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">${draw}</g><text x="200" y="250" text-anchor="middle" font-family="${font}" font-size="30" fill="#374151">${txt}</text></svg>`) });
+const EX_SKETCHES = {
+  endoll: () => [exSketch(1, '<circle cx="200" cy="110" r="45"/><path d="M200 45v-15M200 190v-15M135 110h-15M280 110h-15"/>', 'ENDOLL VERD', 'Georgia, serif'),
+    exSketch(2, '<path d="M150 160c0-70 60-100 110-100-5 60-40 100-110 100z"/><path d="M150 160l60-60"/><path d="M230 150v30M250 150v30M222 150h36"/>', 'Endoll Verd', 'Comic Sans MS, cursive'),
+    exSketch(3, '<rect x="130" y="40" width="140" height="140" rx="30"/><circle cx="200" cy="100" r="28"/><path d="M200 55v10M200 135v10M155 100h10M235 100h10M185 160h30M200 128v32"/>', 'Endoll Verd', 'Arial, sans-serif')],
+  llampec: () => [exSketch(1, '<circle cx="200" cy="110" r="70"/><path d="M210 55l-40 65h30l-10 45 40-65h-30z"/>', 'LLAMPEC', 'Impact, sans-serif'),
+    exSketch(2, '<path d="M160 50v120h70"/><path d="M240 60l10-20M260 75l20-10M250 95l20 5"/>', 'llampec', 'Georgia, serif'),
+    exSketch(3, '<rect x="130" y="40" width="140" height="140" rx="30"/><path d="M212 58l-40 60h28l-8 46 40-62h-28z"/>', 'Llampec', 'Arial, sans-serif')],
+  llar: () => [exSketch(1, '<path d="M140 110l60-55 60 55v75h-120z"/><path d="M185 185v-40h30v40"/>', 'LLAR FÀCIL', 'Georgia, serif'),
+    exSketch(2, '<path d="M150 180c-20-30-10-60 10-60M250 180c20-30 10-60-10-60"/><path d="M165 120l35-35 35 35v45h-70z"/>', 'Llar Fàcil', 'Comic Sans MS, cursive'),
+    exSketch(3, '<rect x="130" y="40" width="140" height="140" rx="30"/><path d="M155 110l45-40 45 40v50h-90z"/><path d="M200 150c-20-14-20-30-8-32 4 0 8 4 8 8 0-4 4-8 8-8 12 2 12 18-8 32z"/>', 'Llar Fàcil', 'Arial, sans-serif')]
+};
 const EX_PROTO = {
   endoll: svgUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400"><rect width="640" height="400" fill="#fff"/><rect x="20" y="20" width="600" height="360" rx="14" fill="#f6f6f7" stroke="#d4d4d8"/><text x="44" y="64" font-family="Arial" font-size="24" font-weight="700" fill="#1f7a4a">Endoll Verd · Pressupost de prova</text><text x="44" y="96" font-family="Arial" font-size="15" fill="#555">Comunitat de 20 veïns · 18 kWp de plaques compartides</text><g font-family="Arial" font-size="16" fill="#222"><text x="44" y="146">Inversió total</text><text x="430" y="146">21.600 €</text><text x="44" y="180">Ajut públic previst (40 %)</text><text x="430" y="180">− 8.640 €</text><text x="44" y="214">Cost per veí</text><text x="430" y="214">648 €</text><text x="44" y="248">Estalvi anual per veí</text><text x="430" y="248">210 €</text></g><rect x="44" y="280" width="552" height="70" rx="10" fill="#e5f4eb"/><text x="64" y="322" font-family="Arial" font-size="18" font-weight="700" fill="#1f7a4a">Amortitzat en 3 anys · Tràmits inclosos · Estalvi garantit</text></svg>'),
   llampec: svgUrl('<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 400"><rect width="640" height="400" fill="#fff"/><rect x="200" y="20" width="240" height="360" rx="28" fill="#111827"/><rect x="214" y="48" width="212" height="304" rx="10" fill="#fff"/><text x="232" y="86" font-family="Arial" font-size="20" font-weight="700" fill="#111827">Llampec</text><text x="232" y="112" font-family="Arial" font-size="13" fill="#555">Urgències elèctriques</text><rect x="232" y="132" width="176" height="56" rx="10" fill="#facc15"/><text x="252" y="167" font-family="Arial" font-size="17" font-weight="700" fill="#111827">Demanar ajuda ara</text><text x="232" y="220" font-family="Arial" font-size="13" fill="#333">Tècnic assignat: Pol</text><text x="232" y="244" font-family="Arial" font-size="13" fill="#333">Arribada estimada: 48 min</text><rect x="232" y="262" width="176" height="8" rx="4" fill="#e5e7eb"/><rect x="232" y="262" width="110" height="8" rx="4" fill="#22c55e"/><text x="232" y="300" font-family="Arial" font-size="12" fill="#777">Tarifa: 65 € + 45 €/hora</text></svg>'),
@@ -2510,7 +2556,7 @@ function exampleGroup() {
   Object.assign(d.prestec, { import: '12000', tin: '5.5', anys: '5', inici: '2', entitat: 'Banca ètica' });
   exTreso(d, { 'Vendes': ['4800', '8'], 'Retribució dels socis': ['3000'], 'Quota d\'autònoms (Seguretat Social)': ['240'], 'Lloguer del local': ['450'], 'Subministraments (llum, aigua, internet)': ['150'], 'Gestoria': ['120'], 'Assegurances': ['900'], 'Màrqueting i publicitat': ['250'] }, '30');
   d.viab.conclusio = 'El primer any arribem al punt mort a partir del mes 7. La tresoreria es manté positiva gràcies al préstec de banca ètica.';
-  Object.assign(d.marca, { nom: 'Endoll Verd', eslogan: 'L\'energia del teu edifici, compartida.', logo: EX_LOGOS.endoll, color1: '#1f7a4a', color2: '#0f2f1e', missio: 'Fer que l\'energia solar arribi a totes les comunitats de veïns, sense complicacions.', visio: 'Ser la cooperativa de referència en autoconsum compartit del Maresme.', valors: 'Proximitat, transparència, sostenibilitat i cooperació.' });
+  Object.assign(d.marca, { nom: 'Endoll Verd', eslogan: 'L\'energia del teu edifici, compartida.', esbossos: EX_SKETCHES.endoll(), logo: EX_LOGOS.endoll, justColors: 'El verd recorda la natura i l\'energia neta, i el groc és el sol que dona l\'energia. Són colors que la gent associa a l\'estalvi i a la sostenibilitat.', justIcones: 'Hem triat el sol dins d\'un quadrat, que és com un edifici vist des de dalt: diu en un cop d\'ull que fem plaques solars per a comunitats. La fulla de la versió 2 quedava massa genèrica.', justTipo: 'Una lletra de pal sec, recta i sense adorns, perquè transmet confiança i modernitat i es llegeix bé de lluny. La lletra manuscrita de la versió 2 semblava poc professional.', color1: '#1f7a4a', color2: '#0f2f1e', missio: 'Fer que l\'energia solar arribi a totes les comunitats de veïns, sense complicacions.', visio: 'Ser la cooperativa de referència en autoconsum compartit del Maresme.', valors: 'Proximitat, transparència, sostenibilitat i cooperació.' });
   Object.assign(d.p7, { product: 'Autoconsum compartit clau en mà, amb manteniment i informe d\'estalvi.', price: 'Instal·lació segons la mida (uns 650 € per veí, abans d\'ajuts) i quota de 60 € l\'any.', place: 'Venda directa a través dels administradors de finques; oficina al viver d\'empreses.', promotion: 'Xerrades a les comunitats, web amb calculadora d\'estalvi i xarxes socials.', people: 'Tres instal·ladors titulats amb tracte proper.', process: 'Estudi gratuït en 48 h, tràmits inclosos i instal·lació en 2 dies.', physical: 'Furgoneta retolada, uniformes i pressupostos amb imatge cuidada.' });
   Object.assign(d.pitch, { ganxo: 'Sabíeu que el vostre terrat podria pagar part de la vostra factura de la llum?', problema: 'Les comunitats volen plaques però els tràmits fan por.', solucio: 'Ho fem tot: estudi, ajuts, instal·lació i manteniment.', mercat: 'Més de 2.000 comunitats de veïns a Mataró.', model: 'Instal·lació més quota anual de manteniment.', impacte: 'Menys emissions i menys pobresa energètica.', equip: 'Tres instal·ladors titulats del Biada.', crida: 'Demaneu-nos l\'estudi gratuït per a la vostra comunitat.', format: 'video', videoUrl: 'https://drive.google.com/file/d/exemple-endoll-verd/view' });
   t.review = { idea: { status: 'correcte', comment: 'Molt bon propòsit!' }, empatia: { status: 'correcte', comment: '' }, entrevistes: { status: 'correcte', comment: 'Bé que hàgiu afegit la família sense plaques.' }, lean: { status: 'correcte', comment: '' }, treso: { status: 'millorar', comment: 'Reviseu el creixement de vendes: un 8 % mensual és molt optimista.' } };
@@ -2544,7 +2590,7 @@ function exampleGroup() {
   Object.assign(e.prestec, { import: '15000', tin: '6', anys: '5', inici: '1', entitat: 'Microcrèdit social' });
   exTreso(e, { 'Vendes': ['5200', '5'], 'Retribució dels socis': ['3300'], 'Quota d\'autònoms (Seguretat Social)': ['290'], 'Lloguer del local': ['300'], 'Subministraments (llum, aigua, internet)': ['120'], 'Gestoria': ['90'], 'Assegurances': ['1100'], 'Màrqueting i publicitat': ['150'] }, '20');
   e.viab.conclusio = 'Amb 30 quotes de manteniment i unes 60 urgències al mes cobrim les despeses. La tresoreria és ajustada els tres primers mesos.';
-  Object.assign(e.marca, { nom: 'Llampec', eslogan: 'Arribem abans que la teva paciència s\'acabi.', logo: EX_LOGOS.llampec, color1: '#facc15', color2: '#111827', missio: 'Que cap comerç tanqui per una avaria elèctrica.', visio: 'Ser el servei d\'urgències elèctriques de referència del Maresme.', valors: 'Rapidesa, honestedat i compromís amb el barri.' });
+  Object.assign(e.marca, { nom: 'Llampec', eslogan: 'Arribem abans que la teva paciència s\'acabi.', esbossos: EX_SKETCHES.llampec(), logo: EX_LOGOS.llampec, justColors: 'El groc sobre negre és el color de l\'avís de perill elèctric: es veu de seguida i transmet rapidesa i energia.', justIcones: 'El llamp és la nostra feina (l\'electricitat) i alhora la velocitat. La L de la versió 2 no deia res de l\'activitat.', justTipo: 'Lletra gruixuda i recta, que dona sensació de força i urgència. La lletra amb serifs de la versió 2 era massa seriosa i antiga.', color1: '#facc15', color2: '#111827', missio: 'Que cap comerç tanqui per una avaria elèctrica.', visio: 'Ser el servei d\'urgències elèctriques de referència del Maresme.', valors: 'Rapidesa, honestedat i compromís amb el barri.' });
   Object.assign(e.p7, { product: 'Urgències en menys de 2 hores i revisions preventives.', price: 'Sortida 65 € + 45 €/hora; quota de manteniment de 35 € al mes.', place: 'Al comerç del client; demanda per app o telèfon.', promotion: 'Visites porta a porta, adhesiu «Protegit per Llampec» i Google Maps.', people: 'Tècnics puntuals, amables i amb uniforme.', process: 'Avís, tècnic assignat, preu tancat i factura al mòbil.', physical: 'Furgoneta groga i negra fàcil de reconèixer.' });
   Object.assign(e.pitch, { ganxo: 'Quant perd un bar si la nevera s\'atura un dissabte?', problema: 'Els electricistes triguen dies i els comerços perden diners.', solucio: 'Llampec arriba en menys de 2 hores.', mercat: 'Més de 900 comerços al centre de Mataró.', model: 'Sortides d\'urgència i quotes mensuals.', impacte: 'Comerços oberts i feina local.', equip: 'Tres electricistes joves i disponibles.', crida: 'Feu-vos la quota avui i la primera revisió és gratuïta.', format: 'classe', videoUrl: '' });
   u.review = { idea: { status: 'correcte', comment: '' }, prototip: { status: 'correcte', comment: 'Molt bona la prova real amb comerços.' }, juridica: { status: 'millorar', comment: 'Compareu també amb la societat laboral.' } };
@@ -2578,7 +2624,7 @@ function exampleGroup() {
   Object.assign(f.prestec, { import: '10000', tin: '5', anys: '6', inici: '2', entitat: 'Cooperativa de crèdit' });
   exTreso(f, { 'Vendes': ['3800', '6'], 'Retribució dels socis': ['2900'], 'Quota d\'autònoms (Seguretat Social)': ['230'], 'Lloguer del local': ['350'], 'Subministraments (llum, aigua, internet)': ['110'], 'Gestoria': ['100'], 'Assegurances': ['800'], 'Màrqueting i publicitat': ['120'] }, '35');
   f.viab.conclusio = 'Amb unes 6 adaptacions al mes arribem al punt mort. La subvenció del mes 3 ens dona marge els primers mesos.';
-  Object.assign(f.marca, { nom: 'Llar Fàcil', eslogan: 'A casa teva, segur.', logo: EX_LOGOS.llar, color1: '#c2410c', color2: '#431407', missio: 'Que la gent gran pugui viure a casa seva amb seguretat i autonomia.', visio: 'Adaptar 500 llars del Maresme en cinc anys.', valors: 'Respecte, senzillesa, proximitat i compromís social.' });
+  Object.assign(f.marca, { nom: 'Llar Fàcil', eslogan: 'A casa teva, segur.', esbossos: EX_SKETCHES.llar(), logo: EX_LOGOS.llar, justColors: 'El taronja terrós és càlid i proper, com una llar, i el fons clar dona tranquil·litat. Volíem allunyar-nos dels colors freds d\'un hospital.', justIcones: 'Una casa amb un cor: la casa és el que adaptem i el cor és la cura per la gent gran. Les mans de la versió 2 no es veien bé en petit.', justTipo: 'Lletra rodona i ampla, fàcil de llegir per a la gent gran. La lletra manuscrita de la versió 2 costava de llegir.', color1: '#c2410c', color2: '#431407', missio: 'Que la gent gran pugui viure a casa seva amb seguretat i autonomia.', visio: 'Adaptar 500 llars del Maresme en cinc anys.', valors: 'Respecte, senzillesa, proximitat i compromís social.' });
   Object.assign(f.p7, { product: 'Paquet d\'adaptació bàsica (llums, detectors, botó d\'ajuda) i manteniment.', price: 'Paquet bàsic de 690 € i quota de 8 € al mes; preu social per a pensions baixes.', place: 'Al domicili del client; derivacions dels serveis socials.', promotion: 'Xerrades a casals de gent gran, fulletons a farmàcies i boca-orella.', people: 'Tècnics pacients que expliquen les coses amb calma.', process: 'Visita gratuïta, proposta, instal·lació en un matí i formació.', physical: 'Manual amb fotos grans i adhesius als dispositius.' });
   Object.assign(f.pitch, { ganxo: 'La Montse té 82 anys i no vol deixar casa seva.', problema: 'Molta gent gran viu sola en pisos poc segurs.', solucio: 'Adaptem la casa en un matí, sense obres i sense complicacions.', mercat: 'Més de 6.000 persones grans viuen soles a Mataró.', model: 'Paquet d\'adaptació i quota de manteniment.', impacte: 'Més autonomia i menys ingressos a residències.', equip: 'Tres tècnics en instal·lacions elèctriques amb vocació social.', crida: 'Demaneu una visita gratuïta per a la vostra família.', format: 'video', videoUrl: 'https://drive.google.com/file/d/exemple-llar-facil/view' });
   w.review = { idea: { status: 'correcte', comment: 'Idea amb molt d\'impacte social.' }, entrevistes: { status: 'correcte', comment: '' } };
