@@ -481,6 +481,11 @@ table.fin.treso tr.sub td:first-child,table.fin.treso tr.tot td:first-child{back
 .reportview table.fin tr.rasec td{background:var(--tone)!important;color:#ffffff;font-size:12px;font-weight:700;box-shadow:none}
 .reportview table.fin tr.rasum td{background:var(--tone-m)!important;font-weight:700}
 table.fin.segtbl td{vertical-align:middle}
+.segteam{display:flex;align-items:center;gap:12px;min-width:170px}
+.slogo{width:44px;height:44px;flex:none;border-radius:11px;background:#ffffff;border:1px solid var(--line);padding:4px;display:grid;place-items:center}
+.slogo img{width:100%;height:100%;object-fit:contain}
+.slogo b{width:100%;height:100%;border-radius:8px;display:grid;place-items:center;background:var(--tb1);color:#ffffff;font-size:18px}
+.slogo.empty{background:var(--soft);border-style:dashed}
 table.matrix thead input{min-width:130px}
 
 
@@ -1194,9 +1199,9 @@ function teamBannerHtml(t) {
   const m = t.data.marca, logo = /^(data:|https?:)/.test(m.logo || '') ? m.logo : '';
   return `<div class="tbanner" style="--tb1:${esc(m.color1 || '#2bc46f')};--tb2:${esc(m.color2 || '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
 }
-function teamLogoHtml(t) {
+function teamLogoHtml(t, cls = 'hlogo') {
   const m = t.data.marca, logo = /^(data:|https?:)/.test(m.logo || '') ? m.logo : '';
-  return `<span class="hlogo" style="--tb1:${esc(m.color1 || '#2bc46f')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
+  return `<span class="${cls}" style="--tb1:${esc(m.color1 || '#2bc46f')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
 }
 function updateTeamBanner() {
   const v = $('#view'), old = v.querySelector(':scope > .tbanner'), t = bannerTeam();
@@ -2603,7 +2608,7 @@ function vSeguiment(v) {
   v.innerHTML = `${head(`${esc(G.name)} · Projecte emprenedor RA4 i RA5`, `${G.teams.length} <span class="muted" style="font-weight:500">equips</span>`)}
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     ${card('Progrés per blocs', pad(`<div class="tablebox"><table class="fin zebra segtbl"><thead><tr><th>Equip i projecte</th>${groups.map(g => `<th class="n">${esc(g[1])}</th>`).join('')}<th class="n">Total</th><th>Dossier</th><th class="n">RA4</th><th class="n">RA5</th></tr></thead><tbody>
-      ${G.teams.map((t, i) => `<tr><td><button class="linkbtn" data-rev="${i}"><b>${esc(t.name)}</b></button><div class="small muted">${esc(projName(t))}</div></td>${groups.map(g => { const ss = g[3].map(x => sec(x[0])); const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<td class="n"><div class="minibar"><span style="width:${p * 100}%"></span></div>${Math.round(p * 100)}%</td>`; }).join('')}<td class="n"><b>${Math.round(progress(t) * 100)}%</b></td><td>${t.delivered ? `<span class="pill">Lliurat</span>${t.updated > t.delivered ? ' <span class="pill warn">Canvis</span>' : ''}` : '<span class="pill grey">Pendent</span>'}</td><td class="n"><span class="gchip ${gcls(raGradeAct(t, 'RA4').nota)}">${f1(raGradeAct(t, 'RA4').nota)}</span></td><td class="n"><span class="gchip ${gcls(raGradeAct(t, 'RA5').nota)}">${f1(raGradeAct(t, 'RA5').nota)}</span></td></tr>`).join('')}
+      ${G.teams.map((t, i) => `<tr><td><div class="segteam">${filled(t.data.marca.nom) ? teamLogoHtml(t, 'slogo') : '<span class="slogo empty"></span>'}<div><button class="linkbtn" data-rev="${i}"><b>${esc(t.name)}</b></button><div class="small muted">${esc(projName(t))}</div></div></div></td>${groups.map(g => { const ss = g[3].map(x => sec(x[0])); const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<td class="n"><div class="minibar"><span style="width:${p * 100}%"></span></div>${Math.round(p * 100)}%</td>`; }).join('')}<td class="n"><b>${Math.round(progress(t) * 100)}%</b></td><td>${t.delivered ? `<span class="pill">Lliurat</span>${t.updated > t.delivered ? ' <span class="pill warn">Canvis</span>' : ''}` : '<span class="pill grey">Pendent</span>'}</td><td class="n"><span class="gchip ${gcls(raGradeAct(t, 'RA4').nota)}">${f1(raGradeAct(t, 'RA4').nota)}</span></td><td class="n"><span class="gchip ${gcls(raGradeAct(t, 'RA5').nota)}">${f1(raGradeAct(t, 'RA5').nota)}</span></td></tr>`).join('')}
     </tbody></table></div><p class="small muted">Toca el nom d'un equip per revisar el projecte i deixar-hi comentaris.</p>`))}`;
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
 }
