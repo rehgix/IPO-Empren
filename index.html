@@ -2132,7 +2132,7 @@ async function homeView(msg) {
         <span class="small muted">Curs ${esc(g.course || '')} · les dades s'esborren el ${fmtDay(g.expiresAt)}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">…</b> alumnes</span><span><b data-st="prog">…</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:0%"></span></div>
-        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}">Copiar l'enllaç</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
+        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` : '<p class="muted">Encara no tens cap grup. Crea\'n un a sota.</p>'}
     ${card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${sectors.map(([k, s]) => `<option value="${k}">${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
@@ -2152,7 +2152,7 @@ async function homeView(msg) {
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
   $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true);
-  v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = 'Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
+  v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
