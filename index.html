@@ -2581,7 +2581,7 @@ function vRevisio(v) {
     const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t), w = ws(s), se = sentOf(t, s.k);
     return `<section class="rcard st-${w}" id="rv-${s.k}" data-g="${s.g}">
       <header><div><span class="rblk">${esc(s.gl)}</span><h3>${esc(s.l)}</h3><span class="small muted">${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span></div>
-        <div class="rbadges"><span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span><span class="rfill ${ss}">${ss === 'done' ? 'Complet' : ss === 'none' ? 'Sense fer' : `${Math.min(d, n)} de ${n}`}</span></div></header>
+        <div class="rbadges"><span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
       <div class="rbody">${secHtml(t, s.k)}</div>
       <footer class="rrev">
         <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">✓ Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">✎ A millorar</button></div>
