@@ -686,6 +686,59 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .glist{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
 </style>
 <style>a.btn{text-decoration:none}</style>
+<style>
+/* Imatges del prototip sense franges */
+.pimg{background:#fff}
+.pimg img{width:auto;max-width:100%;height:auto;max-height:520px;margin:0 auto;background:#fff;object-fit:contain}
+
+/* ===== Revisió dels projectes ===== */
+.rtabs{display:flex;gap:10px;overflow-x:auto;padding:4px 2px 8px;margin-top:4px}
+.rtab{flex:0 0 auto;min-width:190px;display:grid;gap:4px;text-align:left;padding:12px 16px;border-radius:16px;border:1px solid var(--line);background:#fff;cursor:pointer;font:inherit;color:var(--ink);position:relative}
+.rtab b{font-size:15px}.rtab span{font-size:13px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px}
+.rtab i{display:block;height:5px;border-radius:9px;background:#eef1f4;overflow:hidden;margin-top:4px}.rtab i u{display:block;height:100%;background:#26884f;text-decoration:none}
+.rtab em{position:absolute;top:12px;right:14px;font-style:normal;font-size:12px;font-weight:700;color:#26884f}
+.rtab.on{border-color:#26884f;box-shadow:0 0 0 2px #26884f inset;background:#f4fbf6}
+.rsum{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.rsum-i{display:grid;gap:2px;padding:14px 16px;border-radius:16px;background:var(--soft)}
+.rsum-i b{font-size:28px;letter-spacing:-.02em}.rsum-i span{font-size:13px;color:var(--muted)}
+.rsum-i.ok{background:#e5f4eb}.rsum-i.ok b{color:#1d6b3e}
+.rsum-i.warn{background:#fdf2e4}.rsum-i.warn b{color:#9a5513}
+.rsum-i.pend{background:#e8effc}.rsum-i.pend b{color:#234f9e}
+.rfilters{display:inline-flex;gap:4px;padding:4px;border-radius:14px;background:var(--soft);margin-bottom:16px;flex-wrap:wrap}
+.rfilters button{border:0;background:none;padding:8px 14px;border-radius:10px;font:600 14px var(--font);color:var(--muted);cursor:pointer}
+.rfilters button.on{background:#fff;color:var(--ink);box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.rlayout{display:grid;grid-template-columns:240px minmax(0,1fr);gap:20px;align-items:start}
+.rnav{position:sticky;top:16px;display:grid;gap:12px;max-height:calc(100vh - 32px);overflow:auto;padding-right:4px}
+.rnav-g{display:grid;gap:2px}
+.rnav-g > span{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gc);padding:0 8px 2px}
+.rnav-i{display:flex;align-items:center;gap:8px;text-align:left;border:0;background:none;padding:6px 8px;border-radius:8px;font:13px var(--font);color:var(--ink);cursor:pointer}
+.rnav-i:hover{background:var(--soft)}.rnav-i.faded{opacity:.4}
+.rdot{flex:none;width:10px;height:10px;border-radius:50%;background:#cbd5e1}
+.rdot.ok{background:#26884f}.rdot.warn{background:#d97706}.rdot.pend{background:#3b82f6}.rdot.none{background:#e5e7eb;border:1px solid #cbd5e1}
+.rcards{display:grid;gap:16px;min-width:0}
+.rcard{border:1px solid var(--line);border-left:5px solid #cbd5e1;border-radius:18px;background:#fff;overflow:hidden;scroll-margin-top:16px}
+.rcard.st-correcte{border-left-color:#26884f}.rcard.st-millorar{border-left-color:#d97706}.rcard.st-pend{border-left-color:#3b82f6}.rcard.st-none{border-left-color:#e5e7eb}
+.rcard > header{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;padding:16px 20px 12px;background:var(--gs)}
+.rcard h3{margin:2px 0;font-size:18px;letter-spacing:-.01em}
+.rblk{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gc)}
+.rfill{flex:none;font-size:12px;font-weight:600;padding:4px 10px;border-radius:99px;background:#fff;color:var(--muted);border:1px solid var(--line)}
+.rfill.done{color:#1d6b3e;border-color:#c4e6d1}.rfill.none{color:#b3261e}
+.rbody{padding:6px 20px 12px}
+.rbody .sumrow{grid-template-columns:200px minmax(0,1fr);gap:16px;align-items:baseline;padding:10px 0}
+.rbody .sumrow > span{font-weight:600;color:var(--muted)}
+.rbody .dlogo{max-width:96px;margin:10px 0}
+.rrev{display:grid;gap:10px;padding:14px 20px 18px;background:#fafafa;border-top:1px solid var(--line)}
+.rbtns{display:flex;gap:8px;flex-wrap:wrap}
+.rb{border:1.5px solid var(--line);background:#fff;padding:9px 16px;border-radius:12px;font:600 14px var(--font);cursor:pointer;color:var(--ink)}
+.rb.ok:hover,.rb.ok.on{border-color:#26884f;color:#1d6b3e}.rb.ok.on{background:#e5f4eb}
+.rb.warn:hover,.rb.warn.on{border-color:#d97706;color:#9a5513}.rb.warn.on{background:#fdf2e4}
+.rquick{display:flex;gap:6px;flex-wrap:wrap}
+.rquick button{border:1px dashed #cbd5e1;background:#fff;border-radius:99px;padding:4px 10px;font:12.5px var(--font);color:var(--muted);cursor:pointer}
+.rquick button:hover{border-color:#26884f;color:#1d6b3e}
+.rrev textarea{width:100%;font:14px/1.5 var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;resize:vertical}
+.rrev textarea:focus{outline:none;border-color:#26884f;box-shadow:0 0 0 3px rgba(38,136,79,.12)}
+@media (max-width:900px){.rlayout{grid-template-columns:1fr}.rnav{display:none}.rsum{grid-template-columns:1fr 1fr}.rbody .sumrow{grid-template-columns:1fr;gap:2px}}
+</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -2413,17 +2466,47 @@ function vObertura(v) {
   $('#accAllOpen').onclick = () => { PROG.forEach(s => { st(s.k).state = 'open'; }); save(); rr(); };
   $('#accAllClose').onclick = () => { PROG.forEach(s => { st(s.k).state = 'closed'; }); save(); rr(); };
 }
+let revFilter = 'tots';
+const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'Reviseu l\'ortografia.', 'Connecteu-ho amb el vostre sector.'];
 function vRevisio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
-  v.innerHTML = `${head(`Revisió · ${esc(t.name)}${t.members.length ? ' · ' + t.members.map(m => esc(m.name)).filter(Boolean).join(', ') : ''}`, esc(projName(t)), teamSel())}
-    <p class="muted intro">Per a cada apartat, marca si és correcte o si cal millorar-lo i deixa un comentari. L'equip el veurà a la pàgina corresponent i al menú.</p>
-    ${PROG.map(s => { const rv = t.review[s.k] || {}; const st = secState(t, s), [d, n] = s.p(t);
-      return card(`${esc(s.l)} <span class="small muted" style="font-weight:400">· ${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span>`, pad(`${secHtml(t, s.k)}
-        <div class="review"><div class="row"><button type="button" class="btn small ${rv.status === 'correcte' ? '' : 'ghost'}" data-st="${s.k}" data-v="correcte">Correcte</button><button type="button" class="btn small ${rv.status === 'millorar' ? '' : 'ghost'}" data-st="${s.k}" data-v="millorar">A millorar</button></div>
-        <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip">${esc(rv.comment || '')}</textarea></div>`), `${st === 'done' ? 'Complet' : `${Math.min(d, n)} de ${n}`}`); }).join('')}`;
-  bindTeamSel();
-  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; save(); const y = window.scrollY; render(); window.scrollTo(0, y); });
+  const st = s => (t.review[s.k] || {}).status || '';
+  const cnt = { correcte: PROG.filter(s => st(s) === 'correcte').length, millorar: PROG.filter(s => st(s) === 'millorar').length };
+  const pend = PROG.filter(s => !st(s) && secState(t, s) !== 'none').length;
+  const show = s => revFilter === 'tots' || (revFilter === 'pendents' ? !st(s) : st(s) === revFilter);
+  const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(x.name)}</b><span>${esc(projName(x))}</span><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
+  const groups = SECS.filter(g => g[0] !== 'lliura');
+  const dot = s => st(s) === 'correcte' ? 'ok' : st(s) === 'millorar' ? 'warn' : secState(t, s) === 'none' ? 'none' : 'pend';
+  const nav = groups.map(([gk, gl, , items]) => { const ss = items.map(([k]) => sec(k)).filter(s => s.p); if (!ss.length) return ''; return `<div class="rnav-g" data-g="${gk}"><span>${esc(gl)}</span>${ss.map(s => `<button type="button" class="rnav-i ${show(s) ? '' : 'faded'}" data-jump="${s.k}"><i class="rdot ${dot(s)}"></i>${esc(s.l)}</button>`).join('')}</div>`; }).join('');
+  const cards = PROG.filter(show).map(s => {
+    const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t);
+    return `<section class="rcard st-${rv.status || (ss === 'none' ? 'none' : 'pend')}" id="rv-${s.k}" data-g="${s.g}">
+      <header><div><span class="rblk">${esc(s.gl)}</span><h3>${esc(s.l)}</h3><span class="small muted">${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span></div>
+        <span class="rfill ${ss}">${ss === 'done' ? 'Complet' : ss === 'none' ? 'Sense fer' : `${Math.min(d, n)} de ${n}`}</span></header>
+      <div class="rbody">${secHtml(t, s.k)}</div>
+      <footer class="rrev">
+        <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">✓ Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">✎ A millorar</button></div>
+        <div class="rquick">${REV_QUICK.map(q => `<button type="button" data-q="${s.k}">${esc(q)}</button>`).join('')}</div>
+        <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip (el veuran a la pàgina d'aquest apartat)">${esc(rv.comment || '')}</textarea>
+      </footer></section>`;
+  }).join('') || '<div class="notice info">No hi ha cap apartat amb aquest filtre.</div>';
+  v.innerHTML = `${head(`Revisió dels projectes${t.members.length ? ' · ' + t.members.map(m => esc(m.name)).filter(Boolean).join(', ') : ''}`, esc(projName(t)))}
+    <div class="rtabs" role="tablist" aria-label="Equips">${tabs}</div>
+    <div class="rsum">
+      <div class="rsum-i ok"><b>${cnt.correcte}</b><span>correctes</span></div>
+      <div class="rsum-i warn"><b>${cnt.millorar}</b><span>a millorar</span></div>
+      <div class="rsum-i pend"><b>${pend}</b><span>per revisar</span></div>
+      <div class="rsum-i"><b>${Math.round(progress(t) * 100)}%</b><span>completat${t.delivered ? ' · lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : ''}</span></div>
+    </div>
+    <div class="rfilters" role="group" aria-label="Filtre">${[['tots', 'Tots'], ['pendents', 'Per revisar'], ['millorar', 'A millorar'], ['correcte', 'Correctes']].map(([k, l]) => `<button type="button" class="${revFilter === k ? 'on' : ''}" data-rf="${k}">${l}</button>`).join('')}</div>
+    <div class="rlayout"><nav class="rnav" aria-label="Apartats">${nav}</nav><div class="rcards">${cards}</div></div>`;
+  const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); window.scrollTo(0, 0); });
+  v.querySelectorAll('[data-rf]').forEach(b => b.onclick = () => { revFilter = b.dataset.rf; rr(); });
+  v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { const el = $('#rv-' + b.dataset.jump); if (!el) { revFilter = 'tots'; render(); } const e2 = $('#rv-' + b.dataset.jump); if (e2) e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; save(); rr(); });
   v.querySelectorAll('[data-cm]').forEach(a => a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); });
+  v.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, a = v.querySelector(`[data-cm="${k}"]`); a.value = (a.value.trim() ? a.value.trim() + ' ' : '') + b.textContent; a.dispatchEvent(new Event('input')); a.focus(); });
 }
 function vAvaluacio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
