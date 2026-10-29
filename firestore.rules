@@ -56,6 +56,13 @@ service cloud.firestore {
         allow update, delete: if isProf(gid);
       }
 
+      // INVITACIONS: alumnes que el professor afegeix a mà (el document es diu com el correu)
+      match /invites/{email} {
+        allow get, delete: if isProf(gid) || (signed() && me() == email);
+        allow list: if isProf(gid);
+        allow create, update: if isProf(gid) && request.resource.data.team in grp(gid).teamIds;
+      }
+
       match /teams/{tid} {
         allow read: if isProf(gid) || inTeam(gid, tid);
         allow create, delete: if isProf(gid);

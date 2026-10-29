@@ -674,7 +674,12 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .rost{display:grid;gap:6px;padding:10px 0;border-bottom:1px solid var(--line)}
 .rost:last-of-type{border-bottom:0}
 .rostrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,220px) auto;gap:8px;align-items:center;font-size:14px}
-.rostrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rostwho{display:flex;flex-direction:column;min-width:0}
+.rostwho > span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rostrow .pill{font-size:12px;padding:1px 8px}
+.rostbtn{display:flex;gap:6px}
+.invform{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
+@media (max-width:620px){.invform{grid-template-columns:1fr}}
 @media (max-width:600px){.rostrow{grid-template-columns:1fr auto}.rostrow select{grid-column:1/-1;grid-row:2}}
 
 
@@ -2068,7 +2073,7 @@ function bindActsConfig(v) {
 /* ================= Versió web amb Firebase ================= */
 // Inici de sessió amb el compte de Google de l'institut i dades a Firestore.
 // Estructura: groups/{grup} · members/{alumne} · teams/{equip} · teams/{equip}/files · teams/{equip}/prof/{review|grades|ai}
-let lastGid = null, FB = null, USER = null, ME = null, GID = null, GROUP = null, ROSTER = [], UNSUB = [], FILES = {};
+let lastGid = null, FB = null, USER = null, ME = null, GID = null, GROUP = null, ROSTER = [], INVITES = [], UNSUB = [], FILES = {};
 let SNAP = { group: '', teams: {} }, syncT = null, syncBusy = false, syncAgain = false, pendRender = false, rT = null;
 const newId = (p = 't') => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 function ensureIds() { (G.teams || []).forEach(t => { if (!t.id) t.id = newId(); }); }
@@ -2192,6 +2197,7 @@ async function profPush() {
     ops.push({ op: 'del', path: gpath('teams', id) }); ['review', 'grades', 'ai'].forEach(p => ops.push({ op: 'del', path: gpath('teams', id, 'prof', p) }));
     (s.files || []).forEach(f => ops.push({ op: 'del', path: gpath('teams', id, 'files', f) }));
     ROSTER.filter(m => m.team === id).forEach(m => ops.push({ op: 'del', path: gpath('members', m.id) }));
+    INVITES.filter(m => m.team === id).forEach(m => ops.push({ op: 'del', path: gpath('invites', m.id) }));
     after.push(() => { delete SNAP.teams[id]; });
   });
   G.teams.forEach(t => {
@@ -2320,7 +2326,11 @@ async function route() {
   G = groupToG(g);
   if (isProf) return openProf();
   let m = null; try { m = await FB.get(gpath('members', USER.uid)); } catch (e) {}
-  const tid = m && (g.teamIds || []).includes(m.team) ? m.team : null;
+  let tid = m && (g.teamIds || []).includes(m.team) ? m.team : null;
+  if (!tid) { // Si el professor l'ha afegit a mà, entra directament al seu equip
+    const em = USER.email.toLowerCase(); let iv = null; try { iv = await FB.get(gpath('invites', em)); } catch (e) {}
+    if (iv && (g.teamIds || []).includes(iv.team)) { try { await FB.set(gpath('members', USER.uid), { email: USER.email, name: iv.name || USER.name || '', team: iv.team, joined: Date.now(), expiresAt: { __ts: g.expiresAt } }); tid = iv.team; FB.del(gpath('invites', em)).catch(() => {}); } catch (e) {} }
+  }
   if (!tid) return joinView(g, m);
   return openStudent(tid);
 }
@@ -2338,12 +2348,13 @@ async function openProf() {
   ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
   if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w })) { SNAP.group = ''; cloudSave(); }
-  ROSTER = await FB.list(gpath('members')).catch(() => []);
+  ROSTER = await FB.list(gpath('members')).catch(() => []); INVITES = await FB.list(gpath('invites')).catch(() => []);
   role = 'prof'; if (lastGid !== GID || !tab || !['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'config'].includes(tab)) tab = 'seguiment'; lastGid = GID;
   render(); sideUser();
   UNSUB.push(FB.listenDoc(gpath(), applyGroup, () => {}));
   UNSUB.push(FB.listenCol(gpath('teams'), list => { list.forEach(applyTeamDoc); const ids = new Set(list.map(d => d.id)); const gone = G.teams.filter(t => !ids.has(t.id) && SNAP.teams[t.id]); if (gone.length && !syncT && !syncBusy) { G.teams = G.teams.filter(t => !gone.includes(t)); gone.forEach(t => delete SNAP.teams[t.id]); softRender(); } }, () => {}));
   UNSUB.push(FB.listenCol(gpath('members'), list => { ROSTER = list; if (tab === 'config') softRender(); }, () => {}));
+  UNSUB.push(FB.listenCol(gpath('invites'), list => { INVITES = list; if (tab === 'config') softRender(); }, () => {}));
   G.teams.forEach(t => UNSUB.push(FB.listenCol(gpath('teams', t.id, 'prof'), list => list.forEach(p => applyProf(t.id, p.id, p)), () => {})));
 }
 async function openStudent(tid) {
@@ -2461,6 +2472,8 @@ async function deleteGroupDeep(gid) {
   }
   const mem = await FB.list(base + '/members').catch(() => []);
   mem.forEach(m => ops.push({ op: 'del', path: base + '/members/' + m.id }));
+  const inv = await FB.list(base + '/invites').catch(() => []);
+  inv.forEach(m => ops.push({ op: 'del', path: base + '/invites/' + m.id }));
   ops.push({ op: 'del', path: base });
   await FB.batch(ops);
 }
@@ -2477,22 +2490,53 @@ function cloudAfterRender(v) {
 function cloudConfigHtml() {
   if (!CLOUD || !ME || !ME.isProf) return '';
   const link = location.origin + location.pathname + '#g=' + GID;
-  const byTeam = id => ROSTER.filter(x => x.team === id);
-  const orphan = ROSTER.filter(x => !G.teams.some(t => t.id === x.team));
+  // Invitats que encara no han entrat: surten com a «pendents»
+  const pend = INVITES.filter(i => !ROSTER.some(m => String(m.email || '').toLowerCase() === i.id)).map(i => Object.assign({}, i, { inv: 1, email: i.id }));
+  const all = ROSTER.concat(pend);
+  const byTeam = id => all.filter(x => x.team === id);
+  const orphan = all.filter(x => !G.teams.some(t => t.id === x.team));
   return card('Enllaç per a l\'alumnat', pad(`<p class="small muted">Comparteix aquest enllaç amb l'alumnat (per exemple, al Classroom). Hi entren amb el compte de l'institut i trien el seu equip.</p>
       <div class="linkbox"><input type="text" id="gLink" readonly value="${esc(link)}" aria-label="Enllaç del grup"><button type="button" class="btn small" id="gLinkCp">Copiar</button></div>
       <p class="small muted" style="margin-top:10px">Les dades d'aquest grup s'esborraran automàticament el <b>${fmtDay(GROUP.expiresAt)}</b>.</p>`))
-    + card('Alumnes connectats', pad(`<p class="small muted">Cada alumne tria el seu equip el primer cop que entra. Aquí el pots canviar d'equip o treure'l perquè en torni a triar un.</p>
-    ${G.teams.map(t => `<div class="rost"><b>${esc(t.name)}</b>${byTeam(t.id).length ? byTeam(t.id).map(rostRow).join('') : '<p class="small muted">Encara no hi ha entrat ningú.</p>'}</div>`).join('')}
-    ${orphan.length ? `<div class="rost"><b>Sense equip vàlid</b>${orphan.map(rostRow).join('')}</div>` : ''}`))
+    + card('Alumnes del grup', pad(`<p class="small muted">Cada alumne tria el seu equip el primer cop que entra, o bé l'afegeixes tu a sota i entra directament al seu equip. Aquí el pots canviar d'equip o eliminar-lo del grup.</p>
+    ${G.teams.map(t => `<div class="rost"><b>${esc(t.name)}</b>${byTeam(t.id).length ? byTeam(t.id).map(rostRow).join('') : '<p class="small muted">Encara no hi ha ningú.</p>'}</div>`).join('')}
+    ${orphan.length ? `<div class="rost"><b>Sense equip vàlid</b>${orphan.map(rostRow).join('')}</div>` : ''}`), `${ROSTER.length} connectats${pend.length ? ' · ' + pend.length + ' pendents' : ''}`)
+    + card('Afegir un alumne', pad(`<p class="small muted">Escriu-ne les dades i tria l'equip. S'obrirà el Gmail amb la invitació ja escrita (amb l'enllaç i l'equip): només cal prémer «Envia».</p>
+      <div class="invform"><div class="pfield"><label for="ivNom">Nom</label><input type="text" id="ivNom" autocomplete="off"></div>
+      <div class="pfield"><label for="ivCog">Cognoms</label><input type="text" id="ivCog" autocomplete="off"></div>
+      <div class="pfield"><label for="ivMail">Correu de l'institut</label><input type="text" inputmode="email" id="ivMail" autocomplete="off" placeholder="nom.cognom@${esc(DOMAINS()[0] || 'institut.cat')}"></div>
+      <div class="pfield"><label for="ivTeam">Equip</label><select class="field-sel" id="ivTeam">${G.teams.map(t => `<option value="${esc(t.id)}">${esc(t.name)}</option>`).join('')}</select></div></div>
+      <div id="ivMsg"></div><div class="row"><button type="button" class="btn" id="ivAdd">Afegir i enviar la invitació</button></div>`))
     + card('Altres professors del grup', pad(`<div class="pfield"><label for="profsTa">Correus dels professors que també poden gestionar aquest grup</label><div class="help">Un correu per línia. Tindran els mateixos permisos que tu.</div><textarea id="profsTa" rows="3" placeholder="nom.cognom@institut.cat">${esc((G.profs || []).join('\n'))}</textarea></div>`))
     + card('Esborrar el grup', pad(`<p class="small muted">Esborra ara mateix el grup i tota la feina dels equips. No es pot desfer.</p><div id="gDelBox"></div><button type="button" class="btn ghost small" id="gDel">Esborrar aquest grup</button>`));
 }
-function rostRow(x) { return `<div class="rostrow"><span>${esc(x.email)}</span><select class="field-sel" data-move="${esc(x.id)}" aria-label="Equip de ${esc(x.email)}">${G.teams.map(t => `<option value="${esc(t.id)}" ${t.id === x.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select><button type="button" class="btn ghost small" data-unassign="${esc(x.id)}">Treure</button></div>`; }
+function rostRow(x) { const k = x.inv ? 'invites' : 'members';
+  return `<div class="rostrow"><span class="rostwho"><span><b>${esc(x.name || x.email)}</b>${x.inv ? ' <span class="pill" title="Encara no ha entrat a l\'eina">Pendent</span>' : ''}</span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span><select class="field-sel" data-move="${esc(x.id)}" data-k="${k}" aria-label="Equip de ${esc(x.email)}">${G.teams.map(t => `<option value="${esc(t.id)}" ${t.id === x.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="rostbtn">${x.inv ? `<button type="button" class="btn ghost small" data-invmail="${esc(x.id)}" title="Torna a obrir el Gmail amb la invitació">Invitació</button>` : ''}<button type="button" class="btn ghost small" data-unassign="${esc(x.id)}" data-k="${k}" data-mail="${esc(String(x.email || '').toLowerCase())}">Eliminar</button></span></div>`; }
+// Correu d'invitació: obre el Gmail del professor amb el text ja escrit
+function invMailUrl(x) {
+  const t = G.teams.find(t => t.id === x.team), link = location.origin + location.pathname + '#g=' + GID;
+  const body = `Hola ${String(x.name || '').split(' ')[0]},\n\nT'he afegit al grup «${G.name}» de l'eina Emprèn, a l'equip «${t ? t.name : ''}».\n\nEntra amb el teu compte de l'institut (${x.id}) en aquest enllaç:\n${link}\n\nEntraràs directament al teu equip.\n\nSalutacions,\n${(USER && USER.name) || ''}`;
+  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(x.id) + '&su=' + encodeURIComponent('Invitació al projecte emprenedor · ' + G.name) + '&body=' + encodeURIComponent(body);
+}
 function bindCloudConfig(v) {
   if (!CLOUD || !ME || !ME.isProf) return;
-  v.querySelectorAll('[data-unassign]').forEach(b => b.onclick = async () => { b.disabled = true; try { await FB.del(gpath('members', b.dataset.unassign)); } catch (e) { toast('No s\'ha pogut fer.'); b.disabled = false; } });
-  v.querySelectorAll('[data-move]').forEach(s => s.onchange = async () => { try { await FB.update(gpath('members', s.dataset.move), { team: s.value }); toast('Alumne canviat d\'equip.'); } catch (e) { toast('No s\'ha pogut fer.'); } });
+  v.querySelectorAll('[data-unassign]').forEach(b => b.onclick = async () => { b.disabled = true;
+    try { await FB.del(gpath(b.dataset.k, b.dataset.unassign)); if (b.dataset.k === 'members' && INVITES.some(i => i.id === b.dataset.mail)) await FB.del(gpath('invites', b.dataset.mail)); toast('Alumne eliminat del grup.'); } catch (e) { toast('No s\'ha pogut fer.'); b.disabled = false; } });
+  v.querySelectorAll('[data-move]').forEach(s => s.onchange = async () => { try { await FB.update(gpath(s.dataset.k, s.dataset.move), { team: s.value }); toast('Alumne canviat d\'equip.'); } catch (e) { toast('No s\'ha pogut fer.'); } });
+  v.querySelectorAll('[data-invmail]').forEach(b => b.onclick = () => { const x = INVITES.find(i => i.id === b.dataset.invmail); if (x) window.open(invMailUrl(x), '_blank'); });
+  const ia = $('#ivAdd'); if (ia) ia.onclick = async () => {
+    const nom = $('#ivNom').value.trim(), cog = $('#ivCog').value.trim(), mail = $('#ivMail').value.trim().toLowerCase(), team = $('#ivTeam').value, msg = m => { $('#ivMsg').innerHTML = m ? `<div class="notice">${m}</div>` : ''; };
+    if (!nom || !mail) return msg('Escriu com a mínim el nom i el correu.');
+    if (!/^[^\s@\/]+@[^\s@\/]+\.[^\s@\/]+$/.test(mail)) return msg('El correu no sembla correcte.');
+    if (!domainOk(mail)) return msg(`El correu ha de ser de l'institut (${esc(DOMAINS().map(d => '@' + d).join(', '))}).`);
+    if (ROSTER.some(m => String(m.email || '').toLowerCase() === mail)) return msg('Aquest alumne ja és al grup. Canvia-li l\'equip a la llista de dalt.');
+    const x = { id: mail, name: (nom + ' ' + cog).trim(), team };
+    const w = window.open(invMailUrl(x), '_blank'); // s'obre abans d'esperar perquè el navegador no el bloquegi
+    ia.disabled = true; msg('');
+    try { await FB.set(gpath('invites', mail), { name: x.name, team, added: Date.now(), expiresAt: { __ts: GROUP.expiresAt } }); toast(w ? 'Alumne afegit. Envia la invitació des del Gmail.' : 'Alumne afegit.'); ['#ivNom', '#ivCog', '#ivMail'].forEach(s => { $(s).value = ''; }); }
+    catch (e) { if (w) w.close(); msg('No s\'ha pogut afegir. Torna-ho a provar.'); }
+    ia.disabled = false;
+  };
   const pt = $('#profsTa'); if (pt) pt.oninput = () => { G.profs = pt.value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(x => x.includes('@') && x !== ME.email); save(); };
   const cp = $('#gLinkCp'); if (cp) cp.onclick = async () => { const i = $('#gLink'); try { await navigator.clipboard.writeText(i.value); cp.textContent = 'Copiat'; } catch (e) { i.select(); cp.textContent = 'Prem Ctrl+C'; } };
   const gd = $('#gDel'); if (gd) gd.onclick = () => { $('#gDelBox').innerHTML = `<div class="notice">Segur que vols esborrar «${esc(G.name)}» i tota la feina dels equips? <button class="btn small" id="gDelYes">Sí, esborrar</button> <button class="btn ghost small" id="gDelNo">Cancel·lar</button></div>`;
