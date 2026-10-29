@@ -325,6 +325,15 @@ table.cmp{min-width:860px;font-size:13px}
 .bp-n{font-size:24px;font-weight:600;letter-spacing:-.02em}
 .bp-s{font-size:15px;margin-top:4px}
 .dlogo{max-width:120px;border-radius:10px;margin-bottom:8px}
+.tbanner{display:flex;align-items:center;gap:16px;padding:16px 20px;margin-bottom:22px;border-radius:18px;background:var(--tb2);color:#ffffff;border-left:6px solid var(--tb1)}
+.tbanner img,.tbanner .tb-ph{width:60px;height:60px;border-radius:12px;flex:none}
+.tbanner img{object-fit:contain;background:#ffffff;padding:5px}
+.tbanner .tb-ph{display:grid;place-items:center;background:var(--tb1);font-size:28px;font-weight:700}
+.tb-txt{min-width:0;flex:1}
+.tb-n{font-size:22px;font-weight:650;letter-spacing:-.02em;line-height:1.2;overflow-wrap:anywhere}
+.tb-s{font-size:14px;margin-top:3px;opacity:.82}
+.tb-team{flex:none;font-size:12px;font-weight:600;padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.14)}
+@media (max-width:620px){.tbanner{padding:12px 14px;gap:12px}.tbanner img,.tbanner .tb-ph{width:46px;height:46px}.tb-n{font-size:18px}.tb-team{display:none}}
 .choices.two{grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))}
 input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:3px}
 .sr-only{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
@@ -1154,6 +1163,7 @@ function render() {
   const v = $('#view'); v.dataset.g = role === 'prof' ? 'prof' : (sec(tab) ? sec(tab).g : 'proj');
   if (role !== 'prof' && sec(tab) && sec(tab).p && access(tab) === 'closed') lockedPage(v, tab);
   else (VIEWS[tab] || (() => { v.innerHTML = ''; }))(v);
+  updateTeamBanner();
   if (CLOUD) cloudAfterRender(v);
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
 }
@@ -1170,7 +1180,21 @@ function onField(e) {
   if (!changed) return;
   t.updated = Date.now(); save();
   if (el.dataset.rerender && e.type === 'change') { const y = window.scrollY; render(); window.scrollTo(0, y); return; }
-  renderSide(); updateHeadProgress(); updateSendBar(); if (liveFn) liveFn();
+  renderSide(); updateHeadProgress(); updateSendBar(); updateTeamBanner(); if (liveFn) liveFn();
+}
+// Capçalera amb el nom i el logo de l'equip (quan ja n'ha triat el nom)
+const PROF_TEAM_TABS = ['revisio', 'qualificacio', 'avaluacio', 'informe'];
+function bannerTeam() { return role !== 'prof' ? T() : PROF_TEAM_TABS.includes(tab) ? G.teams[profTeam] : null; }
+function teamBannerHtml(t) {
+  const m = t.data.marca, logo = /^(data:|https?:)/.test(m.logo || '') ? m.logo : '';
+  return `<div class="tbanner" style="--tb1:${esc(m.color1 || '#2bc46f')};--tb2:${esc(m.color2 || '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
+}
+function updateTeamBanner() {
+  const v = $('#view'), old = v.querySelector(':scope > .tbanner'), t = bannerTeam();
+  const html = t && filled(t.data.marca.nom) ? teamBannerHtml(t) : '';
+  if (old && old.outerHTML === html) return;
+  if (old) old.remove();
+  if (html) v.insertAdjacentHTML('afterbegin', html);
 }
 $('#view').addEventListener('input', onField);
 // L'alumnat ha de redactar: no es pot enganxar ni arrossegar text (si el professor no ho permet)
