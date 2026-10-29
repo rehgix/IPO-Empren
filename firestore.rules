@@ -14,6 +14,32 @@ service cloud.firestore {
     function memberDoc(gid) { return /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid); }
     function inTeam(gid, tid) { return signed() && exists(memberDoc(gid)) && get(memberDoc(gid)).data.team == tid; }
 
+    // APARTATS OBERTS: el grup desa a «w» quan pot escriure l'alumnat cada dada ({ f: des de, u: fins a }, en mil·lisegons).
+    // Una dada que no surt a «w» (grups antics o apartats nous) es pot escriure sempre.
+    function winOk(w, k) { return !(k in w) || (request.time.toMillis() >= w[k].f && request.time.toMillis() < w[k].u); }
+    function keyOk(aff, w, k) { return !(k in aff) || winOk(w, k); }
+    function studentEditOk(gid) {
+      let w = grp(gid).get('w', {});
+      let aff = request.resource.data.get('data', {}).diff(resource.data.get('data', {})).affectedKeys();
+      // Si només canvia la marca d'«enviat» (_meta) o cap dada, no cal mirar apartat per apartat
+      return (aff.hasOnly(['_meta']) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['members'])) || keyOk(aff, w, 'idea') && keyOk(aff, w, 'empatia') && keyOk(aff, w, 'entrevistes') && keyOk(aff, w, 'definir')
+        && keyOk(aff, w, 'prototip') && keyOk(aff, w, 'micro') && keyOk(aff, w, 'pestel') && keyOk(aff, w, 'dafo')
+        && keyOk(aff, w, 'lean') && keyOk(aff, w, 'sost') && keyOk(aff, w, 'ebc') && keyOk(aff, w, 'agents')
+        && keyOk(aff, w, 'juridica') && keyOk(aff, w, 'fiscal') && keyOk(aff, w, 'inversio') && keyOk(aff, w, 'finan')
+        && keyOk(aff, w, 'prestec') && keyOk(aff, w, 'treso') && keyOk(aff, w, 'viab') && keyOk(aff, w, 'marca')
+        && keyOk(aff, w, 'pitch') && keyOk(aff, w, 'p7')
+        && keyOk(request.resource.data.diff(resource.data).affectedKeys(), w, 'members');
+    }
+    // ARXIUS: imatges i documents del prototip i el logo (màxim 1 MB i amb data d'esborrat del grup)
+    function studentFileOk(gid) {
+      let f = request.resource.data;
+      let w = grp(gid).get('w', {});
+      return f.keys().hasOnly(['name', 'kind', 'size', 'data', 'expiresAt'])
+        && f.data is string && f.data.size() < 1000000
+        && f.expiresAt is timestamp && f.expiresAt <= grp(gid).expiresAt
+        && (winOk(w, 'prototip') || winOk(w, 'marca'));
+    }
+
     match /groups/{gid} {
       allow get: if signed();
       allow list: if signed() && me() in resource.data.profs;
@@ -34,10 +60,12 @@ service cloud.firestore {
         allow read: if isProf(gid) || inTeam(gid, tid);
         allow create, delete: if isProf(gid);
         allow update: if isProf(gid)
-          || (inTeam(gid, tid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'data', 'delivered', 'updated']));
+          || (inTeam(gid, tid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'data', 'delivered', 'updated'])
+              && studentEditOk(gid));
 
         match /files/{fid} {
-          allow read, write: if isProf(gid) || inTeam(gid, tid);
+          allow read, delete: if isProf(gid) || inTeam(gid, tid);
+          allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid));
         }
         match /prof/{part} {
           allow read: if isProf(gid)

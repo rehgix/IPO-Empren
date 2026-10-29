@@ -2091,8 +2091,29 @@ function teamFromDoc(d) {
 const groupFields = () => {
   const cfg = {}; ['sector', 'acts', 'aiCfg', 'access', 'allowPaste'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
-  return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id) };
+  return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows() };
 };
+/* ---------- Quan pot escriure l'alumnat cada dada (ho comproven també les regles de seguretat) ---------- */
+const NEVER = 9e15, DATA_SECS = { finan: ['inversio'], sost: ['sost', 'lean'], members: ['equip'] };
+function secWindow(a) {
+  const day = (iso, add) => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(y, m - 1, d + add).getTime(); };
+  if (!a) return [0, NEVER];
+  const u = a.until ? day(a.until, 1) : NEVER;
+  if (!a.state || a.state === 'open') return [0, u];
+  if (a.state === 'closed' && a.from) return [day(a.from, 0), u];
+  return [NEVER, NEVER];
+}
+// { clau: { f: des de (ms), u: fins a (ms) } }; si una dada la fan servir dos apartats, n'hi ha prou que un estigui obert
+function writeWindows() {
+  const w = {}; if (!G || !G.access) return w;
+  Object.keys(emptyData(G.sector)).concat('members').sort().forEach(k => {
+    const ws = (DATA_SECS[k] || [k]).filter(s => sec(s) && sec(s).p).map(s => secWindow(G.access[s])); if (!ws.length) return;
+    const open = ws.filter(x => x[0] < NEVER);
+    w[k] = open.length ? { f: Math.min(...open.map(x => x[0])), u: Math.max(...open.map(x => x[1])) } : { f: NEVER, u: NEVER };
+  });
+  return w;
+}
+const canWrite = k => { const x = writeWindows()[k], n = Date.now(); return !x || (n >= x.f && n < x.u); };
 function groupToG(g) { const cfg = P(g.cfg) || {}; return Object.assign(cfg, { v: 1, name: g.name, profs: (g.profs || []).filter(x => x !== (ME && ME.email)), showGrades: !!g.showGrades, teams: [] }); }
 
 /* ---------- Indicador de desat ---------- */
@@ -2115,13 +2136,14 @@ async function cloudPush() {
 async function stuPush() {
   const t = G.teams[0]; if (!t || t.id !== ME.teamId) return;
   const s = SNAP.teams[t.id], upd = {}, sent = { data: {} }, ops = [];
-  Object.keys(t.data).forEach(k => { const v = packSection(t, k); if (v !== s.data[k]) { upd['data.' + k] = v; sent.data[k] = v; } });
-  const mv = J(t.members); if (mv !== s.members) { upd.members = mv; sent.members = mv; }
+  // Els apartats tancats o en només lectura no s'envien: les regles de seguretat els rebutjarien
+  Object.keys(t.data).forEach(k => { const v = packSection(t, k); if (v !== s.data[k] && canWrite(k)) { upd['data.' + k] = v; sent.data[k] = v; } });
+  const mv = J(t.members); if (mv !== s.members && canWrite('members')) { upd.members = mv; sent.members = mv; }
   const dv = J(t.delivered || null); if (dv !== s.delivered) { upd.delivered = t.delivered || null; sent.delivered = dv; }
-  const fs = teamFiles(t), ids = Object.keys(fs);
+  const fileOk = canWrite('prototip') || canWrite('marca'), fs = fileOk ? teamFiles(t) : {}, ids = Object.keys(fs);
   ids.filter(id => !s.files.includes(id)).forEach(id => ops.push({ op: 'set', path: gpath('teams', t.id, 'files', id), data: Object.assign({}, fs[id], { expiresAt: { __ts: GROUP.expiresAt } }) }));
   // Només s'esborren els arxius que ja no surten a la fitxa (no els d'un company que encara no s'han descarregat)
-  const refs = fileIdsOf({ data: { prototip: packSection(t, 'prototip'), marca: packSection(t, 'marca') } });
+  const refs = fileOk ? fileIdsOf({ data: { prototip: packSection(t, 'prototip'), marca: packSection(t, 'marca') } }) : s.files;
   s.files.filter(id => !refs.includes(id)).forEach(id => ops.push({ op: 'del', path: gpath('teams', t.id, 'files', id) }));
   if (!Object.keys(upd).length && !ops.length) return;
   if (Object.keys(upd).length) { upd.updated = Date.now(); ops.push({ op: 'update', path: gpath('teams', t.id), data: upd }); }
@@ -2202,7 +2224,7 @@ function applyGroup(g) {
   GROUP = Object.assign({ id: GID }, g);
   if (ME.isProf) {
     if (J(groupFields()) !== SNAP.group || syncT || syncBusy) return;
-    const remote = J({ name: g.name, profs: g.profs, showGrades: !!g.showGrades, cfg: g.cfg, teamList: g.teamList, teamIds: g.teamIds });
+    const remote = J({ name: g.name, profs: g.profs, showGrades: !!g.showGrades, cfg: g.cfg, teamList: g.teamList, teamIds: g.teamIds, w: g.w });
     if (remote === SNAP.group) return;
     Object.assign(G, groupToG(g), { teams: G.teams });
     const order = g.teamIds || []; G.teams.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -2282,7 +2304,7 @@ async function openProf() {
   await Promise.all(G.teams.map(async t => { const ps = await FB.list(gpath('teams', t.id, 'prof')).catch(() => []); ps.forEach(p => { const v = P(p.v) || {}; if (p.id === 'review') t.review = v; else if (p.id === 'ai') t.ai = v; else if (p.id === 'grades') { t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }); }));
   ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
-  if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds })) { SNAP.group = ''; cloudSave(); }
+  if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w })) { SNAP.group = ''; cloudSave(); }
   ROSTER = await FB.list(gpath('members')).catch(() => []);
   role = 'prof'; if (lastGid !== GID || !tab || !['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'config'].includes(tab)) tab = 'seguiment'; lastGid = GID;
   render(); sideUser();
