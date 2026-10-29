@@ -797,7 +797,12 @@ a.btn{text-decoration:none}
 @media (max-width:640px){.sendbar{flex-wrap:wrap}.sendbar .btn{width:100%;justify-content:center}}
 .accdates{display:flex;gap:10px;flex-wrap:wrap}
 
-.wsbadge.rvb{background:#fff;border:1.5px solid currentColor}.wsbadge.rvb.correcte{color:#1d6b3e}.wsbadge.rvb.millorar{color:#b45309}</style>
+.wsbadge.rvb{background:#fff;border:1.5px solid currentColor}.wsbadge.rvb.correcte{color:#1d6b3e}.wsbadge.rvb.millorar{color:#b45309}
+/* Qui ha escrit cada cosa */
+.whochips{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
+.whochip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;color:var(--wc);background:color-mix(in srgb,var(--wc) 12%,#fff);white-space:nowrap}
+.whochip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--wc)}
+.whot{background:color-mix(in srgb,var(--wc) 13%,transparent);box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--wc) 70%,transparent);border-radius:3px}</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -1080,11 +1085,11 @@ function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess(['
 const cnt = (obj, keys) => keys.filter(k => filled(obj[k])).length;
 const ESB_MIN = 3, ESB_MAX = 6; // esbossos del logo: mínim abans del logo final i màxim que es poden pujar
 const SECS = [
-  ['ident', 'Identitat corporativa', 'ident', [
-    ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['proj', 'El projecte', 'proj', [
     ['inici', 'Inici', '', '', null],
     ['equip', 'Equip i rols', 'Treball en equip', 'Tasca Classroom', t => { const ok = t.members.filter(m => filled(m.name) && m.accio && m.social && m.mental && filled(m.resp)).length; return [ok, Math.max(2, t.members.length)]; }]]],
+  ['ident', 'Identitat corporativa', 'ident', [
+    ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['idea', 'La idea', 'idea', [
     ['idea', 'Idea de negoci i Golden Circle', 'CA 4.2 · 5.1', 'Act4 · Pt4', t => { const d = t.data.idea; return [cnt(d, ['activitat', 'diferenciador', 'benefici', 'why', 'how', 'what']) + (cnt(d, ['motExt', 'motInt', 'motTrans']) ? 1 : 0), 7]; }],
     ['empatia', 'Design Thinking · Empatitzar', 'CA 4.1 · 5.4', 'Pt3', t => [cnt(t.data.empatia, ['persona', 'veu', 'escolta', 'pensa', 'diu', 'frustracions', 'motivacions']), 7]],
@@ -1187,12 +1192,13 @@ function render() {
 function onField(e) {
   if (role === 'prof' || access(tab) !== 'open') return;
   const el = e.target, t = T(); let changed = false;
-  if (el.dataset.path) { setP(t.data, el.dataset.path, el.type === 'checkbox' ? el.checked : el.value); changed = true; }
-  else if (el.dataset.list) { setP(t.data, `${el.dataset.list}.${el.dataset.idx}.${el.dataset.key}`, el.type === 'checkbox' ? el.checked : el.value); changed = true; }
+  const put = (path, v) => { const old = getP(t.data, path); setP(t.data, path, v); trackEdit(t, path, old, v); changed = true; };
+  if (el.dataset.path) put(el.dataset.path, el.type === 'checkbox' ? el.checked : el.value);
+  else if (el.dataset.list) put(`${el.dataset.list}.${el.dataset.idx}.${el.dataset.key}`, el.type === 'checkbox' ? el.checked : el.value);
   else if (el.dataset.arr) { const arr = getP(t.data, el.dataset.arr), val = el.dataset.num ? Number(el.value) : el.value, k = arr.indexOf(val);
     if (el.checked && k < 0) { if (el.dataset.max && arr.length >= Number(el.dataset.max)) { el.checked = false; return; } arr.push(val); }
-    if (!el.checked && k >= 0) arr.splice(k, 1); changed = true; }
-  else if (el.dataset.member) { t.members[el.dataset.idx][el.dataset.member] = el.value; changed = true; }
+    if (!el.checked && k >= 0) arr.splice(k, 1); trackEdit(t, el.dataset.arr, null, arr); changed = true; }
+  else if (el.dataset.member) { const m = t.members[el.dataset.idx], old = m[el.dataset.member]; m[el.dataset.member] = el.value; trackEdit(t, `members.${el.dataset.idx}.${el.dataset.member}`, old, el.value); changed = true; }
   if (!changed) return;
   t.updated = Date.now(); save();
   if (el.dataset.rerender && e.type === 'change') { const y = window.scrollY; render(); window.scrollTo(0, y); return; }
@@ -1265,7 +1271,7 @@ const sectorLabel = k => PE.SECTORS[k] ? PE.SECTORS[k].label : '';
 const projName = t => t.data.marca.nom || t.data.idea.nom || t.name;
 function bindList(v, list, tpl, max) {
   v.querySelectorAll(`[data-add="${list}"]`).forEach(b => b.onclick = () => { const arr = getP(T().data, list); if (max && arr.length >= max) return; arr.push(typeof tpl === 'function' ? tpl(b) : JSON.parse(JSON.stringify(tpl))); save(); const y = window.scrollY; render(); window.scrollTo(0, y); });
-  v.querySelectorAll(`[data-del-list="${list}"]`).forEach(b => b.onclick = () => { getP(T().data, list).splice(+b.dataset.idx, 1); save(); const y = window.scrollY; render(); window.scrollTo(0, y); });
+  v.querySelectorAll(`[data-del-list="${list}"]`).forEach(b => b.onclick = () => { getP(T().data, list).splice(+b.dataset.idx, 1); whoShift(T(), list, +b.dataset.idx); save(); const y = window.scrollY; render(); window.scrollTo(0, y); });
 }
 const li = (list, i, key, val, ph, tag = 'input', extra = '') => tag === 'textarea'
   ? `<textarea rows="2" aria-label="${esc(ph)}" placeholder="${esc(ph)}" data-list="${list}" data-idx="${i}" data-key="${key}" ${extra}>${esc(val)}</textarea>`
@@ -1303,7 +1309,7 @@ function vEquip(v) {
     card('Membres de l\'equip', pad((rows || '<p class="muted">Encara no heu afegit cap persona.</p>') + (t.members.length < 3 ? '<button type="button" class="btn ghost small" id="addMember">+ Afegir una persona</button>' : '')), `${t.members.length} de 3`)
     + card('Els rols d\'equip', pad(`<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">${Object.values(PE.ROLES).map(r => `<div><b>${r.label}s</b><ul class="plain">${r.opts.map(([o, d]) => `<li><b>${o}</b>: ${esc(d)}</li>`).join('')}</ul></div>`).join('')}</div>`)));
   const a = $('#addMember'); if (a) a.onclick = () => { t.members.push({ name: '', accio: '', social: '', mental: '', resp: '' }); save(); render(); };
-  v.querySelectorAll('[data-del-member]').forEach(b => b.onclick = () => { t.members.splice(+b.dataset.delMember, 1); save(); render(); });
+  v.querySelectorAll('[data-del-member]').forEach(b => b.onclick = () => { t.members.splice(+b.dataset.delMember, 1); whoShift(t, 'members', +b.dataset.delMember); save(); render(); });
 }
 
 /* ---------- La idea ---------- */
@@ -1687,14 +1693,14 @@ function groupPairs(k, ps) {
   if (rest.length) res.push({ title: res.length ? 'Altres' : '', rows: rest });
   return res;
 }
-function secHtml(t, k) {
+function secHtml(t, k, who = false) {
   const ps = pairs(t, k).filter(([, x]) => x && String(x).trim());
   let extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
   if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
   if (k === 'marca' && esbImgs(t).length) extra += `<div class="small muted">Esbossos del logo</div>` + protoFilesHtml(esbImgs(t), false);
   if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
-  const row = ([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${esc(x).replace(/\n/g, '<br>')}</div></div>`;
+  const row = ([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${who ? whoText(t, k, x) : esc(x).replace(/\n/g, '<br>')}</div></div>`;
   const gs = groupPairs(k, ps);
   if (gs.length === 1 && !gs[0].title) return extra + gs[0].rows.map(row).join('');
   return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.rows.map(row).join('')}</div>`).join('');
@@ -1872,7 +1878,7 @@ function gradeCard(t, a) {
   const lvl = g.nivell ?? (g.nota !== undefined && g.nota !== '' ? noteToLvl(Number(g.nota)) : null);
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="small muted" style="font-weight:400">· ${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
-    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b></p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${x && String(x).trim() ? esc(x).replace(/\n/g, '<br>') : '<span class="muted">Buit</span>'}</div></div>`).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
+    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${x && String(x).trim() ? (gr.k ? whoText(t, gr.k, x) : esc(x).replace(/\n/g, '<br>')) : '<span class="muted">Buit</span>'}</div></div>`).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
     <div class="gradebar"><div class="lvls" role="group" aria-label="Nivell">${[4, 3, 2, 1, 0].map(n => `<button type="button" class="lvl ${lvl === n ? 'on' : ''}" data-lvl="${a.c}" data-v="${n}">${LVL_NAMES[n]}<small>${n}</small>${al === n ? '<em class="sug" title="Proposta automàtica"></em>' : ''}${aiCfg().enabled && ai && ai.nivell === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</button>`).join('')}</div>
       <label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label></div>
     ${al !== null && ev.length ? `<p class="small muted" style="margin:8px 0 0">Proposta automàtica: <b>${LVL_NAMES[al]} (${f1(LVL_NOTE(al))})</b></p>` : ''}
@@ -2089,6 +2095,58 @@ function merge3(b, l, r) {
   return l;
 }
 const logoSrc = l => /^data:image\//.test(String(l || '')) ? l : '';
+
+/* ---------- Qui ha escrit cada cosa ----------
+   t.data._who = { u: { id: nom }, f: { camí: [[id, lletres], ...] } }: per a cada camp, quin alumne ha escrit cada tros del text */
+const whoId = e => String(e || '').toLowerCase().split('@')[0];
+const WHO_COLORS = ['#2d5bea', '#c2185b', '#b45309', '#7c3aed', '#0e7490', '#15803d'];
+const LEAN_SOST = ['costosAmb', 'benSocial', 'benAmbiental', 'cicleVida', 'circular'];
+const SEC_PATHS = { inversio: ['inversio.', 'finan.'], lean: ['lean.', ...LEAN_SOST.map(k => 'sost.' + k)], equip: ['members.'] };
+function trackEdit(t, path, oldV, newV) {
+  if (!CLOUD || !ME || ME.isProf || role === 'prof') return;
+  const id = whoId(ME.email); if (!id) return;
+  const w = t.data._who = t.data._who || {}; w.u = w.u || {}; w.f = w.f || {};
+  if (!w.u[id]) w.u[id] = (USER && USER.name) || id;
+  if (typeof newV !== 'string') { w.f[path] = [[id, 0]]; return; } // caselles, llistes...: només qui ho ha tocat
+  const o = typeof oldV === 'string' ? oldV : '', n = newV, arr = [];
+  (w.f[path] || []).forEach(([a, l]) => { for (let i = 0; i < l; i++) arr.push(a); });
+  arr.length = Math.min(arr.length, o.length); while (arr.length < o.length) arr.push('');
+  let p = 0; while (p < o.length && p < n.length && o[p] === n[p]) p++;
+  let s = 0; while (s < o.length - p && s < n.length - p && o[o.length - 1 - s] === n[n.length - 1 - s]) s++;
+  arr.splice(p, o.length - s - p, ...Array(n.length - s - p).fill(id));
+  const segs = []; arr.forEach(a => { const l = segs[segs.length - 1]; if (l && l[0] === a) l[1]++; else segs.push([a, 1]); });
+  w.f[path] = segs.length ? segs : [[id, 0]];
+}
+// En treure una fila d'una llista, les de sota pugen una posició
+function whoShift(t, list, idx) {
+  const w = t.data._who; if (!w || !w.f) return;
+  const re = new RegExp('^' + list.replace(/\./g, '\\.') + '\\.(\\d+)\\.(.*)$'), f = {};
+  Object.keys(w.f).forEach(p => { const m = p.match(re); if (!m) { f[p] = w.f[p]; return; } const i = +m[1]; if (i < idx) f[p] = w.f[p]; else if (i > idx) f[`${list}.${i - 1}.${m[2]}`] = w.f[p]; });
+  w.f = f;
+}
+const whoPaths = (t, k) => { const w = t.data._who, pre = SEC_PATHS[k] || [k + '.']; return w && w.f ? Object.keys(w.f).filter(p => pre.some(x => p === x || p.startsWith(x))) : []; };
+function secAuthors(t, k) { const ids = new Set(); whoPaths(t, k).forEach(p => t.data._who.f[p].forEach(([a]) => a && ids.add(a))); return [...ids].sort(); }
+function whoName(t, id) { const w = t.data._who || {}, r = (ROSTER || []).find(m => whoId(m.email) === id); return (r && r.name) || (w.u || {})[id] || id; }
+function whoColor(t, id) { const ids = Object.keys((t.data._who || {}).u || {}).sort(); return WHO_COLORS[Math.max(0, ids.indexOf(id)) % WHO_COLORS.length]; }
+function whoChips(t, k) {
+  const ids = secAuthors(t, k); if (!ids.length) return '';
+  return `<span class="whochips" title="Alumnes que han editat aquest apartat">${ids.map(id => `<span class="whochip" style="--wc:${whoColor(t, id)}">${esc(whoName(t, id))}</span>`).join('')}</span>`;
+}
+// Text d'un camp amb el que ha escrit cada alumne d'un color (només si hi ha escrit més d'un alumne)
+function whoText(t, k, x) {
+  const s = String(x ?? ''), plain = c => esc(c).replace(/\n/g, '<br>');
+  if (secAuthors(t, k).length < 2) return plain(s);
+  const own = Array(s.length).fill(null), taken = Array(s.length).fill(false);
+  whoPaths(t, k).map(p => ({ segs: t.data._who.f[p], v: getP(p.startsWith('members.') ? { members: t.members } : t.data, p) }))
+    .filter(c => typeof c.v === 'string' && c.v.length && (c.v.length >= 3 || c.v === s) && c.segs.reduce((a, g) => a + g[1], 0) === c.v.length)
+    .sort((a, b) => b.v.length - a.v.length)
+    .forEach(c => { let i = s.indexOf(c.v); while (i >= 0 && taken.slice(i, i + c.v.length).some(Boolean)) i = s.indexOf(c.v, i + 1); if (i < 0) return;
+      let j = i; c.segs.forEach(([a, l]) => { for (let q = 0; q < l; q++, j++) { own[j] = a || null; taken[j] = true; } }); });
+  let out = '', i = 0;
+  while (i < s.length) { let j = i; while (j < s.length && own[j] === own[i]) j++; const c = s.slice(i, j);
+    out += own[i] ? `<span class="whot" style="--wc:${whoColor(t, own[i])}" title="${esc(whoName(t, own[i]))}">${plain(c)}</span>` : plain(c); i = j; }
+  return out;
+}
 const esbImgs = t => ((t.data.marca || {}).esbossos || []).filter(f => logoSrc(f.data));
 const DOMAINS = () => (window.FB_DOMAINS || []).map(d => d.toLowerCase());
 const domainOk = e => !DOMAINS().length || DOMAINS().some(d => e.endsWith('@' + d));
@@ -2759,8 +2817,8 @@ function vRevisio(v) {
     const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t), w = ws(s), se = sentOf(t, s.k);
     return `<section class="rcard st-${w}" id="rv-${s.k}" data-g="${s.g}">
       <header><div><span class="rblk">${esc(s.gl)}</span><h3>${esc(s.l)}</h3><span class="small muted">${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span></div>
-        <div class="rbadges"><span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${rv.status && w !== rv.status ? `<span class="wsbadge rvb ${rv.status}">Revisió: ${rv.status === 'correcte' ? 'correcte' : 'a millorar'}</span>` : ''}${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
-      <div class="rbody">${secHtml(t, s.k)}</div>
+        <div class="rbadges">${whoChips(t, s.k)}<span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${rv.status && w !== rv.status ? `<span class="wsbadge rvb ${rv.status}">Revisió: ${rv.status === 'correcte' ? 'correcte' : 'a millorar'}</span>` : ''}${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
+      <div class="rbody">${secHtml(t, s.k, true)}</div>
       <footer class="rrev">
         <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">✓ Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">✎ A millorar</button></div>
         <div class="rquick">${REV_QUICK.map(q => `<button type="button" data-q="${s.k}">${esc(q)}</button>`).join('')}</div>
