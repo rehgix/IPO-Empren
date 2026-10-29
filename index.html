@@ -747,6 +747,32 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .subsec:first-child .subh{margin-top:6px}
 .reportview .rsub{margin:12px 0 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
 </style>
+<style>
+/* Estat de la feina: vermell en edició, blau enviat, verd correcte, taronja a millorar */
+:root{--ws-edit:#dc2626;--ws-edit-s:#fdecec;--ws-sent:#2563eb;--ws-sent-s:#e8effc;--ws-ok:#26884f;--ws-ok-s:#e5f4eb;--ws-warn:#d97706;--ws-warn-s:#fdf2e4;--ws-none:#cbd5e1}
+.rdot.edit,.wsdot.edit{background:var(--ws-edit)}.rdot.sent,.wsdot.sent{background:var(--ws-sent)}.rdot.correcte,.wsdot.correcte{background:var(--ws-ok)}.rdot.millorar,.wsdot.millorar{background:var(--ws-warn)}.rdot.none,.wsdot.none{background:#e5e7eb;border:1px solid var(--ws-none)}
+.rcard.st-edit{border-left-color:var(--ws-edit)}.rcard.st-sent{border-left-color:var(--ws-sent)}.rcard.st-correcte{border-left-color:var(--ws-ok)}.rcard.st-millorar{border-left-color:var(--ws-warn)}.rcard.st-none{border-left-color:#e5e7eb}
+.rbadges{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+.wsbadge{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;white-space:nowrap}
+.wsbadge.edit{background:var(--ws-edit-s);color:var(--ws-edit)}.wsbadge.sent{background:var(--ws-sent-s);color:var(--ws-sent)}.wsbadge.correcte{background:var(--ws-ok-s);color:#1d6b3e}.wsbadge.millorar{background:var(--ws-warn-s);color:#9a5513}.wsbadge.none{background:#f1f5f9;color:#64748b}
+.rsum-i.sent{background:var(--ws-sent-s)}.rsum-i.sent b{color:var(--ws-sent)}
+.rsum-i.edit{background:var(--ws-edit-s)}.rsum-i.edit b{color:var(--ws-edit)}
+.pill.ws-edit{background:var(--ws-edit-s);color:var(--ws-edit)}.pill.ws-sent{background:var(--ws-sent-s);color:var(--ws-sent)}.pill.ws-correcte{background:var(--ws-ok-s);color:#1d6b3e}.pill.ws-millorar{background:var(--ws-warn-s);color:#9a5513}.pill.ws-none{background:#f1f5f9;color:#64748b}
+.nav .bullet.ws{opacity:1;border:0;width:8px;height:8px}
+.nav .bullet.ws-edit{background:#f87171!important}.nav .bullet.ws-sent{background:#60a5fa!important}.nav .bullet.ws-correcte{background:#4ade80!important}.nav .bullet.ws-millorar{background:#fbbf24!important}.nav .bullet.ws-none{background:transparent!important;border:1.5px solid #6b7280!important;width:8px;height:8px}
+/* Barra d'enviament de l'alumnat */
+.sendbar{display:flex;align-items:center;gap:14px;padding:16px 18px;border-radius:16px;border:1.5px solid;margin-top:8px}
+.sendbar .sb-t{flex:1;font-size:14.5px;line-height:1.5}
+.sendbar .wsdot{flex:none;width:14px;height:14px;border-radius:50%}
+.sendbar.ws-edit{background:var(--ws-edit-s);border-color:#f5b5b5;color:#7f1d1d}
+.sendbar.ws-sent{background:var(--ws-sent-s);border-color:#bcd0f7;color:#1e3a8a}
+.sendbar.ws-correcte{background:var(--ws-ok-s);border-color:#c4e6d1;color:#14532d}
+.sendbar.ws-millorar{background:var(--ws-warn-s);border-color:#f3dbbb;color:#7c2d12}
+.sendbar.ws-none{background:#f8fafc;border-color:#e2e8f0;color:#475569}
+.sendbar.ws-edit .btn{background:var(--ws-edit);border-color:var(--ws-edit)}
+@media (max-width:640px){.sendbar{flex-wrap:wrap}.sendbar .btn{width:100%;justify-content:center}}
+.accdates{display:flex;gap:10px;flex-wrap:wrap}
+</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -996,9 +1022,33 @@ function access(k) {
   if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' ? 'open' : 'readonly';
   if (!G || !G.access || k === 'inici' || k === 'dossier' || k === 'notes') return 'open';
   const a = G.access[k]; if (!a) return 'open';
-  if (a.state === 'closed' && a.from && todayISO() >= a.from) return 'open';
-  return a.state || 'open';
+  let s = a.state === 'closed' && a.from && todayISO() >= a.from ? 'open' : (a.state || 'open');
+  if (s === 'open' && a.until && todayISO() > a.until) s = 'readonly';
+  return s;
 }
+// Estat de la feina d'un apartat: 'none' (sense fer), 'edit' (en edició), 'sent' (enviat), 'correcte', 'millorar'
+const SEND_SRC = { equip: t => t.members, lean: t => [t.data.lean, ['costosAmb', 'benSocial', 'benAmbiental', 'cicleVida', 'circular'].map(k => t.data.sost[k])], sost: t => [t.data.sost.ods, t.data.sost.odsAccions, t.data.sost.tecnologia], inversio: t => [t.data.inversio, t.data.finan],
+  prototip: t => Object.assign({}, t.data.prototip, { fitxers: (t.data.prototip.fitxers || []).map(f => (f.name || '') + '|' + (f.size || 0)) }), marca: t => Object.assign({}, t.data.marca, { logo: (t.data.marca.logo || '').length ? 1 : 0 }) };
+function secHash(t, k) { const v = (SEND_SRC[k] || (x => x.data[k]))(t); const s = JSON.stringify(v === undefined ? null : v); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
+const sentOf = (t, k) => ((t.data._meta || {}).sent || {})[k];
+function workState(t, s) {
+  if (!s || !s.p) return null;
+  if (secState(t, s) === 'none') return 'none';
+  const se = sentOf(t, s.k), rv = t.review[s.k] || {};
+  if (se && se.h === secHash(t, s.k)) return rv.status && (!rv.at || rv.at >= se.at) ? rv.status : 'sent';
+  if (!se && rv.status) return rv.status;
+  return 'edit';
+}
+const WS_LABEL = { none: 'Sense fer', edit: 'En edició', sent: 'Enviat', correcte: 'Correcte', millorar: 'A millorar' };
+function sendSection(k) { const t = T(); t.data._meta = t.data._meta || {}; t.data._meta.sent = Object.assign({}, t.data._meta.sent || {}, { [k]: { at: Date.now(), h: secHash(t, k) } }); t.updated = Date.now(); save(); }
+function sendBarHtml(t, s, ac) {
+  const ws = workState(t, s), se = sentOf(t, s.k), when = se ? new Date(se.at).toLocaleString('ca-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
+  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo al professor perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo al professor.', sent: `<b>✓ Enviat al professor</b> el ${when}. Si hi feu canvis, l'haureu de tornar a enviar.`, correcte: '<b>✓ Revisat pel professor: correcte.</b>', millorar: '<b>El professor us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
+  const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar al professor'}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar al professor</button>` : '';
+  return `<div class="sendbar ws-${ws}"><i class="wsdot ${ws}"></i><div class="sb-t">${msg}</div>${btn}</div>`;
+}
+function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'prof') return; const s = sec(tab); el.innerHTML = sendBarHtml(T(), s, access(tab)); bindSendBar(); }
+function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); }; }
 function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s => { o[s.k] = { state: openKeys.includes(s.k) ? 'open' : 'closed', from: '' }; }); return o; }
 function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess(['equip', 'idea']), name, sector: sector || 'electricitat', teams: teams.map(n => ({ id: newId(), name: n, members: [], data: emptyData(sector), review: {}, delivered: null, evals: { levels: {}, comment: '' } })) }; }
 
@@ -1088,7 +1138,7 @@ function renderSide() {
   $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup" data-g="${ic}"><div class="ghead">${ico(GICONS[ic])}<span>${g}</span></div>${items.map(([k, l]) => {
     const st = role === 'prof' ? null : secState(T(), sec(k)); const rv = role !== 'prof' && T().review[k];
     const ac = role === 'prof' ? 'open' : access(k);
-    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}">${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${st ? 'st-' + st : ''}"></span>`}<span class="nl">${l}</span>${ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
+    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}">${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
   const cur = all.find(x => x[0] === tab);
   $('#menuToggle').innerHTML = `<span>${cur ? cur[1] : 'Menú'}</span><span class="small">Menú ▾</span>`;
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
@@ -1118,7 +1168,7 @@ function onField(e) {
   if (!changed) return;
   t.updated = Date.now(); save();
   if (el.dataset.rerender && e.type === 'change') { const y = window.scrollY; render(); window.scrollTo(0, y); return; }
-  renderSide(); updateHeadProgress(); if (liveFn) liveFn();
+  renderSide(); updateHeadProgress(); updateSendBar(); if (liveFn) liveFn();
 }
 $('#view').addEventListener('input', onField);
 // L'alumnat ha de redactar: no es pot enganxar ni arrossegar text (si el professor no ho permet)
@@ -1152,7 +1202,9 @@ function pageBody(v, k, intro, body, opts = {}) {
     ${rv && (rv.comment || rv.status) ? `<div class="notice ${rv.status === 'correcte' ? 'info' : ''}"><b>${rv.status === 'correcte' ? 'Revisat pel professor: correcte.' : rv.status === 'millorar' ? 'El professor us demana millores.' : 'Comentari del professor.'}</b> ${esc(rv.comment || '')}</div>` : ''}
     ${intro ? `<div class="intro muted">${intro}</div>` : ''}
     <div class="${opts.aside ? 'dec-layout' : ''}"><div id="pageBody" style="display:grid;gap:20px;min-width:0">${body}</div>${opts.aside ? '<aside class="sheet forecast" id="pageAside" aria-live="polite"></aside>' : ''}</div>
+    ${s.p && !(CLOUD && ME && ME.isProf) ? `<div id="sendBarWrap">${sendBarHtml(t, s, ac)}</div>` : ''}
     <div class="row stepnav">${prev && prev.k !== 'inici' ? `<button class="btn ghost" data-go="${prev.k}">← ${prev.l}</button>` : '<span></span>'}${next ? `<button class="btn" data-go="${next.k}">${next.l} →</button>` : ''}</div>`;
+  bindSendBar();
   if (opts.aside) { liveFn = () => opts.aside(t); opts.aside(t); }
   if (ac === 'readonly') {
     $('#pageBody').insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : '<div class="notice">Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.</div>');
@@ -1187,7 +1239,7 @@ function vInici(v) {
     </div>
     ${groups.map(([gk, gl, , items]) => '<div class="gtint" data-g="' + gk + '">' + card(gl, items.map(([k]) => { const s = sec(k), st = secState(t, s), [d, n] = s.p(t), rv = t.review[k];
       return `<button class="lrow" data-go="${k}"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}</div></div>
-        <div class="mid">${access(k) === 'closed' ? '<span class="pill grey">Encara tancat</span>' : access(k) === 'readonly' ? '<span class="pill grey">Només lectura</span>' : ''}${access(k) === 'closed' ? '' : st === 'done' ? '<span class="pill">Fet</span>' : st === 'part' ? '<span class="pill blue">En curs</span>' : '<span class="pill grey">Per fer</span>'}${rv && rv.status === 'correcte' ? '<span class="pill">Revisat</span>' : rv && rv.status === 'millorar' ? '<span class="pill warn">A millorar</span>' : ''}</div>
+        <div class="mid">${access(k) === 'closed' ? '<span class="pill grey">Encara tancat</span>' : access(k) === 'readonly' ? '<span class="pill grey">Només lectura</span>' : ''}${access(k) === 'closed' ? '' : (ws => `<span class="pill ws-${ws}">${WS_LABEL[ws]}</span>`)(workState(t, s))}</div>
         <div class="val">${Math.min(d, n)}/${n}</div>${CHEV}</button>`; }).join('')) + '</div>').join('')}`;
 }
 
@@ -2445,6 +2497,11 @@ function exampleGroup() {
   w.grades = {};
   w.updated = ago(0);
 
+  const keys = PROG.map(x => x.k), sendAll = (tm, ks, at) => { tm.data._meta = { sent: {} }; ks.forEach(k => { tm.data._meta.sent[k] = { at, h: secHash(tm, k) }; }); };
+  sendAll(t, keys, ago(1));
+  sendAll(u, keys.filter(k => !['p7', 'pitch', 'marca'].includes(k)), ago(2));
+  sendAll(w, keys.filter(k => ['equip', 'idea', 'empatia', 'entrevistes', 'definir', 'prototip', 'micro', 'pestel', 'dafo', 'lean'].includes(k)), ago(0));
+  w.data.dafo.a = w.data.dafo.a + ' També la competència de les grans marques de domòtica.';
   g.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   return Object.assign(g, { example: true });
 }
@@ -2496,14 +2553,15 @@ function vObertura(v) {
   const nOpen = PROG.filter(s => access(s.k) === 'open').length;
   const seg = k => { const a = st(k); return `<div class="seg" role="group" aria-label="Estat">${[['closed', 'Tancat'], ['open', 'Obert'], ['readonly', 'Només lectura']].map(([v2, l]) => `<button type="button" class="${a.state === v2 ? 'on' : ''} s-${v2}" data-acc="${k}" data-v="${v2}">${l}</button>`).join('')}</div>`; };
   v.innerHTML = `${head('Planificació del projecte', `${nOpen} <span class="muted" style="font-weight:500">de ${PROG.length} apartats oberts</span>`, '<button class="btn ghost" id="accAllOpen">Obrir-ho tot</button><button class="btn ghost" id="accAllClose">Tancar-ho tot</button>')}
-    <p class="muted intro">Obre els apartats a mesura que els treballeu a classe. Els tancats no es poden veure ni omplir. Amb «Només lectura», l'alumnat veu la feina feta però ja no la pot canviar (per exemple, després de la data de lliurament). També pots programar que un apartat s'obri sol en una data.</p>
+    <p class="muted intro">Obre els apartats a mesura que els treballeu a classe. Els tancats no es poden veure ni omplir. Amb «Només lectura», l'alumnat veu la feina feta però ja no la pot canviar (per exemple, després de la data de lliurament). També pots programar que un apartat s'obri sol en una data i fins quan es pot editar: passada aquesta data, queda en «Només lectura».</p>
     ${groups.map(([gk, gl, , items]) => card(gl, items.filter(([k]) => sec(k).p).map(([k]) => { const s = sec(k), a = st(k), eff = access(k);
-      return `<div class="accrow"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}${a.state === 'closed' && a.from ? ` · ${eff === 'open' ? 'obert automàticament des del' : 's\'obrirà el'} ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES')}` : ''}</div></div>
-        ${seg(k)}<label class="accdate">S'obre el<input type="date" data-accdate="${k}" value="${esc(a.from || '')}" ${a.state !== 'closed' ? 'disabled' : ''}></label></div>`; }).join(''),
+      return `<div class="accrow"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}${a.state === 'closed' && a.from ? ` · ${eff === 'open' ? 'obert automàticament des del' : 's\'obrirà el'} ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES')}` : ''}${a.until && a.state !== 'readonly' ? ` · ${eff === 'readonly' ? 'tancat per a l\'edició des del' : 'es podrà editar fins al'} ${new Date(a.until + 'T00:00').toLocaleDateString('ca-ES')}` : ''}</div></div>
+        ${seg(k)}<div class="accdates"><label class="accdate">S'obre el<input type="date" data-accdate="${k}" value="${esc(a.from || '')}" ${a.state !== 'closed' ? 'disabled' : ''}></label><label class="accdate">Editable fins al<input type="date" data-accuntil="${k}" value="${esc(a.until || '')}" ${a.state === 'readonly' ? 'disabled' : ''}></label></div></div>`; }).join(''),
       `<button type="button" class="linkbtn" data-accgrp="${gk}" data-v="open">Obrir el bloc</button> · <button type="button" class="linkbtn" data-accgrp="${gk}" data-v="closed">Tancar-lo</button>`)).join('')}`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { st(b.dataset.acc).state = b.dataset.v; save(); rr(); });
   v.querySelectorAll('[data-accdate]').forEach(i => i.onchange = () => { st(i.dataset.accdate).from = i.value; save(); rr(); });
+  v.querySelectorAll('[data-accuntil]').forEach(i => i.onchange = () => { st(i.dataset.accuntil).until = i.value; save(); rr(); });
   v.querySelectorAll('[data-accgrp]').forEach(b => b.onclick = () => { SECS.find(g => g[0] === b.dataset.accgrp)[3].forEach(([k]) => { if (sec(k).p) st(k).state = b.dataset.v; }); save(); rr(); });
   $('#accAllOpen').onclick = () => { PROG.forEach(s => { st(s.k).state = 'open'; }); save(); rr(); };
   $('#accAllClose').onclick = () => { PROG.forEach(s => { st(s.k).state = 'closed'; }); save(); rr(); };
@@ -2512,19 +2570,18 @@ let revFilter = 'tots';
 const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'Reviseu l\'ortografia.', 'Connecteu-ho amb el vostre sector.'];
 function vRevisio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
-  const st = s => (t.review[s.k] || {}).status || '';
-  const cnt = { correcte: PROG.filter(s => st(s) === 'correcte').length, millorar: PROG.filter(s => st(s) === 'millorar').length };
-  const pend = PROG.filter(s => !st(s) && secState(t, s) !== 'none').length;
-  const show = s => revFilter === 'tots' || (revFilter === 'pendents' ? !st(s) : st(s) === revFilter);
+  const ws = s => workState(t, s);
+  const cnt = w => PROG.filter(s => ws(s) === w).length;
+  const show = s => revFilter === 'tots' || ws(s) === revFilter;
   const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(x.name)}</b><span>${esc(projName(x))}</span><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
   const groups = SECS.filter(g => g[0] !== 'lliura');
-  const dot = s => st(s) === 'correcte' ? 'ok' : st(s) === 'millorar' ? 'warn' : secState(t, s) === 'none' ? 'none' : 'pend';
+  const dot = s => ws(s);
   const nav = groups.map(([gk, gl, , items]) => { const ss = items.map(([k]) => sec(k)).filter(s => s.p); if (!ss.length) return ''; return `<div class="rnav-g" data-g="${gk}"><span>${esc(gl)}</span>${ss.map(s => `<button type="button" class="rnav-i ${show(s) ? '' : 'faded'}" data-jump="${s.k}"><i class="rdot ${dot(s)}"></i>${esc(s.l)}</button>`).join('')}</div>`; }).join('');
   const cards = PROG.filter(show).map(s => {
-    const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t);
-    return `<section class="rcard st-${rv.status || (ss === 'none' ? 'none' : 'pend')}" id="rv-${s.k}" data-g="${s.g}">
+    const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t), w = ws(s), se = sentOf(t, s.k);
+    return `<section class="rcard st-${w}" id="rv-${s.k}" data-g="${s.g}">
       <header><div><span class="rblk">${esc(s.gl)}</span><h3>${esc(s.l)}</h3><span class="small muted">${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span></div>
-        <span class="rfill ${ss}">${ss === 'done' ? 'Complet' : ss === 'none' ? 'Sense fer' : `${Math.min(d, n)} de ${n}`}</span></header>
+        <div class="rbadges"><span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span><span class="rfill ${ss}">${ss === 'done' ? 'Complet' : ss === 'none' ? 'Sense fer' : `${Math.min(d, n)} de ${n}`}</span></div></header>
       <div class="rbody">${secHtml(t, s.k)}</div>
       <footer class="rrev">
         <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">✓ Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">✎ A millorar</button></div>
@@ -2535,18 +2592,18 @@ function vRevisio(v) {
   v.innerHTML = `${head(`Revisió dels projectes${t.members.length ? ' · ' + t.members.map(m => esc(m.name)).filter(Boolean).join(', ') : ''}`, esc(projName(t)))}
     <div class="rtabs" role="tablist" aria-label="Equips">${tabs}</div>
     <div class="rsum">
-      <div class="rsum-i ok"><b>${cnt.correcte}</b><span>correctes</span></div>
-      <div class="rsum-i warn"><b>${cnt.millorar}</b><span>a millorar</span></div>
-      <div class="rsum-i pend"><b>${pend}</b><span>per revisar</span></div>
-      <div class="rsum-i"><b>${Math.round(progress(t) * 100)}%</b><span>completat${t.delivered ? ' · lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : ''}</span></div>
+      <div class="rsum-i sent"><b>${cnt('sent')}</b><span>enviats per revisar</span></div>
+      <div class="rsum-i edit"><b>${cnt('edit')}</b><span>en edició</span></div>
+      <div class="rsum-i warn"><b>${cnt('millorar')}</b><span>a millorar</span></div>
+      <div class="rsum-i ok"><b>${cnt('correcte')}</b><span>correctes</span></div>
     </div>
-    <div class="rfilters" role="group" aria-label="Filtre">${[['tots', 'Tots'], ['pendents', 'Per revisar'], ['millorar', 'A millorar'], ['correcte', 'Correctes']].map(([k, l]) => `<button type="button" class="${revFilter === k ? 'on' : ''}" data-rf="${k}">${l}</button>`).join('')}</div>
+    <div class="rfilters" role="group" aria-label="Filtre">${[['tots', 'Tots'], ['sent', 'Enviats'], ['edit', 'En edició'], ['millorar', 'A millorar'], ['correcte', 'Correctes']].map(([k, l]) => `<button type="button" class="${revFilter === k ? 'on' : ''}" data-rf="${k}">${l}</button>`).join('')}</div>
     <div class="rlayout"><nav class="rnav" aria-label="Apartats">${nav}</nav><div class="rcards">${cards}</div></div>`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); window.scrollTo(0, 0); });
   v.querySelectorAll('[data-rf]').forEach(b => b.onclick = () => { revFilter = b.dataset.rf; rr(); });
   v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { const el = $('#rv-' + b.dataset.jump); if (!el) { revFilter = 'tots'; render(); } const e2 = $('#rv-' + b.dataset.jump); if (e2) e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; save(); rr(); });
+  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); save(); rr(); });
   v.querySelectorAll('[data-cm]').forEach(a => a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); });
   v.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, a = v.querySelector(`[data-cm="${k}"]`); a.value = (a.value.trim() ? a.value.trim() + ' ' : '') + b.textContent; a.dispatchEvent(new Event('input')); a.focus(); });
 }
