@@ -1,0 +1,50 @@
+rules_version = '2';
+// Emprèn · Regles de seguretat de la base de dades.
+// Només poden entrar comptes dels dominis de l'institut (línia DOMINIS).
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // DOMINIS: correus que poden entrar (professorat i alumnat)
+    function domainOk() { return request.auth.token.email.lower().matches('.*@(biada[.]net)$'); }
+
+    function signed() { return request.auth != null && request.auth.token.email_verified == true && domainOk(); }
+    function me() { return request.auth.token.email.lower(); }
+    function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
+    function isProf(gid) { return signed() && me() in grp(gid).profs; }
+    function memberDoc(gid) { return /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid); }
+    function inTeam(gid, tid) { return signed() && exists(memberDoc(gid)) && get(memberDoc(gid)).data.team == tid; }
+
+    match /groups/{gid} {
+      allow get: if signed();
+      allow list: if signed() && me() in resource.data.profs;
+      allow create: if signed() && request.resource.data.owner == request.auth.uid && me() in request.resource.data.profs;
+      allow update: if isProf(gid) && me() in request.resource.data.profs;
+      allow delete: if isProf(gid);
+
+      match /members/{uid} {
+        allow get: if (signed() && request.auth.uid == uid) || isProf(gid);
+        allow list: if isProf(gid);
+        allow create: if signed() && request.auth.uid == uid
+          && request.resource.data.email == me()
+          && request.resource.data.team in grp(gid).teamIds;
+        allow update, delete: if isProf(gid);
+      }
+
+      match /teams/{tid} {
+        allow read: if isProf(gid) || inTeam(gid, tid);
+        allow create, delete: if isProf(gid);
+        allow update: if isProf(gid)
+          || (inTeam(gid, tid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'data', 'delivered', 'updated']));
+
+        match /files/{fid} {
+          allow read, write: if isProf(gid) || inTeam(gid, tid);
+        }
+        match /prof/{part} {
+          allow read: if isProf(gid)
+            || (inTeam(gid, tid) && (part == 'review' || (part == 'grades' && grp(gid).showGrades == true)));
+          allow write: if isProf(gid);
+        }
+      }
+    }
+  }
+}
