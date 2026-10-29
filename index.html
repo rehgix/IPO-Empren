@@ -802,6 +802,9 @@ a.btn{text-decoration:none}
 .whochips{display:inline-flex;flex-wrap:wrap;gap:6px;vertical-align:middle}
 .whochip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;line-height:1.2;padding:3px 10px;border-radius:999px;color:var(--wc);background:color-mix(in srgb,var(--wc) 12%,#fff);white-space:nowrap}
 .whochip::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--wc)}
+.whochips.mini{display:flex;gap:4px;margin-top:4px}
+.whochips.mini .whochip{font-size:11px;padding:1px 7px;gap:4px}
+.whochips.mini .whochip::before{width:6px;height:6px}
 .whot{background:color-mix(in srgb,var(--wc) 13%,transparent);box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--wc) 70%,transparent);border-radius:3px}</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
@@ -1700,7 +1703,7 @@ function secHtml(t, k, who = false) {
   if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
   if (k === 'marca' && esbImgs(t).length) extra += `<div class="small muted">Esbossos del logo</div>` + protoFilesHtml(esbImgs(t), false);
   if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
-  const row = ([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${who ? whoText(t, k, x) : esc(x).replace(/\n/g, '<br>')}</div></div>`;
+  const row = ([l, x]) => { const [c, h] = who ? whoRow(t, k, x) : ['', esc(x).replace(/\n/g, '<br>')]; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; };
   const gs = groupPairs(k, ps);
   if (gs.length === 1 && !gs[0].title) return extra + gs[0].rows.map(row).join('');
   return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.rows.map(row).join('')}</div>`).join('');
@@ -1878,7 +1881,7 @@ function gradeCard(t, a) {
   const lvl = g.nivell ?? (g.nota !== undefined && g.nota !== '' ? noteToLvl(Number(g.nota)) : null);
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="small muted" style="font-weight:400">· ${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
-    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${x && String(x).trim() ? (gr.k ? whoText(t, gr.k, x) : esc(x).replace(/\n/g, '<br>')) : '<span class="muted">Buit</span>'}</div></div>`).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
+    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted">Buit</span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
     <div class="gradebar"><div class="lvls" role="group" aria-label="Nivell">${[4, 3, 2, 1, 0].map(n => `<button type="button" class="lvl ${lvl === n ? 'on' : ''}" data-lvl="${a.c}" data-v="${n}">${LVL_NAMES[n]}<small>${n}</small>${al === n ? '<em class="sug" title="Proposta automàtica"></em>' : ''}${aiCfg().enabled && ai && ai.nivell === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</button>`).join('')}</div>
       <label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label></div>
     ${al !== null && ev.length ? `<p class="small muted" style="margin:8px 0 0">Proposta automàtica: <b>${LVL_NAMES[al]} (${f1(LVL_NOTE(al))})</b></p>` : ''}
@@ -2132,20 +2135,27 @@ function whoChips(t, k) {
   const ids = secAuthors(t, k); if (!ids.length) return '';
   return `<span class="whochips" title="Alumnes que han editat aquest apartat">${ids.map(id => `<span class="whochip" style="--wc:${whoColor(t, id)}">${esc(whoName(t, id))}</span>`).join('')}</span>`;
 }
-// Text d'un camp amb el que ha escrit cada alumne d'un color (només si hi ha escrit més d'un alumne)
-function whoText(t, k, x) {
-  const s = String(x ?? ''), plain = c => esc(c).replace(/\n/g, '<br>');
-  if (secAuthors(t, k).length < 2) return plain(s);
+// Qui ha escrit cada lletra del text que es mostra (null si no se sap)
+function whoOwn(t, k, s) {
   const own = Array(s.length).fill(null), taken = Array(s.length).fill(false);
   whoPaths(t, k).map(p => ({ segs: t.data._who.f[p], v: getP(p.startsWith('members.') ? { members: t.members } : t.data, p) }))
     .filter(c => typeof c.v === 'string' && c.v.length && (c.v.length >= 3 || c.v === s) && c.segs.reduce((a, g) => a + g[1], 0) === c.v.length)
     .sort((a, b) => b.v.length - a.v.length)
     .forEach(c => { let i = s.indexOf(c.v); while (i >= 0 && taken.slice(i, i + c.v.length).some(Boolean)) i = s.indexOf(c.v, i + 1); if (i < 0) return;
       let j = i; c.segs.forEach(([a, l]) => { for (let q = 0; q < l; q++, j++) { own[j] = a || null; taken[j] = true; } }); });
+  return own;
+}
+// Fila d'un camp: [etiquetes amb qui l'ha escrit, text amb el de cada alumne d'un color si n'hi ha més d'un a l'apartat]
+function whoRow(t, k, x) {
+  const s = String(x ?? ''), plain = c => esc(c).replace(/\n/g, '<br>');
+  if (!secAuthors(t, k).length) return ['', plain(s)];
+  const own = whoOwn(t, k, s), ids = [...new Set(own.filter(Boolean))];
+  const chips = ids.length ? `<span class="whochips mini">${ids.map(id => `<span class="whochip" style="--wc:${whoColor(t, id)}">${esc(whoName(t, id))}</span>`).join('')}</span>` : '';
+  if (secAuthors(t, k).length < 2) return [chips, plain(s)];
   let out = '', i = 0;
   while (i < s.length) { let j = i; while (j < s.length && own[j] === own[i]) j++; const c = s.slice(i, j);
     out += own[i] ? `<span class="whot" style="--wc:${whoColor(t, own[i])}" title="${esc(whoName(t, own[i]))}">${plain(c)}</span>` : plain(c); i = j; }
-  return out;
+  return [chips, out];
 }
 const esbImgs = t => ((t.data.marca || {}).esbossos || []).filter(f => logoSrc(f.data));
 const DOMAINS = () => (window.FB_DOMAINS || []).map(d => d.toLowerCase());
