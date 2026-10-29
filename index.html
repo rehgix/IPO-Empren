@@ -1310,7 +1310,7 @@ function vPrototip(v) {
   page(v, 'prototip', '<b>Prototipar</b>: creeu un model senzill de la idea per veure com funcionaria. <b>Provar</b>: ensenyeu-lo a usuaris reals, recolliu les seves opinions i feu-hi ajustos fins aconseguir l\'encaix problema-solució.',
     card('Prototip', pad(`<div class="pfield"><label for="ptipus">Tipus de prototip</label><select class="field-sel" id="ptipus" data-path="prototip.tipus">${['', 'Esbós o maqueta', 'Storyboard (història dibuixada)', 'Pàgina web o fitxa de presentació', 'Pressupost o oferta de prova', 'Servei de prova amb un client real', 'Simulació o role-play', 'Altres'].map(o => `<option ${T().data.prototip.tipus === o ? 'selected' : ''} value="${esc(o)}">${o || 'Tria un tipus'}</option>`).join('')}</select></div>`
       + ta('prototip.descripcio', 'Descriviu el prototip', 'Què heu fet i què volíeu comprovar?', 3)
-      + `<div class="pfield"><label for="protoIn">Imatges o arxius del prototip</label><div class="help">Pugeu fotos, esbossos o captures (JPG, PNG) o un document (PDF, Word o PowerPoint). Màxim ${PROTO_MAX} arxius; els documents, de fins a 2 MB.</div>
+      + `<div class="pfield"><label for="protoIn">Imatges o arxius del prototip</label><div class="help">Pugeu fotos, esbossos o captures (JPG, PNG) o un document (PDF, Word o PowerPoint). Màxim ${PROTO_MAX} arxius; els documents, de fins a 700 kB (les imatges es redueixen soles).</div>
         <label class="upl ${(T().data.prototip.fitxers || []).length >= PROTO_MAX ? 'off' : ''}"><input type="file" id="protoIn" multiple accept="image/*,.pdf,.docx,.pptx,application/pdf">${ico('<path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>')}<span>Pujar imatges o arxius</span></label>
         <div id="protoMsg" class="small" role="status"></div></div>
       <div id="protoFiles">${protoFilesHtml(T().data.prototip.fitxers, true)}</div>`))
@@ -1319,6 +1319,8 @@ function vPrototip(v) {
   bindProtoFiles();
 }
 const PROTO_MAX = 4;
+// Cada arxiu es desa en una fitxa de Firebase (màxim 1 MB); en base64 ocupa un terç més
+const PROTO_DOC_MAX = 700 * 1024, FILE_DATA_MAX = 950000;
 const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + ' MB' : Math.max(1, Math.round(b / 1024)) + ' kB';
 function protoFilesHtml(fs, edit) {
   fs = fs || []; if (!fs.length) return edit ? '' : '';
@@ -1332,7 +1334,7 @@ function bindProtoFiles() {
   const d = T().data.prototip; if (!Array.isArray(d.fitxers)) d.fitxers = [];
   const msg = m => { const el = $('#protoMsg'); if (el) el.textContent = m; };
   const rer = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
-  const readImg = f => new Promise((ok, ko) => { const r = new FileReader(); r.onerror = ko; r.onload = () => { const img = new Image(); img.onerror = ko; img.onload = () => { const s = Math.min(1, 1200 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); const x = c.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height); const data = c.toDataURL('image/jpeg', 0.82); ok({ kind: 'img', name: f.name.replace(/\.[^.]+$/, '') + '.jpg', size: Math.round(data.length * 0.75), data }); }; img.src = r.result; }; r.readAsDataURL(f); });
+  const readImg = f => new Promise((ok, ko) => { const r = new FileReader(); r.onerror = ko; r.onload = () => { const img = new Image(); img.onerror = ko; img.onload = () => { const s = Math.min(1, 1200 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); const x = c.getContext('2d'); x.fillStyle = '#ffffff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height); let data = c.toDataURL('image/jpeg', 0.82); for (let q = 0.7; data.length > FILE_DATA_MAX && q > 0.3; q -= 0.15) data = c.toDataURL('image/jpeg', q); if (data.length > FILE_DATA_MAX) return ko(new Error('big')); ok({ kind: 'img', name: f.name.replace(/\.[^.]+$/, '') + '.jpg', size: Math.round(data.length * 0.75), data }); }; img.src = r.result; }; r.readAsDataURL(f); });
   const readDoc = f => new Promise((ok, ko) => { const r = new FileReader(); r.onerror = ko; r.onload = () => ok({ kind: 'doc', name: f.name, size: f.size, data: r.result }); r.readAsDataURL(f); });
   inp.onchange = async e => {
     if (access('prototip') !== 'open') return;
@@ -1341,10 +1343,10 @@ function bindProtoFiles() {
       if (d.fitxers.length >= PROTO_MAX) { skipped.push(`${f.name} (ja n'hi ha ${PROTO_MAX})`); continue; }
       const ext = (f.name.split('.').pop() || '').toLowerCase(), isImg = /^image\//.test(f.type);
       if (!isImg && !['pdf', 'docx', 'pptx'].includes(ext)) { skipped.push(`${f.name} (format no admès)`); continue; }
-      if (!isImg && f.size > 2 * 1048576) { skipped.push(`${f.name} (més de 2 MB)`); continue; }
+      if (!isImg && f.size > PROTO_DOC_MAX) { skipped.push(`${f.name} (fa ${fmtSize(f.size)} i el màxim és 700 kB: deseu-lo com a PDF més lleuger o pugeu-ne captures)`); continue; }
       try { const item = await (isImg ? readImg(f) : readDoc(f)); d.fitxers.push(item); T().updated = Date.now();
         if (!save()) { d.fitxers.pop(); save(); skipped.push(`${f.name} (no hi ha prou espai al navegador)`); } }
-      catch (err) { skipped.push(`${f.name} (no s'ha pogut llegir)`); }
+      catch (err) { skipped.push(`${f.name} (${err && err.message === 'big' ? 'la imatge és massa pesada' : 'no s\'ha pogut llegir'})`); }
     }
     rer(); if (skipped.length) msg('No s\'ha afegit: ' + skipped.join('; ') + '.');
   };
