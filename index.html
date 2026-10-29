@@ -2,12 +2,22 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%232bc46f%22/%3E%3Cpath d=%22M5 17l4.5-5.5 3.5 2.5 6-7.5%22 fill=%22none%22 stroke=%22%23111%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
 <script src="config.js?v=2"></script><script src="fbapi.js"></script>
 <title>IPO Emprèn</title>
+<script>
+// Aparença: 'auto' (segons el sistema), 'light' o 'dark'. Es desa en aquest navegador i s'aplica abans de pintar.
+const THEME_MQ = matchMedia('(prefers-color-scheme: dark)');
+function themePref() { try { return localStorage.getItem('ipoTema') || 'auto'; } catch (e) { return 'auto'; } }
+function applyTheme() { const p = themePref(); document.documentElement.classList.toggle('dark', p === 'dark' || (p === 'auto' && THEME_MQ.matches));
+  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === p))); }
+function setTheme(p) { try { localStorage.setItem('ipoTema', p); } catch (e) {} applyTheme(); }
+THEME_MQ.addEventListener('change', applyTheme); applyTheme();
+document.addEventListener('click', e => { const b = e.target.closest('[data-theme-set]'); if (b) setTheme(b.dataset.themeSet); });
+</script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&display=swap">
 <style>
 /* Disseny: menú lateral fosc + gran plafó blanc arrodonit; xifres grans, botons negres, llistes amb fileres i fletxes.
-   El tema fosc automàtic és al final de tot («TEMA FOSC»). */
+   El tema fosc és al final de tot («TEMA FOSC»). */
 :root{
   --side:#1c1c1e; --side-2:#2a2a2d; --side-fg:#f4f4f5; --side-muted:#8d8d93;
   --bg:#ffffff; --soft:#f7f7f8; --ink:#111113; --muted:#76767d; --line:#ebebee;
@@ -816,7 +826,8 @@ a.btn{text-decoration:none}
    Capa final: grisos zinc, vores subtils, ombres en capes, radis generosos i microinteraccions.
    Va al final perquè mani sobre les regles anteriors; la lògica no canvia. */
 :root{
-  --side:#0c0c0e; --side-2:#1d1d21; --side-3:#26262b; --side-fg:#f4f4f5; --side-muted:#8b8b94;
+  --side:#efeff1; --side-2:#e4e4e7; --side-3:#ffffff; --side-fg:#18181b; --side-muted:#71717a;
+  --side-hover:rgba(24,24,27,.045); --side-ring:rgba(24,24,27,.08); --side-border:#d4d4d8; --side-sel:#ffffff;
   --bg:#ffffff; --canvas:#f8f8f9; --soft:#f4f4f5; --ink:#18181b; --ink-2:#3f3f46; --muted:#71717a;
   --line:rgba(228,228,231,.85); --line-2:#d4d4d8;
   --accent:#22b864; --accent-ink:#15803d; --accent-soft:#ecfdf3;
@@ -838,20 +849,20 @@ body{background:var(--side);font-size:15px;letter-spacing:-.003em;text-rendering
 /* Menú lateral */
 .brand{font-size:19px;letter-spacing:-.025em;border-color:var(--side-2)}
 .logo{border-radius:10px;background:linear-gradient(145deg,#4ade80,#16a34a);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),0 4px 14px -2px rgba(34,184,100,.45)}
-.role select{background:var(--side-2);border:1px solid var(--side-3);border-radius:var(--r-md);transition:border-color var(--t-fast),background var(--t-fast);cursor:pointer}
-.role select:hover{border-color:#3f3f46}
+.role select{background:var(--side-3);border:1px solid var(--side-border);border-radius:var(--r-md);transition:border-color var(--t-fast),background var(--t-fast);cursor:pointer}
+.role select:hover{border-color:var(--side-muted)}
 .ghead{color:var(--side-muted)!important;font-size:11.5px;letter-spacing:.08em;padding:6px 12px 4px}
 .nav button{border-radius:8px;transition:background var(--t-fast),opacity var(--t-fast),color var(--t-fast),transform .1s var(--ease)}
-.nav button:hover{background:rgba(255,255,255,.05);opacity:1}
-.nav button[aria-selected="true"]{background:var(--side-2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)!important;opacity:1}
-.ngroup[data-g] button[aria-selected="true"]{box-shadow:inset 2px 0 0 var(--gl),inset 0 0 0 1px rgba(255,255,255,.05)!important}
+.nav button:hover{background:var(--side-hover);opacity:1}
+.nav button[aria-selected="true"]{background:var(--side-sel);box-shadow:inset 0 0 0 1px var(--side-ring),var(--sh-xs)!important;opacity:1}
+.ngroup[data-g] button[aria-selected="true"]{box-shadow:inset 2px 0 0 var(--gl),inset 0 0 0 1px var(--side-ring),var(--sh-xs)!important}
 .nav button:active,.menu-toggle:active{transform:scale(.98)}
 .side-foot{border-color:var(--side-2)}
 .quarter .q{transition:background var(--t)}
 .side-btn{border-radius:var(--r-md);box-shadow:var(--sh-sm)}
 
 /* Plafó principal */
-.panel{background:var(--canvas);border:1px solid rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(0,0,0,.4),0 24px 48px -12px rgba(0,0,0,.5);border-radius:18px}
+.panel{background:var(--canvas);border:1px solid var(--line);box-shadow:var(--sh-md);border-radius:18px}
 .content{gap:24px}
 
 /* Capçalera de pàgina */
@@ -927,7 +938,7 @@ details.ex summary{list-style-position:inside}
 .btn:active,.lvl:active,.rb:active,.seg button:active,.rfilters button:active,.aiseg button:active,.rquick button:active,.upl:active,.dashbtn:active,.linkbtn:active,.joinlist .btn:active{transform:scale(.96)}
 .btn:disabled,.btn:disabled:hover{transform:none;box-shadow:none}
 .side-btn{background:var(--side-fg);color:var(--side);border-color:var(--side-fg)}
-.side-btn:hover{background:#ffffff}
+.side-btn:hover{background:var(--side-fg);opacity:.88}
 .sendbar.ws-edit .btn{background:var(--ws-edit);border-color:var(--ws-edit)}
 .lvl,.rb,.seg button,.rfilters button,.aiseg button,.rquick button,.upl,.dashbtn,.rnav-i{transition:background var(--t-fast),border-color var(--t-fast),color var(--t-fast),box-shadow var(--t-fast),transform .12s var(--ease)}
 .lvl{border-radius:var(--r-md);box-shadow:var(--sh-xs)}
@@ -989,12 +1000,26 @@ tbody tr{transition:background var(--t-fast)}
   .head:has(.hlogo) > .actions{grid-column:1/-1;grid-row:2}
   #view[data-g] > .head .label{border-radius:10px}
 }
+/* Interruptor d'aparença (automàtic, clar, fosc) */
+.themesw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;border-radius:var(--r-md);background:var(--side-2);margin-top:6px}
+.themesw button{display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;color:var(--side-muted);font:500 12.5px var(--font);padding:7px 4px;border-radius:8px;cursor:pointer;transition:background var(--t-fast),color var(--t-fast),transform .12s var(--ease)}
+.themesw button:hover{color:var(--side-fg)}
+.themesw button[aria-pressed="true"]{background:var(--side-3);color:var(--side-fg);box-shadow:var(--sh-xs)}
+.themesw button:active{transform:scale(.96)}
+.themesw svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.list-pad .themesw{max-width:440px;background:#ececef;border-radius:var(--r-lg)}
+.list-pad .themesw button{font-size:14px;padding:10px 8px;color:var(--muted)}
+.list-pad .themesw button:hover{color:var(--ink)}
+.list-pad .themesw button[aria-pressed="true"]{background:var(--bg);color:var(--ink);box-shadow:var(--sh-sm)}
+.list-pad .themesw svg{width:16px;height:16px}
+@media (max-width:860px){.side.open .side-foot{display:grid;margin-top:12px}}
+
 /* ================= TEMA FOSC =================
-   S'activa sol quan l'ordinador o el mòbil estan en mode fosc. Els PDF es generen sempre en clar (.pdfbox). */
-@media (prefers-color-scheme:dark){
-  :root{
+   S'activa amb la classe html.dark (interruptor d'Aparença: automàtic, clar o fosc). Els PDF es generen sempre en clar (.pdfbox). */
+  html.dark{
     color-scheme:dark;
     --side:#09090b; --side-2:#1c1c20; --side-3:#27272a; --side-fg:#f4f4f5; --side-muted:#8b8b94;
+    --side-hover:rgba(255,255,255,.05); --side-ring:rgba(255,255,255,.05); --side-border:#3f3f46; --side-sel:#1c1c20;
     --bg:#18181b; --canvas:#111113; --soft:#202024; --ink:#f4f4f5; --ink-2:#d4d4d8; --muted:#a1a1aa;
     --line:rgba(63,63,70,.7); --line-2:#3f3f46;
     --accent:#2fcf78; --accent-ink:#4ade80; --accent-soft:rgba(34,197,94,.12);
@@ -1016,101 +1041,105 @@ tbody tr{transition:background var(--t-fast)}
     --ws-ok:#4ade80; --ws-ok-s:rgba(74,222,128,.11); --ws-warn:#fbbf24; --ws-warn-s:rgba(251,191,36,.11); --ws-none:#52525b;
   }
   /* Colors de bloc: el to clar fa de color principal i el fons és una tinta fosca */
-  [data-g]{--gc:var(--gl);--gs:color-mix(in srgb,var(--gl) 11%,#18181b)}
-  *{scrollbar-color:#3f3f46 transparent}
-  .t-ra4{--tone-s:color-mix(in srgb,var(--tn-ra4) 8%,#18181b);--tone-m:color-mix(in srgb,var(--tn-ra4) 16%,#18181b)}
-  .t-ra5{--tone-s:color-mix(in srgb,var(--tn-ra5) 8%,#18181b);--tone-m:color-mix(in srgb,var(--tn-ra5) 16%,#18181b)}
+  html.dark [data-g]{--gc:var(--gl);--gs:color-mix(in srgb,var(--gl) 11%,#18181b)}
+  html.dark *{scrollbar-color:#3f3f46 transparent}
+  html.dark .t-ra4{--tone-s:color-mix(in srgb,var(--tn-ra4) 8%,#18181b);--tone-m:color-mix(in srgb,var(--tn-ra4) 16%,#18181b)}
+  html.dark .t-ra5{--tone-s:color-mix(in srgb,var(--tn-ra5) 8%,#18181b);--tone-m:color-mix(in srgb,var(--tn-ra5) 16%,#18181b)}
 
-  .panel{border-color:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 24px 48px -12px rgba(0,0,0,.7)}
-  #view[data-g] > .head{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--gl) 13%,var(--bg)) 0%,var(--bg) 62%)}
-  #view[data-g] > .head .label{background:var(--soft)}
-  #view[data-g] .list:not(.dafo .list) > .list-head,.gtint .list > .list-head{color:var(--gc)!important}
-  .lrow:hover{background:rgba(255,255,255,.03)}
-  td.ind{color:var(--ink-2)}
+  html.dark .panel{border-color:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 24px 48px -12px rgba(0,0,0,.7)}
+  html.dark #view[data-g] > .head{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--gl) 13%,var(--bg)) 0%,var(--bg) 62%)}
+  html.dark #view[data-g] > .head .label{background:var(--soft)}
+  html.dark #view[data-g] .list:not(.dafo .list) > .list-head,html.dark .gtint .list > .list-head{color:var(--gc)!important}
+  html.dark .lrow:hover{background:rgba(255,255,255,.03)}
+  html.dark td.ind{color:var(--ink-2)}
 
   /* Botons: el principal passa a ser clar (invertit) */
-  .btn{color:#18181b;border-color:#e4e4e7;background:linear-gradient(180deg,#fafafa,#e4e4e7);box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.4)}
-  .btn:hover{background:linear-gradient(180deg,#fff,#f4f4f5);box-shadow:inset 0 1px 0 #fff,0 2px 4px rgba(0,0,0,.4),0 8px 18px -4px rgba(0,0,0,.6)}
-  .btn.ghost{background:var(--bg);color:var(--ink);border-color:var(--line-2);box-shadow:var(--sh-xs)}
-  .btn.ghost:hover{background:#27272a;border-color:#52525b}
-  .side-btn{background:var(--side-fg);color:var(--side);border-color:var(--side-fg)}
-  .sendbar.ws-edit .btn{background:#dc2626;border-color:#dc2626;color:#fff}
-  .lvl:hover,.rrev{background:var(--soft)}
-  input[type=text]:hover,input[type=number]:hover,textarea:hover,select.field-sel:hover{border-color:#52525b}
-  input[type=color],#dosTxt:not(.sr-only){background:var(--bg);color:var(--ink)}
+  html.dark .btn{color:#18181b;border-color:#e4e4e7;background:linear-gradient(180deg,#fafafa,#e4e4e7);box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.4)}
+  html.dark .btn:hover{background:linear-gradient(180deg,#fff,#f4f4f5);box-shadow:inset 0 1px 0 #fff,0 2px 4px rgba(0,0,0,.4),0 8px 18px -4px rgba(0,0,0,.6)}
+  html.dark .btn.ghost{background:var(--bg);color:var(--ink);border-color:var(--line-2);box-shadow:var(--sh-xs)}
+  html.dark .btn.ghost:hover{background:#27272a;border-color:#52525b}
+  html.dark .side-btn{background:var(--side-fg);color:var(--side);border-color:var(--side-fg)}
+  html.dark .sendbar.ws-edit .btn{background:#dc2626;border-color:#dc2626;color:#fff}
+  html.dark .lvl:not(.on):hover,html.dark .rrev{background:var(--soft)}
+  html.dark input[type=text]:hover,html.dark input[type=number]:hover,html.dark textarea:hover,html.dark select.field-sel:hover{border-color:#52525b}
+  html.dark input[type=color],html.dark #dosTxt:not(.sr-only){background:var(--bg);color:var(--ink)}
 
   /* Taules */
-  .app table.fin thead th{background:var(--soft)}
-  .app table.fin.zebra tbody tr:nth-child(even) td{background:rgba(255,255,255,.02)}
-  .app table.fin tbody tr:hover td{background:color-mix(in srgb,var(--tone-s,var(--bg)) 70%,#2a2a2f)}
-  .app table.fin .zero{color:#52525b}
-  .app table.fin td.negc{background:rgba(239,68,68,.16)!important}
-  .app .tagauto{background:rgba(255,255,255,.08)}
-  .sc-1{background:rgba(239,68,68,.2)!important}.sc-2{background:rgba(249,115,22,.18)!important}.sc-3{background:rgba(234,179,8,.16)!important}.sc-4{background:rgba(132,204,22,.16)!important}.sc-5{background:rgba(34,197,94,.22)!important}
-  .app .g-hi{background:rgba(74,222,128,.14);color:#4ade80}.app .g-ok{background:rgba(45,212,191,.14);color:#2dd4bf}.app .g-mid{background:rgba(251,191,36,.14);color:#fbbf24}.app .g-low{background:rgba(248,113,113,.14);color:#f87171}.app .g-none{background:#27272a;color:#a1a1aa}
-  .app .reportview .rnote.g-hi,.app .reportview .rgrades b.g-hi{color:#4ade80}.app .reportview .rnote.g-ok,.app .reportview .rgrades b.g-ok{color:#2dd4bf}.app .reportview .rnote.g-mid,.app .reportview .rgrades b.g-mid{color:#fbbf24}.app .reportview .rnote.g-low,.app .reportview .rgrades b.g-low{color:#f87171}
+  html.dark .app table.fin thead th{background:var(--soft)}
+  html.dark .app table.fin.zebra tbody tr:nth-child(even) td{background:rgba(255,255,255,.02)}
+  html.dark .app table.fin tbody tr:hover td{background:color-mix(in srgb,var(--tone-s,var(--bg)) 70%,#2a2a2f)}
+  html.dark .app table.fin .zero{color:#52525b}
+  html.dark .app table.fin td.negc{background:rgba(239,68,68,.16)!important}
+  html.dark .app .tagauto{background:rgba(255,255,255,.08)}
+  html.dark .sc-1{background:rgba(239,68,68,.2)!important}html.dark .sc-2{background:rgba(249,115,22,.18)!important}html.dark .sc-3{background:rgba(234,179,8,.16)!important}html.dark .sc-4{background:rgba(132,204,22,.16)!important}html.dark .sc-5{background:rgba(34,197,94,.22)!important}
+  html.dark .app .g-hi{background:rgba(74,222,128,.14);color:#4ade80}html.dark .app .g-ok{background:rgba(45,212,191,.14);color:#2dd4bf}html.dark .app .g-mid{background:rgba(251,191,36,.14);color:#fbbf24}html.dark .app .g-low{background:rgba(248,113,113,.14);color:#f87171}html.dark .app .g-none{background:#27272a;color:#a1a1aa}
+  html.dark .app .reportview .rnote.g-hi,html.dark .app .reportview .rgrades b.g-hi{color:#4ade80}html.dark .app .reportview .rnote.g-ok,html.dark .app .reportview .rgrades b.g-ok{color:#2dd4bf}html.dark .app .reportview .rnote.g-mid,html.dark .app .reportview .rgrades b.g-mid{color:#fbbf24}html.dark .app .reportview .rnote.g-low,html.dark .app .reportview .rgrades b.g-low{color:#f87171}
 
   /* DAFO, Golden Circle, Lean Canvas */
-  .dafo-f .list{background:rgba(74,222,128,.07)}.dafo-d .list{background:rgba(251,191,36,.07)}.dafo-o .list{background:rgba(96,165,250,.07)}.dafo-a .list{background:rgba(248,113,113,.07)}
-  .gc-why{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2)}.gc-why label{color:#4ade80}
-  .gc-how{background:rgba(242,166,90,.08);border-color:rgba(242,166,90,.2)}.gc-how label{color:#f2a65a}
-  .gc-what{background:rgba(122,167,245,.08);border-color:rgba(122,167,245,.2)}.gc-what label{color:#7aa7f5}
-  .gc-f textarea,.lc-sost .pfield textarea{background:var(--bg)!important}
-  .gc-svg .c-what{fill:#1b2333;stroke:#34507f}.gc-svg .c-how{fill:#2c2216;stroke:#7a5428}
-  .gc-svg .tw{fill:#7aa7f5}.gc-svg .th{fill:#f2a65a}
-  .leancanvas .lc-sost{background:rgba(74,222,128,.07)}
-  .sosttag{color:#4ade80}.sosttag::before{background:#4ade80}
+  html.dark .dafo-f .list{background:rgba(74,222,128,.07)}html.dark .dafo-d .list{background:rgba(251,191,36,.07)}html.dark .dafo-o .list{background:rgba(96,165,250,.07)}html.dark .dafo-a .list{background:rgba(248,113,113,.07)}
+  html.dark .gc-why{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2)}html.dark .gc-why label{color:#4ade80}
+  html.dark .gc-how{background:rgba(242,166,90,.08);border-color:rgba(242,166,90,.2)}html.dark .gc-how label{color:#f2a65a}
+  html.dark .gc-what{background:rgba(122,167,245,.08);border-color:rgba(122,167,245,.2)}html.dark .gc-what label{color:#7aa7f5}
+  html.dark .gc-f textarea,html.dark .lc-sost .pfield textarea{background:var(--bg)!important}
+  html.dark .gc-svg .c-what{fill:#1b2333;stroke:#34507f}html.dark .gc-svg .c-how{fill:#2c2216;stroke:#7a5428}
+  html.dark .gc-svg .tw{fill:#7aa7f5}html.dark .gc-svg .th{fill:#f2a65a}
+  html.dark .leancanvas .lc-sost{background:rgba(74,222,128,.07)}
+  html.dark .sosttag{color:#4ade80}html.dark .sosttag::before{background:#4ade80}
 
   /* Fitxers, enllaços i IA */
-  .upl,.pimg,.pdoc,.vlink,.gcard,.rtab,.rcard,.rb,.rquick button,.rrev textarea,.wsbadge.rvb,.rfill{background:var(--bg)}
-  .upl:hover{background:color-mix(in srgb,var(--gc,#fff) 8%,var(--bg))}
-  .vlink input[type=url]:focus{background:var(--bg)}
-  .slogo.empty{background:var(--soft)}
-  .aipick{background:rgba(139,92,246,.09);border-color:rgba(139,92,246,.25)}
-  .aiseg button{background:var(--bg);border-color:rgba(139,92,246,.25)}
-  .aiseg button.on{background:var(--bg);border-color:#a78bfa;box-shadow:inset 0 0 0 1px #a78bfa}
-  .aiseg button.on::after{color:#a78bfa}
+  html.dark .upl,html.dark .pimg,html.dark .pdoc,html.dark .vlink,html.dark .gcard,html.dark .rtab,html.dark .rcard,html.dark .rb,html.dark .rquick button,html.dark .rrev textarea,html.dark .wsbadge.rvb,html.dark .rfill{background:var(--bg)}
+  html.dark .upl:hover{background:color-mix(in srgb,var(--gc,#fff) 8%,var(--bg))}
+  html.dark .vlink input[type=url]:focus{background:var(--bg)}
+  html.dark .slogo.empty{background:var(--soft)}
+  html.dark .aipick{background:rgba(139,92,246,.09);border-color:rgba(139,92,246,.25)}
+  html.dark .aiseg button{background:var(--bg);border-color:rgba(139,92,246,.25)}
+  html.dark .aiseg button.on{background:var(--bg);border-color:#a78bfa;box-shadow:inset 0 0 0 1px #a78bfa}
+  html.dark .aiseg button.on::after{color:#a78bfa}
 
   /* Seguiment i revisió */
-  .gbar,.rtab i,.bar,.minibar{background:#27272a}
-  .gcard:hover{border-color:rgba(74,222,128,.4)}
-  .rtab.on{background:rgba(74,222,128,.07);border-color:#4ade80;box-shadow:0 0 0 2px #4ade80 inset,var(--sh-md)}
-  .rtab em{color:#4ade80}
-  .rsum-i.ok{background:var(--ws-ok-s)}.rsum-i.ok b{color:#4ade80}
-  .rsum-i.warn{background:var(--ws-warn-s)}.rsum-i.warn b{color:#fbbf24}
-  .rsum-i.pend{background:var(--ws-sent-s)}.rsum-i.pend b{color:#60a5fa}
-  .rfilters{background:#27272a}
-  .rfilters button.on{background:#3f3f46;color:var(--ink)}
-  .rdot.none,.rdot.none.wsdot,.wsdot.none{background:#3f3f46;border-color:#52525b}
-  .rfill.done{color:#4ade80;border-color:rgba(74,222,128,.3)}.rfill.none{color:#f87171}
-  .rb{color:var(--ink)}
-  .rb.ok:hover,.rb.ok.on{border-color:#4ade80;color:#4ade80}.rb.ok.on{background:rgba(74,222,128,.12)}
-  .rb.warn:hover,.rb.warn.on{border-color:#fbbf24;color:#fbbf24}.rb.warn.on{background:rgba(251,191,36,.12)}
-  .rquick button{border-color:#3f3f46}
-  .rquick button:hover{border-color:#4ade80;color:#4ade80}
-  .rrev textarea:focus{border-color:#4ade80}
+  html.dark .gbar,html.dark .rtab i,html.dark .bar,html.dark .minibar{background:#27272a}
+  html.dark .gcard:hover{border-color:rgba(74,222,128,.4)}
+  html.dark .rtab.on{background:rgba(74,222,128,.07);border-color:#4ade80;box-shadow:0 0 0 2px #4ade80 inset,var(--sh-md)}
+  html.dark .rtab em{color:#4ade80}
+  html.dark .rsum-i.ok{background:var(--ws-ok-s)}html.dark .rsum-i.ok b{color:#4ade80}
+  html.dark .rsum-i.warn{background:var(--ws-warn-s)}html.dark .rsum-i.warn b{color:#fbbf24}
+  html.dark .rsum-i.pend{background:var(--ws-sent-s)}html.dark .rsum-i.pend b{color:#60a5fa}
+  html.dark .rfilters{background:#27272a}
+  html.dark .rfilters button.on{background:#3f3f46;color:var(--ink)}
+  html.dark .rdot.none,html.dark .rdot.none.wsdot,html.dark .wsdot.none{background:#3f3f46;border-color:#52525b}
+  html.dark .rfill.done{color:#4ade80;border-color:rgba(74,222,128,.3)}html.dark .rfill.none{color:#f87171}
+  html.dark .rb{color:var(--ink)}
+  html.dark .rb.ok:hover,html.dark .rb.ok.on{border-color:#4ade80;color:#4ade80}html.dark .rb.ok.on{background:rgba(74,222,128,.12)}
+  html.dark .rb.warn:hover,html.dark .rb.warn.on{border-color:#fbbf24;color:#fbbf24}html.dark .rb.warn.on{background:rgba(251,191,36,.12)}
+  html.dark .rquick button{border-color:#3f3f46}
+  html.dark .rquick button:hover{border-color:#4ade80;color:#4ade80}
+  html.dark .rrev textarea:focus{border-color:#4ade80}
 
   /* Estats de la feina */
-  .wsbadge.correcte,.pill.ws-correcte,.wsbadge.rvb.correcte{color:#4ade80}
-  .wsbadge.millorar,.pill.ws-millorar,.wsbadge.rvb.millorar{color:#fbbf24}
-  .pill.grey,.wsbadge.none,.pill.ws-none{background:#27272a;color:#a1a1aa}
-  .sendbar.ws-edit{border-color:rgba(248,113,113,.3);color:#fecaca}
-  .sendbar.ws-sent{border-color:rgba(96,165,250,.3);color:#bfdbfe}
-  .sendbar.ws-correcte{border-color:rgba(74,222,128,.3);color:#bbf7d0}
-  .sendbar.ws-millorar{border-color:rgba(251,191,36,.3);color:#fde68a}
-  .sendbar.ws-none{background:var(--soft);border-color:var(--line);color:var(--muted)}
+  html.dark .wsbadge.correcte,html.dark .pill.ws-correcte,html.dark .wsbadge.rvb.correcte{color:#4ade80}
+  html.dark .wsbadge.millorar,html.dark .pill.ws-millorar,html.dark .wsbadge.rvb.millorar{color:#fbbf24}
+  html.dark .pill.grey,html.dark .wsbadge.none,html.dark .pill.ws-none{background:#27272a;color:#a1a1aa}
+  html.dark .sendbar.ws-edit{border-color:rgba(248,113,113,.3);color:#fecaca}
+  html.dark .sendbar.ws-sent{border-color:rgba(96,165,250,.3);color:#bfdbfe}
+  html.dark .sendbar.ws-correcte{border-color:rgba(74,222,128,.3);color:#bbf7d0}
+  html.dark .sendbar.ws-millorar{border-color:rgba(251,191,36,.3);color:#fde68a}
+  html.dark .sendbar.ws-none{background:var(--soft);border-color:var(--line);color:var(--muted)}
 
   /* Avisos i altres */
-  .notice{color:#fde68a}
-  .notice.info{color:var(--ink)}
-  .notice.expwarn{background:rgba(242,166,90,.1);border-color:rgba(242,166,90,.25);color:#fcd9a8}
-  .whochip{background:color-mix(in srgb,var(--wc) 18%,var(--bg))}
-  #toast{background:rgba(39,39,42,.95);color:var(--ink);box-shadow:var(--sh-lg),inset 0 0 0 1px rgba(255,255,255,.06)}
-  #syncPill{background:rgba(24,24,27,.85)}
-  #syncPill.sp-saved{color:#4ade80}
+  html.dark .notice{color:#fde68a}
+  html.dark .notice.info{color:var(--ink)}
+  html.dark .notice.expwarn{background:rgba(242,166,90,.1);border-color:rgba(242,166,90,.25);color:#fcd9a8}
+  html.dark .whochip{background:color-mix(in srgb,var(--wc) 18%,var(--bg))}
+  html.dark #toast{background:rgba(39,39,42,.95);color:var(--ink);box-shadow:var(--sh-lg),inset 0 0 0 1px rgba(255,255,255,.06)}
+  html.dark #syncPill{background:rgba(24,24,27,.85)}
+  html.dark #syncPill.sp-saved{color:#4ade80}
 
   /* El PDF s'ha de veure en clar encara que la pantalla sigui fosca */
-  .pdfbox{color-scheme:light;color:#18181b;
+  html.dark .list-pad .themesw{background:#27272a}
+  html.dark .list-pad .themesw button[aria-pressed="true"]{background:#3f3f46}
+  html.dark .btn:disabled:hover{box-shadow:none}
+
+  html.dark .pdfbox{color-scheme:light;color:#18181b;
     --bg:#ffffff; --soft:#f4f4f5; --ink:#18181b; --ink-2:#3f3f46; --muted:#71717a; --line:#e4e4e7; --line-2:#d4d4d8;
     --accent:#22b864; --accent-ink:#15803d; --accent-soft:#ecfdf3; --blue:#2563eb; --blue-soft:#eff4ff;
     --warn:#b45309; --warn-soft:#fff7e6; --bad:#dc2626; --bad-soft:#fef2f2;
@@ -1118,8 +1147,8 @@ tbody tr{transition:background var(--t-fast)}
     --tn-pas:#9a6a2f; --tn-pas-s:#fbf7f1; --tn-pas-m:#f4eadc; --tn-in:#3f7a5c; --tn-in-s:#f4f9f6; --tn-in-m:#e6f1eb;
     --tn-out:#a54a3f; --tn-out-s:#fcf5f4; --tn-out-m:#f6e6e3; --tn-res:#5a5390; --tn-res-s:#f6f5fb; --tn-res-m:#ebe9f5;
     --tn-ra4:#2d5bea; --tn-ra5:#7a4fb0}
-  .pdfbox .t-ra4{--tone-s:#eef3ff;--tone-m:#dce6ff}.pdfbox .t-ra5{--tone-s:#f4eeff;--tone-m:#e8dcfa}
-}
+  html.dark .pdfbox .t-ra4{--tone-s:#eef3ff;--tone-m:#dce6ff}html.dark .pdfbox .t-ra5{--tone-s:#f4eeff;--tone-m:#e8dcfa}
+
 @media (prefers-reduced-motion:reduce){#view.vin > *,#view.vin .bar span,#view.vin .gbar span,#view.vin .minibar span,#view.vin .stack i{animation:none}.btn:hover,.stat:hover,.gcard:hover,.rtab:hover{transform:none}}</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
@@ -3296,8 +3325,12 @@ function vGuia(v) {
     ${card('Activitats de la programació', pad(`<div class="tablebox"><table class="fin zebra"><thead><tr><th>Activitat</th><th>Contingut</th><th>Pàgines de l'eina</th></tr></thead><tbody>${acts.map(a => `<tr><td><b>${a[0]}</b></td><td>${esc(a[1])}</td><td>${esc(where(a[2]))}</td></tr>`).join('')}</tbody></table></div>`))}
     ${card('Consells d\'ús', pad(`<ul class="fb tip"><li>A «Obertura dels apartats» decideixes què pot fer l'alumnat a cada moment: obre els apartats a mesura que els treballeu, programa'n l'obertura per data o deixa'ls en «Només lectura» quan acabi el termini.</li><li>El menú de l'alumnat mostra quins apartats tenen fets, a mitges, per fer o encara tancats.</li><li>A «Revisió dels projectes» pots deixar comentaris a cada apartat i marcar-los com a correctes o a millorar.</li><li>A «Qualificació per activitats» poses la nota de cada activitat de la programació. Tens una proposta automàtica i la correcció amb IA: l'eina prepara una petició amb la feina i la rúbrica de l'activitat, l'enganxes a la IA que facis servir (ChatGPT, Gemini, Copilot...) i et proposa nivell, nota i comentari, que tu revises.</li><li>A «Informes dels equips» descarregues l'informe de cada equip amb la feina i la nota de cada activitat.</li><li>Les eines de càlcul (préstec, tresoreria i viabilitat) estan connectades: el que posen a «Inversió i finançament» apareix automàticament a la tresoreria.</li><li>El dossier es pot copiar per publicar-lo al Google Sites del projecte.</li><li>Aquesta versió desa les dades al navegador d'aquest ordinador. Fes una còpia de seguretat des de «Configuració».</li></ul>`))}`;
 }
+// Interruptor d'aparença: el mateix al menú lateral i a Configuració
+const themeSw = () => `<div class="themesw" role="group" aria-label="Aparença">${[['auto', 'Automàtic', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'], ['light', 'Clar', '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'], ['dark', 'Fosc', '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>']]
+  .map(([k, l, p]) => `<button type="button" data-theme-set="${k}" aria-pressed="${themePref() === k}">${ico(p)}${l}</button>`).join('')}</div>`;
 function vConfig(v) {
   v.innerHTML = `${flashHtml()}${head('Configuració', esc(G.name))}
+    ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador: cada persona pot triar el seu.</p>${themeSw()}`))}
     ${card('Grup classe', pad(`<div class="pfield"><label for="gName">Nom del grup</label><input type="text" id="gName" value="${esc(G.name)}"></div>
       <div class="pfield"><label for="gSector">Sector per defecte dels projectes</label><select class="field-sel" id="gSector">${Object.entries(PE.SECTORS).map(([k, s]) => `<option value="${k}" ${G.sector === k ? 'selected' : ''}>${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
       <div class="pfield"><label>Equips</label>${G.teams.map((t, i) => `<div class="member" style="grid-template-columns:minmax(0,1fr) auto"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>`))}
@@ -3333,7 +3366,7 @@ const VIEWS = { inici: vInici, equip: vEquip, idea: vIdea, empatia: vEmpatia, en
   lean: vLean, sost: vSost, ebc: vEbc, agents: vAgents, juridica: vJuridica, fiscal: vFiscal, inversio: vInversio, prestec: vPrestec, treso: vTreso, viab: vViab, marca: vMarca, p7: vP7, pitch: vPitch, dossier: vDossier,
   seguiment: vSeguiment, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, config: vConfig, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, grups: () => { location.hash = ''; } };
 $('#tabs').insertAdjacentHTML('beforebegin', '<button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false"></button>');
-document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>');
+document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>' + themeSw());
 $('#menuToggle').onclick = () => { const s = document.querySelector('.side'); s.classList.toggle('open'); $('#menuToggle').setAttribute('aria-expanded', String(s.classList.contains('open'))); };
 if (CLOUD) cloudBoot();
 else {
