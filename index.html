@@ -155,7 +155,6 @@ textarea{font-size:13px;min-height:140px}
 
 <style>
 .field{grid-template-columns:minmax(0,1fr) minmax(140px,250px)}
-.field select{grid-row:1/span 2;grid-column:2;width:100%}
 .field input[type=text]{text-align:left}
 @media (max-width:520px){.field select{grid-row:auto;grid-column:1}}
 .choices{display:grid;gap:10px}
@@ -181,8 +180,8 @@ ul.fb.good li::marker{color:var(--accent)} ul.fb.bad li::marker{color:var(--bad)
 .guide{max-width:780px}
 .guide > * + *{margin-top:12px}
 .guide h2{margin-top:24px}
-</style>
-<style>
+
+
 /* Menú per departaments */
 #navLabel{display:none}
 .nav{display:grid;gap:12px;margin-top:6px}
@@ -211,8 +210,8 @@ ul.fb.good li::marker{color:var(--accent)} ul.fb.bad li::marker{color:var(--bad)
 .prow .t{font-weight:500}.prow .s{color:var(--muted);font-size:14px}
 .choice.dim{opacity:.6}
 .choice > span .small .pill{margin-right:6px}
-</style>
-<style>
+
+
 .intro{max-width:72ch;margin:0}
 .pfield{display:grid;gap:6px;padding:4px 0}
 .pfield label{font-weight:500;font-size:16px}
@@ -262,8 +261,8 @@ ul.fb.good li::marker{color:var(--accent)} ul.fb.bad li::marker{color:var(--bad)
 .rcell:focus-within{outline:2px solid var(--blue);outline-offset:2px}
 .sug{font-style:normal;font-size:11px;font-weight:600;color:var(--accent-ink);display:flex;align-items:center;gap:5px}
 .sug::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
-</style>
-<style>
+
+
 .intro{max-width:76ch;margin:0;line-height:1.6}
 .nav button .nl{flex:1;min-width:0}
 .nbadge{display:inline-grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#e0a23a;color:#111113;font-size:11px;font-weight:700;flex:none}
@@ -332,8 +331,8 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 #dosTxt:not(.sr-only){width:100%;font:13px var(--font);padding:10px;border:1px solid var(--line);border-radius:12px}
 .pfield input[type=text]{width:100%}
 .field select{grid-row:1/span 2;grid-column:2;width:100%}
-</style>
-<style>
+
+
 .actcode{display:inline-block;background:var(--ink);color:var(--bg);border-radius:6px;padding:1px 7px;font-size:12px;font-weight:600;margin-right:4px}
 .gradebar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:12px}
 .lvls{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
@@ -380,14 +379,14 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .reportview dl{margin:0}.reportview dt{font-size:12px;color:var(--muted);margin-top:8px}.reportview dd{margin:2px 0 0}
 .reportview .rempty{color:var(--muted);font-style:italic}
 @media (max-width:620px){.reportview{padding:18px}.reportview .rhead{padding-right:0}.reportview .rlogo{position:static;margin-top:10px}}
-</style>
-<style>
+
+
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:12px 18px;border-radius:12px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:50;max-width:calc(100% - 32px)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 .steps{margin:0 0 12px;padding-left:20px;display:grid;gap:4px;font-size:14px}
 #mPrompt,#mResp{width:100%;font:13px var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink)}
-</style>
-<style>
+
+
 /* Codi de colors per a les taules */
 :root{
   --tn-a:#2d5bea; --tn-a-s:#eef3ff; --tn-a-m:#dce6ff;
@@ -469,8 +468,8 @@ table.fin.treso tr.sub td:first-child,table.fin.treso tr.tot td:first-child{back
 .reportview table.fin tr.rasum td{background:var(--tone-m)!important;font-weight:700}
 table.fin.segtbl td{vertical-align:middle}
 table.matrix thead input{min-width:130px}
-</style>
-<style>
+
+
 /* DAFO: el color queda dins de la capsa */
 .dafo .list-head{background:none!important}
 .dafo-f .list{background:#eef7f1}.dafo-d .list{background:#fdf5e7}.dafo-o .list{background:#eef3fb}.dafo-a .list{background:#fbefee}
@@ -510,8 +509,8 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .accdate{display:grid;gap:2px;font-size:12px;color:var(--muted)}
 .accdate input{font:13px var(--font);padding:6px 8px;border:1px solid var(--line);border-radius:10px;background:var(--soft);color:var(--ink)}
 .accdate input:disabled{opacity:.4}
-</style>
-<style>
+
+
 /* ===== Color per blocs del projecte ===== */
 [data-g]{--gc:#4f5bd5;--gs:#eef0fd;--gl:#8f97ff}
 [data-g="idea"]{--gc:#c46f1c;--gs:#fdf2e4;--gl:#f2a65a}
@@ -577,9 +576,9 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .gc-what{background:#e8effc;border-color:#cbdaf6}.gc-what label{color:#234f9e}
 .gc-f textarea{background:#fff!important}
 @media (max-width:760px){.golden{grid-template-columns:1fr}.gc-svg{position:static;margin:0 auto;width:220px;height:220px}}
-</style>
-<style>#view[data-g] .lc-proposta{background:var(--gs)!important}</style>
-<style>
+
+#view[data-g] .lc-proposta{background:var(--gs)!important}
+
 /* Prototip: pujada d'arxius */
 .upl{display:inline-flex;align-items:center;gap:10px;width:fit-content;padding:11px 18px;border:1.5px dashed color-mix(in srgb,var(--gc,#111) 45%,transparent);border-radius:14px;background:#fff;color:var(--gc,#111);font-weight:600;font-size:14px;cursor:pointer}
 .upl:hover{background:color-mix(in srgb,var(--gc,#111) 6%,#fff)}
@@ -603,8 +602,8 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .pext{flex:none;display:grid;place-items:center;width:44px;height:44px;border-radius:10px;background:var(--gs,#eee);color:var(--gc,#111);font-weight:700;font-size:11px}
 @media (max-width:600px){.pdoc{flex-wrap:wrap}.pgal{grid-template-columns:1fr}}
 .sumrow + .pgal,.pgal + .sumrow{margin-top:10px}
-</style>
-<style>
+
+
 /* Lean Canvas sostenible: dues caselles a sota de costos i ingressos */
 .leancanvas{grid-template-areas:"pr so pv av se" "pr me pv ca se" "co co co in in" "cs cs cs bs bs"}
 .lc-costamb{grid-area:cs}.lc-benamb{grid-area:bs}
@@ -615,16 +614,16 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .benamb{display:grid;grid-template-columns:1fr;gap:2px}
 @media (max-width:1000px){.leancanvas{grid-template-areas:"pr so" "pv pv" "se ca" "me av" "co in" "cs bs"}.benamb{grid-template-columns:1fr}}
 @media (max-width:560px){.leancanvas{grid-template-areas:"pr" "so" "pv" "se" "ca" "me" "av" "co" "in" "cs" "bs"}}
-</style>
-<style>.lc-sost .pfield > label{font-weight:700}</style>
-<style>
+
+.lc-sost .pfield > label{font-weight:700}
+
 .vlink{margin-top:14px;padding:16px;border-radius:14px;background:#fff;border:1.5px dashed color-mix(in srgb,var(--gc,#111) 40%,transparent)}
 .vlink input[type=url]{width:100%;font:15px/1.5 var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink)}
 .vlink input[type=url]:focus{background:#fff;border-color:var(--gc,#111);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--gc,#111) 14%,transparent)}
 .vlink .bad,.vlink .small.bad{color:var(--bad,#b3261e)}
 #vmsg a{color:var(--gc,#111);font-weight:600}
-</style>
-<style>
+
+
 .aipick{background:#f1edfe;border:1px solid #e1d9fb;border-radius:18px;padding:16px 18px}
 .aipick-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .aipick-h:only-child{margin-bottom:0}
@@ -637,13 +636,13 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .aiseg button.on::after{top:8px;right:12px;color:#6b4fd8;font-weight:700}
 .aiseg button:focus-visible{outline:2px solid #6b4fd8;outline-offset:2px}
 @media (max-width:800px){.aiseg{grid-template-columns:1fr 1fr}}
-</style>
-<style>
+
+
 .pdfbox{position:fixed;left:-30000px;top:0;width:720px;background:#fff;z-index:-1}
 .reportview.pdfrep{background:#fff!important;padding:0!important;margin:0!important;max-width:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 .pdfbox .ract{break-inside:auto}
-</style>
-<style>
+
+
 /* Versió connectada */
 #syncPill{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;font:600 13px var(--font);padding:7px 12px;border-radius:999px;background:#fff;border:1px solid var(--line);box-shadow:0 4px 14px rgba(0,0,0,.08);color:var(--muted);transition:opacity .3s}
 #syncPill.sp-idle,#syncPill:empty{opacity:0;pointer-events:none}
@@ -658,8 +657,8 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .rostrow{display:grid;grid-template-columns:minmax(0,1fr) minmax(140px,220px) auto;gap:8px;align-items:center;font-size:14px}
 .rostrow span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 @media (max-width:600px){.rostrow{grid-template-columns:1fr auto}.rostrow select{grid-column:1/-1;grid-row:2}}
-</style>
-<style>
+
+
 .sideuser{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;color:var(--side-fg,#bbb);opacity:.85}
 .sideuser span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .sideuser .linkbtn{color:inherit;font-size:12px;flex:none}
@@ -670,9 +669,9 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .linkbox{display:flex;gap:8px}
 .linkbox input{flex:1;min-width:0;font:14px var(--font);padding:9px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink)}
 .notice.expwarn{background:#fdf2e4;border-color:#f3dbbb;color:#7a4a12;margin-bottom:16px}
-</style>
-<style>body.cloud-msg .side-label,body.cloud-msg .role{display:none}</style>
-<style>
+
+body.cloud-msg .side-label,body.cloud-msg .role{display:none}
+
 .dashbtn{display:flex;align-items:center;gap:8px;margin:4px 0 14px;padding:10px 14px;border-radius:12px;background:#26884f;color:#fff;font:600 14px var(--font);text-decoration:none}
 .dashbtn:hover{background:#1f7a4a}
 .dashbtn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
@@ -685,9 +684,9 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .gbar span{display:block;height:100%;background:#26884f;transition:width .4s}
 .gact{margin-top:6px}
 .glist{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
-</style>
-<style>a.btn{text-decoration:none}</style>
-<style>
+
+a.btn{text-decoration:none}
+
 /* Imatges del prototip sense franges */
 .pimg{background:#fff}
 .pimg img{width:auto;max-width:100%;height:auto;max-height:520px;margin:0 auto;background:#fff;object-fit:contain}
@@ -739,16 +738,16 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .rrev textarea{width:100%;font:14px/1.5 var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:#fff;resize:vertical}
 .rrev textarea:focus{outline:none;border-color:#26884f;box-shadow:0 0 0 3px rgba(38,136,79,.12)}
 @media (max-width:900px){.rlayout{grid-template-columns:1fr}.rnav{display:none}.rsum{grid-template-columns:1fr 1fr}.rbody .sumrow{grid-template-columns:1fr;gap:2px}}
-</style>
-<style>
+
+
 /* Subapartats dins d'un apartat */
 .subsec + .subsec{margin-top:14px}
 .subh{display:flex;align-items:center;gap:8px;margin:14px 0 2px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gc,#26884f)}
 .subh::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--gc,#26884f) 25%,transparent)}
 .subsec:first-child .subh{margin-top:6px}
 .reportview .rsub{margin:12px 0 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-</style>
-<style>
+
+
 /* Estat de la feina: vermell en edició, blau enviat, verd correcte, taronja a millorar */
 :root{--ws-edit:#dc2626;--ws-edit-s:#fdecec;--ws-sent:#2563eb;--ws-sent-s:#e8effc;--ws-ok:#26884f;--ws-ok-s:#e5f4eb;--ws-warn:#d97706;--ws-warn-s:#fdf2e4;--ws-none:#cbd5e1}
 .rdot.edit,.wsdot.edit{background:var(--ws-edit)}.rdot.sent,.wsdot.sent{background:var(--ws-sent)}.rdot.correcte,.wsdot.correcte{background:var(--ws-ok)}.rdot.millorar,.wsdot.millorar{background:var(--ws-warn)}.rdot.none,.wsdot.none{background:#e5e7eb;border:1px solid var(--ws-none)}
@@ -773,8 +772,8 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .sendbar.ws-edit .btn{background:var(--ws-edit);border-color:var(--ws-edit)}
 @media (max-width:640px){.sendbar{flex-wrap:wrap}.sendbar .btn{width:100%;justify-content:center}}
 .accdates{display:flex;gap:10px;flex-wrap:wrap}
-</style>
-<style>.wsbadge.rvb{background:#fff;border:1.5px solid currentColor}.wsbadge.rvb.correcte{color:#1d6b3e}.wsbadge.rvb.millorar{color:#b45309}</style>
+
+.wsbadge.rvb{background:#fff;border:1.5px solid currentColor}.wsbadge.rvb.correcte{color:#1d6b3e}.wsbadge.rvb.millorar{color:#b45309}</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -1529,9 +1528,11 @@ function vMarca(v) {
     ${card('Vista prèvia', `<div class="brandprev" id="brandPrev"></div>`)}</div>`
     + card('Cultura empresarial', pad(ta('marca.missio', 'Missió', 'Per què existeix l\'empresa? Què fa i per a qui?', 2) + ta('marca.visio', 'Visió', 'Què vol arribar a ser l\'empresa d\'aquí a uns anys?', 2) + ta('marca.valors', 'Valors', 'Els principis que guien el comportament de l\'empresa.', 2))));
   const prev = () => { const m = T().data.marca, el = $('#brandPrev'); if (!el) return;
-    el.innerHTML = `<div class="bp" style="background:${esc(m.color2)};color:#fff">${m.logo ? `<img src="${m.logo}" alt="Logo">` : `<div class="bp-ph" style="background:${esc(m.color1)}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${esc(m.color1)}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
+    el.innerHTML = `<div class="bp" style="background:${esc(m.color2)};color:#fff">${logoSrc(m.logo) ? `<img src="${logoSrc(m.logo)}" alt="Logo">` : `<div class="bp-ph" style="background:${esc(m.color1)}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${esc(m.color1)}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
   liveFn = prev; prev();
-  $('#logoIn').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader(); r.onload = () => { const img = new Image(); img.onload = () => { const s = Math.min(1, 320 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); d.logo = c.toDataURL('image/png'); save(); render(); }; img.src = r.result; }; r.readAsDataURL(f); };
+  $('#logoIn').onchange = e => { const f = e.target.files[0]; if (!f) return; const bad = () => { e.target.value = ''; toast('No s\'ha pogut afegir el logo: ha de ser una imatge (PNG o JPG).'); };
+    if (!/^image\//.test(f.type)) return bad();
+    const r = new FileReader(); r.onerror = bad; r.onload = () => { const img = new Image(); img.onerror = bad; img.onload = () => { const s = Math.min(1, 320 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); d.logo = c.toDataURL('image/png'); save(); render(); }; img.src = r.result; }; r.readAsDataURL(f); };
   const dl = $('#logoDel'); if (dl) dl.onclick = () => { d.logo = ''; save(); render(); };
 }
 function vP7(v) {
@@ -1615,7 +1616,7 @@ function secHtml(t, k) {
   const ps = pairs(t, k).filter(([, x]) => x && String(x).trim());
   let extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
-  if (k === 'marca' && t.data.marca.logo) extra = `<img class="dlogo" src="${t.data.marca.logo}" alt="Logo de ${esc(t.data.marca.nom)}">`;
+  if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
   if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
   const row = ([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${esc(x).replace(/\n/g, '<br>')}</div></div>`;
   const gs = groupPairs(k, ps);
@@ -1866,7 +1867,7 @@ function reportBody(t, forStudents) {
       ${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
       ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${f.data}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(t.name)} · ${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
-      ${t.data.marca.logo ? `<img class="rlogo" src="${t.data.marca.logo}" alt="Logo">` : ''}</header>
+      ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
     <div class="rgrades"><div class="ra-ra4"><span>RA4</span><b class="${gcls(r4.nota)}">${f1(r4.nota)}</b></div><div class="ra-ra5"><span>RA5</span><b class="${gcls(r5.nota)}">${f1(r5.nota)}</b></div></div>
     ${roles ? `<h2>Equip</h2><table class="rtab fin zebra"><thead><tr><th>Persona</th><th>Rols</th><th>Responsabilitats</th></tr></thead><tbody>${roles}</tbody></table>` : ''}
     <h2>Resum de les qualificacions</h2><table class="rtab fin"><thead><tr><th>Codi</th><th>Activitat</th><th>RA</th><th class="n">Pes</th><th>Nivell</th><th class="n">Nota</th></tr></thead><tbody>${summary}</tbody></table>
@@ -2002,6 +2003,16 @@ const newId = (p = 't') => p + Date.now().toString(36) + Math.random().toString(
 function ensureIds() { (G.teams || []).forEach(t => { if (!t.id) t.id = newId(); }); }
 const J = x => JSON.stringify(x === undefined ? null : x);
 const P = s => { try { return JSON.parse(s); } catch (e) { return null; } };
+// Fusió de tres versions (base, local, remota): es queden els canvis de totes dues bandes; si toquen el mateix camp, guanya el local
+function merge3(b, l, r) {
+  if (J(l) === J(b)) return r;
+  if (J(r) === J(b) || J(r) === J(l)) return l;
+  const obj = x => x && typeof x === 'object' && !Array.isArray(x);
+  if (obj(b) && obj(l) && obj(r)) { const o = {}; new Set([...Object.keys(l), ...Object.keys(r)]).forEach(k => { const v = merge3(b[k], l[k], r[k]); if (v !== undefined) o[k] = v; }); return o; }
+  if (Array.isArray(b) && Array.isArray(l) && Array.isArray(r) && b.length === l.length && l.length === r.length) return l.map((x, i) => merge3(b[i], x, r[i]));
+  return l;
+}
+const logoSrc = l => /^data:image\//.test(String(l || '')) ? l : '';
 const DOMAINS = () => (window.FB_DOMAINS || []).map(d => d.toLowerCase());
 const domainOk = e => !DOMAINS().length || DOMAINS().some(d => e.endsWith('@' + d));
 function nextExpiry(now = new Date()) { let y = now.getFullYear(); let d = new Date(y, 6, 15, 12); if (now > new Date(d - 30 * 864e5)) d = new Date(y + 1, 6, 15, 12); return d.getTime(); }
@@ -2024,7 +2035,7 @@ function teamFiles(t) {
 function unpackSection(t, k, str) {
   const v = P(str); if (v == null) return;
   if (k === 'prototip') v.fitxers = (v.fitxers || []).map(f => Object.assign({}, f, { data: (FILES[t.id] || {})[f.id] || '' }));
-  if (k === 'marca') v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || '') : (v.logo || '');
+  if (k === 'marca') v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || v.logo) : (v.logo || '');
   t.data[k] = v;
 }
 const profPart = t => ({ review: J(t.review || {}), grades: J({ grades: t.grades || {}, evals: t.evals || { levels: {}, comment: '' } }), ai: J(t.ai || {}) });
@@ -2068,12 +2079,14 @@ async function stuPush() {
   const dv = J(t.delivered || null); if (dv !== s.delivered) { upd.delivered = t.delivered || null; sent.delivered = dv; }
   const fs = teamFiles(t), ids = Object.keys(fs);
   ids.filter(id => !s.files.includes(id)).forEach(id => ops.push({ op: 'set', path: gpath('teams', t.id, 'files', id), data: Object.assign({}, fs[id], { expiresAt: { __ts: GROUP.expiresAt } }) }));
-  s.files.filter(id => !ids.includes(id)).forEach(id => ops.push({ op: 'del', path: gpath('teams', t.id, 'files', id) }));
+  // Només s'esborren els arxius que ja no surten a la fitxa (no els d'un company que encara no s'han descarregat)
+  const refs = fileIdsOf({ data: { prototip: packSection(t, 'prototip'), marca: packSection(t, 'marca') } });
+  s.files.filter(id => !refs.includes(id)).forEach(id => ops.push({ op: 'del', path: gpath('teams', t.id, 'files', id) }));
   if (!Object.keys(upd).length && !ops.length) return;
   if (Object.keys(upd).length) { upd.updated = Date.now(); ops.push({ op: 'update', path: gpath('teams', t.id), data: upd }); }
   ids.forEach(id => { FILES[t.id] = FILES[t.id] || {}; FILES[t.id][id] = fs[id].data; });
   await FB.batch(ops);
-  Object.assign(s.data, sent.data); if (sent.members) s.members = sent.members; if (sent.delivered) s.delivered = sent.delivered; s.files = ids;
+  Object.assign(s.data, sent.data); if (sent.members) s.members = sent.members; if (sent.delivered) s.delivered = sent.delivered; s.files = refs;
 }
 async function profPush() {
   const ops = [], exp = GROUP.expiresAt, ids = new Set(G.teams.map(t => t.id)), after = [];
@@ -2110,7 +2123,9 @@ document.addEventListener('focusout', () => { if (pendRender) setTimeout(softRen
 async function needFiles(t, ids) {
   const miss = ids.filter(id => !(FILES[t.id] || {})[id]); if (!miss.length) return;
   await Promise.all(miss.map(async id => { const f = await FB.get(gpath('teams', t.id, 'files', id)).catch(() => null); if (f) { FILES[t.id] = FILES[t.id] || {}; FILES[t.id][id] = f.data; } }));
-  ['prototip', 'marca'].forEach(k => { const s = SNAP.teams[t.id]; if (s && packSection(t, k) === s.data[k]) unpackSection(t, k, s.data[k]); });
+  const F = FILES[t.id] || {}, m = t.data.marca;
+  (t.data.prototip.fitxers || []).forEach(f => { if (!f.data && F[f.id]) f.data = F[f.id]; });
+  if (m && String(m.logo || '').startsWith('file:') && F[m.logo.slice(5)]) m.logo = F[m.logo.slice(5)];
   softRender();
 }
 function applyTeamDoc(d) {
@@ -2118,8 +2133,12 @@ function applyTeamDoc(d) {
   if (!t) { if (!ME.isProf) return; t = teamFromDoc(d); G.teams.push(t); snapTeam(t); softRender(); fileIdsOf(d).length && needFiles(t, fileIdsOf(d)); return; }
   const s = SNAP.teams[t.id]; let ch = false;
   if (!s) return;
-  Object.keys(d.data || {}).forEach(k => { const sv = d.data[k]; if (sv !== s.data[k] && packSection(t, k) === s.data[k]) { unpackSection(t, k, sv); s.data[k] = sv; ch = true; } });
-  if (d.members !== s.members && J(t.members) === s.members) { t.members = P(d.members) || []; s.members = d.members; ch = true; }
+  Object.keys(d.data || {}).forEach(k => { const sv = d.data[k]; if (sv === s.data[k]) return;
+    const lv = packSection(t, k);
+    if (lv === s.data[k]) unpackSection(t, k, sv);
+    else { keepLocalFiles(t); unpackSection(t, k, J(merge3(P(s.data[k]), P(lv), P(sv)))); } // l'equip ha canviat el mateix apartat alhora: es fusionen els canvis
+    s.data[k] = sv; ch = true; });
+  if (d.members !== s.members) { t.members = J(t.members) === s.members ? (P(d.members) || []) : merge3(P(s.members), t.members, P(d.members)) || []; s.members = d.members; ch = true; }
   const dd = J(d.delivered || null); if (dd !== s.delivered && J(t.delivered || null) === s.delivered) { t.delivered = d.delivered || null; s.delivered = dd; ch = true; }
   if (d.name !== s.name && t.name === s.name) { t.name = d.name; s.name = d.name; ch = true; }
   t.updated = d.updated || t.updated;
@@ -2127,6 +2146,7 @@ function applyTeamDoc(d) {
   normTeam(t);
   if (ch) { softRender(); needFiles(t, s.files); }
 }
+function keepLocalFiles(t) { const fs = teamFiles(t); FILES[t.id] = FILES[t.id] || {}; Object.keys(fs).forEach(id => { FILES[t.id][id] = fs[id].data; }); }
 function fileIdsOf(d) { const pr = P((d.data || {}).prototip) || {}, mk = P((d.data || {}).marca) || {}; return (pr.fitxers || []).map(f => f.id).filter(Boolean).concat(String(mk.logo || '').startsWith('file:') ? [mk.logo.slice(5)] : []); }
 function logoId(s) { let h = 5381; for (let i = 0; i < s.length; i += 7) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return 'logo' + (h >>> 0).toString(36) + s.length.toString(36); }
 function applyProf(tid, part, doc) {
