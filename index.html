@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%232bc46f%22/%3E%3Cpath d=%22M5 17l4.5-5.5 3.5 2.5 6-7.5%22 fill=%22none%22 stroke=%22%23111%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
-<script src="config.js"></script><script src="fbapi.js"></script>
+<script src="config.js?v=2"></script><script src="fbapi.js"></script>
 <title>IPO Emprèn</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2465,7 +2465,7 @@ function joinView(g, m) {
 }
 
 /* ---------- Professorat autoritzat (només l'administrador el gestiona) ---------- */
-const ADMIN = () => String(window.FB_ADMIN || '').toLowerCase();
+const ADMIN = () => String(window.FB_ADMIN || 'solivares@biada.net').toLowerCase(); // per si el navegador té un config.js antic
 const isAdmin = () => !!USER && !!ADMIN() && USER.email === ADMIN();
 function bareView() {
   stopListen(); G = null; GID = null; ME = null; dashBtn();
