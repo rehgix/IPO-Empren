@@ -773,6 +773,7 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 @media (max-width:640px){.sendbar{flex-wrap:wrap}.sendbar .btn{width:100%;justify-content:center}}
 .accdates{display:flex;gap:10px;flex-wrap:wrap}
 </style>
+<style>.wsbadge.rvb{background:#fff;border:1.5px solid currentColor}.wsbadge.rvb.correcte{color:#1d6b3e}.wsbadge.rvb.millorar{color:#b45309}</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -1036,7 +1037,6 @@ function workState(t, s) {
   if (secState(t, s) === 'none') return 'none';
   const se = sentOf(t, s.k), rv = t.review[s.k] || {};
   if (se && se.h === secHash(t, s.k)) return rv.status && (!rv.at || rv.at >= se.at) ? rv.status : 'sent';
-  if (!se && rv.status) return rv.status;
   return 'edit';
 }
 const WS_LABEL = { none: 'Sense fer', edit: 'En edició', sent: 'Enviat', correcte: 'Correcte', millorar: 'A millorar' };
@@ -2581,7 +2581,7 @@ function vRevisio(v) {
     const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t), w = ws(s), se = sentOf(t, s.k);
     return `<section class="rcard st-${w}" id="rv-${s.k}" data-g="${s.g}">
       <header><div><span class="rblk">${esc(s.gl)}</span><h3>${esc(s.l)}</h3><span class="small muted">${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span></div>
-        <div class="rbadges"><span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
+        <div class="rbadges"><span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${rv.status && w !== rv.status ? `<span class="wsbadge rvb ${rv.status}">Revisió: ${rv.status === 'correcte' ? 'correcte' : 'a millorar'}</span>` : ''}${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
       <div class="rbody">${secHtml(t, s.k)}</div>
       <footer class="rrev">
         <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">✓ Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">✎ A millorar</button></div>
