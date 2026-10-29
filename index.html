@@ -739,6 +739,14 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .rrev textarea:focus{outline:none;border-color:#26884f;box-shadow:0 0 0 3px rgba(38,136,79,.12)}
 @media (max-width:900px){.rlayout{grid-template-columns:1fr}.rnav{display:none}.rsum{grid-template-columns:1fr 1fr}.rbody .sumrow{grid-template-columns:1fr;gap:2px}}
 </style>
+<style>
+/* Subapartats dins d'un apartat */
+.subsec + .subsec{margin-top:14px}
+.subh{display:flex;align-items:center;gap:8px;margin:14px 0 2px;font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--gc,#26884f)}
+.subh::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--gc,#26884f) 25%,transparent)}
+.subsec:first-child .subh{margin-top:6px}
+.reportview .rsub{margin:12px 0 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -1516,17 +1524,50 @@ function pairs(t, k) {
   }
   return [];
 }
+// Subapartats de cada apartat (per mostrar la feina ordenada a la revisió, al dossier i a l'informe)
+const SUBS = {
+  idea: [['La idea de negoci', ['Sector', 'Nom', 'Activitat', 'Element diferenciador', 'Expectativa de benefici']], ['Golden Circle', ['Why · Per a què', 'How · Com', 'What · Què']], ['Què us motiva?', ['Motivació*']]],
+  empatia: [['Buyer persona', ['Buyer persona']], ['Mapa d\'empatia', ['Què veu', 'Què escolta', 'Què pensa i sent', 'Què diu i fa']], ['Frustracions i motivacions', ['Frustracions', 'Motivacions']]],
+  entrevistes: [['Hipòtesi', ['Hipòtesi']], ['Entrevistes', ['Entrevista*']], ['Conclusió', ['Conclusió']]],
+  definir: [['Definir', ['Insights', 'Repte']], ['Idear', ['Idea *']], ['Idea seleccionada', ['Idea seleccionada', 'Justificació']]],
+  prototip: [['Prototip', ['Tipus', 'Descripció', 'Arxius adjunts']], ['Prova amb usuaris', ['Opinions dels usuaris', 'Ajustos', 'Encaix problema-solució']]],
+  micro: [['La competència', ['Competència actual', 'Competència futura', 'Productes substitutius']], ['Clients, proveïdors i intermediaris', ['Clients', 'Proveïdors', 'Intermediaris']]],
+  dafo: [['Anàlisi interna', ['Fortaleses', 'Debilitats']], ['Anàlisi externa', ['Oportunitats', 'Amenaces']]],
+  sost: [['Objectius de Desenvolupament Sostenible', ['ODS', 'Integració al model']], ['Canvas sostenible', ['Costos mediambientals i socials', 'Impacte social', 'Impacte ambiental', 'Cicle de vida', 'Impacte circular']], ['Tecnologia i canvi del model productiu', ['Tecnologia']]],
+  ebc: [['Economia social i solidària', ['Principis d\'economia social']], ['Matriu del bé comú', ['Drets humans*', 'Justícia social*', 'Sostenibilitat ecològica*', 'Democràcia i transparència*', 'Solidaritat i cooperació*']], ['Responsabilitat social corporativa', ['RSC *']], ['Lideratge ètic', ['Lideratge ètic']]],
+  juridica: [['La vostra elecció', ['Forma jurídica', 'Socis', 'Capital inicial']], ['Arguments tècnics', ['Constitució i gestió', 'Socis i capital', 'Responsabilitat']], ['Guió del vídeo', ['Guió del vídeo']]],
+  fiscal: [['Obligacions fiscals', ['Obligacions investigades']], ['Tràmits de constitució i posada en marxa', ['Tràmits investigats']], ['Calendari i observacions', ['Calendari i observacions']]],
+  inversio: [['Inversions inicials', [l => !/^Fons de maniobra$|^Necessitat total/.test(l) && !PE.FIN_CATS.some(c => l.startsWith(c[1]))]], ['Finançament', [l => PE.FIN_CATS.some(c => l.startsWith(c[1]))]], ['Resum', ['Fons de maniobra', 'Necessitat total / finançament']]],
+  marca: [['Identitat', ['Nom', 'Eslògan']], ['Missió, visió i valors', ['Missió', 'Visió', 'Valors']]],
+  p7: [['Les 4 P clàssiques', ['Producte (Product)', 'Preu (Price)', 'Distribució (Place)', 'Promoció (Promotion)']], ['Les 3 P dels serveis', ['Persones (People)', 'Procés (Process)', 'Entorn físic (Physical environment)']]],
+  pitch: [['Guió del pitch', ['Ganxo', 'Problema', 'Solució', 'Mercat', 'Model de negoci', 'Impacte', 'Equip', 'Crida a l\'acció']], ['Format de la presentació', ['Format', 'Enllaç del vídeo']]]
+};
+SUBS.pestel = () => PE.PESTEL.map(([, l]) => [l, [l + ' · *'], l + ' · ']);
+function groupPairs(k, ps) {
+  let subs = SUBS[k]; if (typeof subs === 'function') subs = subs();
+  if (!subs) return [{ title: '', rows: ps }];
+  const out = subs.map(([title, , strip]) => ({ title, rows: [], strip })), rest = [];
+  const hit = (m, l, exact) => typeof m === 'function' ? !exact && m(l) : exact ? m === l : m.endsWith('*') && l.startsWith(m.slice(0, -1));
+  ps.forEach(r => { let i = subs.findIndex(sb => sb[1].some(m => hit(m, r[0], true))); if (i < 0) i = subs.findIndex(sb => sb[1].some(m => hit(m, r[0], false))); (i < 0 ? rest : out[i].rows).push(r); });
+  out.forEach(g => { if (g.strip) g.rows = g.rows.map(([l, x]) => [l.replace(g.strip, '').replace(/^./, c => c.toUpperCase()), x]); });
+  const res = out.filter(g => g.rows.length);
+  if (rest.length) res.push({ title: res.length ? 'Altres' : '', rows: rest });
+  return res;
+}
 function secHtml(t, k) {
   const ps = pairs(t, k).filter(([, x]) => x && String(x).trim());
   let extra = '';
-  if (k === 'definir' && t.data.definir.idees.length) extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
   if (k === 'marca' && t.data.marca.logo) extra = `<img class="dlogo" src="${t.data.marca.logo}" alt="Logo de ${esc(t.data.marca.nom)}">`;
-  return extra + (ps.length ? ps.map(([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${esc(x).replace(/\n/g, '<br>')}</div></div>`).join('') : '<p class="muted">Sense contingut.</p>');
+  if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
+  const row = ([l, x]) => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div>${esc(x).replace(/\n/g, '<br>')}</div></div>`;
+  const gs = groupPairs(k, ps);
+  if (gs.length === 1 && !gs[0].title) return extra + gs[0].rows.map(row).join('');
+  return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.rows.map(row).join('')}</div>`).join('');
 }
 function dossierText(t) {
   let out = `PROJECTE EMPRENEDOR · ${projName(t)}\n${t.name}${t.members.length ? ' · ' + t.members.map(m => m.name).filter(Boolean).join(', ') : ''}\n`;
-  ALL.filter(s => s.p).forEach(s => { const ps = pairs(t, s.k).filter(([, x]) => x && String(x).trim()); if (!ps.length) return; out += `\n## ${s.l}\n` + ps.map(([l, x]) => `${l}: ${x}`).join('\n') + '\n'; });
+  ALL.filter(s => s.p).forEach(s => { const ps = pairs(t, s.k).filter(([, x]) => x && String(x).trim()); if (!ps.length) return; out += `\n## ${s.l}\n` + groupPairs(s.k, ps).map(g => (g.title ? `### ${g.title}\n` : '') + g.rows.map(([l, x]) => `${l}: ${x}`).join('\n')).join('\n') + '\n'; });
   return out;
 }
 function vDossier(v) {
@@ -1766,7 +1807,7 @@ function reportBody(t, forStudents) {
   const acts = G.acts.map(a => { const g = t.grades[a.c] || {}, ev = actEvidence(t, a);
     return `<section class="ract ra-${a.ra.toLowerCase()}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
       ${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
-      ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${f.data}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? `<dl>${gr.pairs.filter(([, x]) => x && String(x).trim()).map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>` : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
+      ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${f.data}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(t.name)} · ${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
       ${t.data.marca.logo ? `<img class="rlogo" src="${t.data.marca.logo}" alt="Logo">` : ''}</header>
     <div class="rgrades"><div class="ra-ra4"><span>RA4</span><b class="${gcls(r4.nota)}">${f1(r4.nota)}</b></div><div class="ra-ra5"><span>RA5</span><b class="${gcls(r5.nota)}">${f1(r5.nota)}</b></div></div>
@@ -1780,6 +1821,7 @@ const REPORT_CSS = `:root{--ink:#111113;--muted:#6b6b72;--line:#e6e6ea;--soft:#f
 .rep{max-width:860px;margin:0 auto;padding:32px 24px}.rep + .rep{border-top:3px solid var(--ink);page-break-before:always}
 .rhead{position:relative;padding-right:110px}.rk{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}.rhead h1{font-size:30px;margin:4px 0;letter-spacing:-.02em}.rmeta{color:var(--muted);font-size:13px}
 .rimgs{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 10px}.rimgs img{max-width:calc(50% - 5px);max-height:260px;border-radius:8px;border:1px solid var(--line);object-fit:contain;background:#fff}
+.rsub{margin:12px 0 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:#6b6b72}
 .rlogo{position:absolute;right:0;top:0;width:90px;height:90px;object-fit:contain}
 .rgrades{display:flex;gap:12px;margin:20px 0}.rgrades div{flex:1;border:1px solid var(--line);border-radius:12px;padding:12px 16px}.rgrades span{display:block;font-size:12px;color:var(--muted)}.rgrades b{font-size:26px}
 h2{font-size:18px;margin:28px 0 10px}h4{font-size:13px;margin:14px 0 4px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
