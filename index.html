@@ -2099,13 +2099,14 @@ async function homeView(msg) {
   const v = $('#view');
   v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>';
   let gs = [];
-  try { gs = await FB.list('groups', ['profs', 'array-contains', USER.email]); } catch (e) { gs = []; }
+  let listErr = ''; try { gs = await FB.list('groups', ['profs', 'array-contains', USER.email]); } catch (e) { gs = []; listErr = (e && (e.code || e.message)) || 'error'; console.warn(e); }
   const now = Date.now(), dead = gs.filter(g => g.expiresAt && g.expiresAt < now);
   if (dead.length) { await Promise.all(dead.map(g => deleteGroupDeep(g.id).catch(() => {}))); gs = gs.filter(g => !dead.includes(g)); }
   gs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const sectors = Object.entries(PE.SECTORS);
   v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Professorat', 'Els meus grups')}
     <p class="intro muted">Si ets alumne, obre l'enllaç del grup que t'ha donat el professor.</p>
+    ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length ? `<div class="glist">${gs.map(g => `<a class="gcard" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b><span class="small muted">${(g.teamList || []).length} equips · les dades s'esborren el ${fmtDay(g.expiresAt)}</span></a>`).join('')}</div>` : '<p class="muted">Encara no tens cap grup.</p>'}
     ${card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${sectors.map(([k, s]) => `<option value="${k}">${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
@@ -2122,7 +2123,7 @@ async function homeView(msg) {
       G = g; ensureIds(); ensureEval();
       const gid = await createGroupDoc();
       location.hash = 'g=' + gid;
-    } catch (e) { console.warn(e); $('#ngMsg').innerHTML = '<div class="notice">No s\'ha pogut crear el grup. Torna-ho a provar.</div>'; btns.forEach(b => { b.disabled = false; }); }
+    } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
   $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true);
 }
