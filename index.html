@@ -721,6 +721,19 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .dashbtn .dcount{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:99px;background:#26884f;color:#fff;font-size:12px;text-align:center}
 .dashbtn .dcount:empty{display:none}
 .dashbtn.alt:hover .dcount,.dashbtn.alt.on .dcount{background:#fff;color:#1f7a4a}
+.rlog{grid-column:1/-1;margin:-2px 0 8px}
+.rlog details{margin-top:4px}
+.rlog summary{cursor:pointer;color:var(--accent-ink);width:max-content;max-width:100%}
+.rlog table{margin-top:6px;border-collapse:collapse;font-size:13px}
+.rlog th,.rlog td{text-align:left;padding:3px 14px 3px 0;border-bottom:1px solid var(--line)}
+.rlog th{font-weight:600;color:var(--ink)}
+.qrbig{position:fixed;inset:0;z-index:100;background:rgba(10,10,12,.72);display:grid;place-items:center;padding:16px}
+.qrbox{background:#fff;color:#111113;border-radius:24px;padding:24px;display:grid;gap:12px;justify-items:center;text-align:center;width:min(560px,100%);max-height:100%;overflow:auto}
+.qrbox b{font-size:20px}
+.qrimg{width:min(420px,72vw,62vh);aspect-ratio:1;display:grid;place-items:center}
+.qrimg svg{width:100%;height:100%}
+.qrbox p{margin:0;color:#52525b}
+.qrbox code{font-size:15px;word-break:break-all;background:#f4f4f5;padding:6px 10px;border-radius:8px}
 .cmsg{white-space:pre-wrap;font:14px/1.5 var(--font);padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--soft);margin:10px 0}
 .gcard{gap:8px}
 .gcard .gtitle{color:var(--ink);text-decoration:none}
@@ -2772,7 +2785,20 @@ async function route() {
     if (iv && (g.teamIds || []).includes(iv.team)) { try { await FB.set(gpath('members', USER.uid), { email: USER.email, name: iv.name || USER.name || '', team: iv.team, joined: Date.now(), expiresAt: { __ts: g.expiresAt } }); tid = iv.team; FB.del(gpath('invites', em)).catch(() => {}); } catch (e) {} }
   }
   if (!tid) return joinView(g, m);
+  logIn(m);
   return openStudent(tid);
+}
+// Historial de connexions de l'alumne: data i dispositiu (les 30 últimes, una per sessió del navegador)
+function devName() {
+  const u = navigator.userAgent, ipad = /iPad/.test(u) || (/Macintosh/.test(u) && navigator.maxTouchPoints > 1);
+  const os = /CrOS/.test(u) ? 'Chromebook' : /Android/.test(u) ? (/Mobile/.test(u) ? 'Mòbil Android' : 'Tauleta Android') : /iPhone|iPod/.test(u) ? 'iPhone' : ipad ? 'iPad' : /Windows/.test(u) ? 'Ordinador Windows' : /Mac OS/.test(u) ? 'Mac' : /Linux/.test(u) ? 'Ordinador Linux' : 'Altre dispositiu';
+  const br = /Edg\//.test(u) ? 'Edge' : /OPR\//.test(u) ? 'Opera' : /Firefox|FxiOS/.test(u) ? 'Firefox' : /Chrome|CriOS/.test(u) ? 'Chrome' : /Safari/.test(u) ? 'Safari' : '';
+  return os + (br ? ' · ' + br : '');
+}
+function logIn(m) {
+  const k = 'empren-log-' + GID + '-' + USER.uid; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) {}
+  const now = Date.now(), log = ((m && m.log) || []).concat({ at: now, dev: devName() }).slice(-30);
+  FB.update(gpath('members', USER.uid), { log, last: now }).catch(() => {});
 }
 async function openProf() {
   document.body.classList.remove('cloud-msg', 'is-student'); document.body.classList.add('is-prof');
@@ -3020,6 +3046,17 @@ function cloudConfigHtml() {
     + card('Esborrar el grup', pad(`<p class="small muted">Esborra ara mateix el grup i tota la feina dels equips. No es pot desfer.</p><div id="gDelBox"></div><button type="button" class="btn ghost small" id="gDel">Esborrar aquest grup</button>`));
 }
 /* ---------- Gestiona l'alumnat: enllaç per al Classroom, alumnes que han entrat i invitacions ---------- */
+// Codi QR a pantalla completa per projectar-lo (la llibreria es carrega només quan cal)
+function loadQR() { return window.qrcode ? Promise.resolve() : new Promise((ok, ko) => { const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js'; s.onload = ok; s.onerror = ko; document.head.appendChild(s); }); }
+function showQR(link) {
+  const o = document.createElement('div'); o.className = 'qrbig'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', 'Codi QR de l\'enllaç del grup');
+  o.innerHTML = `<div class="qrbox"><b>${esc(G.name)}</b><div class="qrimg"><span class="spin"></span></div><p>Escaneja el codi amb la càmera del mòbil o entra a:</p><code>${esc(link)}</code><button type="button" class="btn" data-qrclose>Tancar</button></div>`;
+  const close = () => { o.remove(); document.removeEventListener('keydown', esc1); }, esc1 = e => { if (e.key === 'Escape') close(); };
+  o.onclick = e => { if (e.target === o || e.target.closest('[data-qrclose]')) close(); }; document.addEventListener('keydown', esc1);
+  document.body.appendChild(o);
+  loadQR().then(() => { const q = qrcode(0, 'M'); q.addData(link); q.make(); o.querySelector('.qrimg').innerHTML = q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); })
+    .catch(() => { o.querySelector('.qrimg').innerHTML = '<p class="small">No s\'ha pogut crear el codi QR. Comprova la connexió a internet.</p>'; });
+}
 const classMsg = link => `Hola! Per al projecte emprenedor farem servir l'eina Emprèn.\n\n1. Obre aquest enllaç: ${link}\n2. Entra amb el teu compte de l'institut${DOMAINS().length ? ' (@' + DOMAINS()[0] + ')' : ''}.\n3. Tria el teu equip. Només ho has de fer el primer dia.\n\nSi t'equivoques d'equip, avisa'm i et canvio.`;
 function vAlumnes(v) {
   const link = location.origin + location.pathname + (CLOUD ? '#g=' + GID : '');
@@ -3041,7 +3078,7 @@ function vAlumnes(v) {
       <div class="linkbox"><input type="text" id="gLink" readonly value="${esc(link)}" aria-label="Enllaç del grup"><button type="button" class="btn small" id="gLinkCp">Copiar l'enllaç</button></div>
       <p class="small muted" style="margin-top:14px">O copia aquest missatge ja preparat, amb l'enllaç i les instruccions:</p>
       <div class="cmsg" id="cMsg">${esc(classMsg(link))}</div>
-      <div class="row"><button type="button" class="btn ghost small" id="cMsgCp">Copiar el missatge</button></div>
+      <div class="row"><button type="button" class="btn ghost small" id="cMsgCp">Copiar el missatge</button><button type="button" class="btn ghost small" id="qrBtn" title="Mostra un codi QR gran per projectar-lo a classe">${ico('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v1M14 20h1M17 20h4v-3"/>')}Mostrar el codi QR</button></div>
       ${CLOUD ? `<p class="small muted" style="margin-top:10px">Les dades d'aquest grup s'esborraran automàticament el <b>${fmtDay(GROUP.expiresAt)}</b>.</p>` : ''}`))}
     ${card('Alumnes del grup', pad(`${CLOUD ? '<p class="small muted">Cada alumne tria el seu equip el primer cop que entra, o bé l\'afegeixes tu a sota i entra directament al seu equip. Aquí el pots canviar d\'equip o eliminar-lo del grup.</p>' : ''}
       ${G.teams.map(t => `<div class="rost"><b>${esc(t.name)} <span class="small muted" style="font-weight:400">· ${byTeam(t.id).length}</span></b>${byTeam(t.id).length ? byTeam(t.id).map(CLOUD ? rostRow : locRow).join('') : '<p class="small muted">Encara no hi ha ningú.</p>'}</div>`).join('')}
@@ -3056,10 +3093,18 @@ function vAlumnes(v) {
   bindCloudConfig(v);
   const cp = (b, txt, ok) => b.onclick = async () => { try { await navigator.clipboard.writeText(txt); b.textContent = ok; } catch (e) { prompt('Copia aquest text:', txt); } };
   cp($('#gLinkCp'), link, '✓ Enllaç copiat'); cp($('#cMsgCp'), classMsg(link), '✓ Missatge copiat');
+  $('#qrBtn').onclick = () => showQR(link);
   if ($('#mailsCp')) cp($('#mailsCp'), all.map(x => x.email).filter(Boolean).join(', '), '✓ Correus copiats');
 }
 function rostRow(x) { const k = x.inv ? 'invites' : 'members';
-  return `<div class="rostrow"><span class="rostwho"><span><b>${esc(x.name || x.email)}</b>${x.inv ? ' <span class="pill" title="Encara no ha entrat a l\'eina">Pendent</span>' : ''}</span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span><select class="field-sel" data-move="${esc(x.id)}" data-k="${k}" aria-label="Equip de ${esc(x.email)}">${G.teams.map(t => `<option value="${esc(t.id)}" ${t.id === x.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="rostbtn">${x.inv ? `<button type="button" class="btn ghost small" data-invmail="${esc(x.id)}" title="Torna a obrir el Gmail amb la invitació">Invitació</button>` : ''}<button type="button" class="btn ghost small" data-unassign="${esc(x.id)}" data-k="${k}" data-mail="${esc(String(x.email || '').toLowerCase())}">Eliminar</button></span></div>`; }
+  return `<div class="rostrow"><span class="rostwho"><span><b>${esc(x.name || x.email)}</b>${x.inv ? ' <span class="pill" title="Encara no ha entrat a l\'eina">Pendent</span>' : ''}</span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span><select class="field-sel" data-move="${esc(x.id)}" data-k="${k}" aria-label="Equip de ${esc(x.email)}">${G.teams.map(t => `<option value="${esc(t.id)}" ${t.id === x.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="rostbtn">${x.inv ? `<button type="button" class="btn ghost small" data-invmail="${esc(x.id)}" title="Torna a obrir el Gmail amb la invitació">Invitació</button>` : ''}<button type="button" class="btn ghost small" data-unassign="${esc(x.id)}" data-k="${k}" data-mail="${esc(String(x.email || '').toLowerCase())}">Eliminar</button></span>${x.inv ? '' : rostLog(x)}</div>`; }
+// Data d'entrada i historial de connexions (data, hora i dispositiu)
+const fmtWhen = ms => new Date(ms).toLocaleString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+function rostLog(x) {
+  const log = (x.log || []).slice().reverse(), last = x.last || (log[0] && log[0].at);
+  return `<div class="rlog small muted">${x.joined ? `Va entrar per primer cop el ${fmtDay(x.joined)}` : 'Data d\'entrada desconeguda'}${last ? ` · Última connexió: ${fmtWhen(last)}` : ''}
+    ${log.length ? `<details><summary>Historial de connexions (${log.length})</summary><table><thead><tr><th>Data i hora</th><th>Dispositiu</th></tr></thead><tbody>${log.map(l => `<tr><td>${fmtWhen(l.at)}</td><td>${esc(l.dev || '—')}</td></tr>`).join('')}</tbody></table></details>` : ''}</div>`;
+}
 // Correu d'invitació: obre el Gmail del professor amb el text ja escrit
 function invMailUrl(x) {
   const t = G.teams.find(t => t.id === x.team), link = location.origin + location.pathname + '#g=' + GID;

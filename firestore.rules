@@ -77,6 +77,11 @@ service cloud.firestore {
           && request.resource.data.email == me()
           && request.resource.data.team in grp(gid).teamIds;
         allow update, delete: if isProf(gid);
+        // L'alumne només pot afegir les seves connexions (data i dispositiu, com a molt 30)
+        allow update: if signed() && request.auth.uid == uid
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log', 'last'])
+          && request.resource.data.log is list && request.resource.data.log.size() <= 30
+          && request.resource.data.last is number;
       }
 
       // INVITACIONS: alumnes que el professor afegeix a mà (el document es diu com el correu)
