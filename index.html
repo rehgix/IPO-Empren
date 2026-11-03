@@ -390,6 +390,9 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .rubai li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:3px 0}
 .rubass{display:grid;gap:8px}
 .rubassr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px;align-items:center;font-size:14px}
+#rubImpBox,.rubed{min-width:0}
+.rubprev{border-top:1px solid var(--line);padding-top:12px;margin-top:12px}
+.rubtab{min-width:760px;font-size:13px}.rubtab td{vertical-align:top}
 .rubed{border:1px solid var(--line);border-radius:14px;margin:10px 0;background:var(--bg)}
 .rubed summary{display:flex;flex-wrap:wrap;gap:4px 12px;align-items:baseline;padding:14px 16px;cursor:pointer}
 .rubed-b{padding:0 16px 16px}
@@ -2557,7 +2560,79 @@ function vNotes(v) {
   $('#pdfMine').onclick = e => savePdf([t], e.currentTarget);
 }
 /* ---------- Rúbriques: triar-les per activitat, editar-les i crear-ne de noves ---------- */
-let rubOpen = null;
+let rubOpen = null, rubImp = null;
+// Importar rúbriques des d'un full de càlcul (Excel, Google Sheets, LibreOffice o CSV)
+let xlsxP = null;
+const loadXLSX = () => xlsxP || (xlsxP = new Promise((ok, ko) => { if (window.XLSX) return ok(window.XLSX); const s = document.createElement('script'); s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'; s.onload = () => window.XLSX ? ok(window.XLSX) : ko(new Error('load')); s.onerror = () => { xlsxP = null; ko(new Error('load')); }; document.head.appendChild(s); }));
+// Text amb separadors (el que es copia d'un full de càlcul, o un CSV), amb cel·les entre cometes
+function parseDelim(s) {
+  s = String(s || '').replace(/^\uFEFF/, ''); const ls = s.split(/\r?\n/).slice(0, 15), cnt = ch => Math.max(0, ...ls.map(l => l.split(ch).length - 1));
+  const d = cnt('\t') ? '\t' : cnt(';') >= cnt(',') && cnt(';') ? ';' : ',', rows = [[]]; let c = '', q = false;
+  for (let i = 0; i < s.length; i++) { const ch = s[i];
+    if (q) { if (ch === '"') { if (s[i + 1] === '"') { c += '"'; i++; } else q = false; } else c += ch; }
+    else if (ch === '"' && c === '') q = true;
+    else if (ch === d) { rows[rows.length - 1].push(c); c = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && s[i + 1] === '\n') i++; rows[rows.length - 1].push(c); c = ''; rows.push([]); }
+    else c += ch; }
+  rows[rows.length - 1].push(c); return rows;
+}
+// Nivell que indica la capçalera d'una columna (null si no n'és cap)
+function headLvl(h) {
+  h = String(h || '').trim().toLowerCase(); if (!h) return null;
+  if (/sense fer|no fet|^0\b|no presentat/.test(h)) return 0;
+  if (/novell|insuf|no assolit|inicial|^1\b/.test(h)) return 1;
+  if (/expert|excel|exemplar|molt b[eé]|^4\b/.test(h)) return 4;
+  if (/avan[cç]|notable|^3\b/.test(h)) return 3;
+  if (/aprenent|sufici|assolit|^b[eé]\b|^2\b/.test(h)) return 2;
+  return null;
+}
+const cut = (x, n) => String(x ?? '').replace(/\s+$/, '').trim().slice(0, n);
+// Files del full → rúbrica { n, crit } (o null si no s'hi troba cap criteri)
+function rowsToRub(rows, name) {
+  rows = rows.map(r => (r || []).map(x => cut(x, 1500)));
+  const hi = rows.findIndex(r => r.filter(x => headLvl(x) !== null).length >= 2);
+  let ci = 0, wi = -1, lc = {}, body;
+  if (hi >= 0) {
+    const h = rows[hi]; h.forEach((x, i) => { const l = headLvl(x); if (l !== null && lc[l] === undefined) lc[l] = i; else if (/pes|peso|weight|pondera|%/i.test(x)) wi = i; });
+    const k = h.findIndex(x => /criteri|criterio|criterion|aspecte|indicador|[ií]tem|apartat/i.test(x)); ci = k >= 0 ? k : h.findIndex((x, i) => i !== wi && !Object.values(lc).includes(i));
+    const t = rows.slice(0, hi).find(r => r.filter(Boolean).length === 1); if (t) name = t.find(Boolean).replace(/^r[uú]brica\s*[:·-]\s*/i, '') || name;
+    body = rows.slice(hi + 1);
+  } else { // sense capçalera: criteri, pes (opcional) i nivells de més a menys
+    body = rows.filter(r => r.filter(Boolean).length >= 3);
+    if (body.length && body.every(r => !r[1] || !isNaN(Number(String(r[1]).replace('%', '').replace(',', '.'))))) wi = 1;
+    [4, 3, 2, 1, 0].forEach((l, j) => { lc[l] = (wi === 1 ? 2 : 1) + j; });
+  }
+  if (ci < 0) ci = 0;
+  const crit = body.filter(r => r[ci] && Object.values(lc).some(i => r[i])).slice(0, 20).map(r => {
+    const w = wi >= 0 ? Number(String(r[wi] || '').replace('%', '').replace(',', '.')) : NaN;
+    return { k: newId('c'), t: cut(r[ci], 200), w: isNaN(w) || w < 0 || r[wi] === '' ? 1 : w, d: [4, 3, 2, 1, 0].map(l => lc[l] !== undefined && r[lc[l]] ? r[lc[l]] : l === 0 ? R0 : '') };
+  });
+  return crit.length ? { n: cut(name, 120) || 'Rúbrica importada', crit } : null;
+}
+async function readRubFile(f) {
+  const base = f.name.replace(/\.[^.]+$/, '');
+  if (/\.(csv|tsv|txt)$/i.test(f.name)) { const r = rowsToRub(parseDelim(await f.text()), base); return r ? [r] : []; }
+  const X = await loadXLSX(), wb = X.read(await f.arrayBuffer(), { type: 'array' }), one = wb.SheetNames.length === 1;
+  return wb.SheetNames.map(sn => rowsToRub(X.utils.sheet_to_json(wb.Sheets[sn], { header: 1, raw: false, defval: '' }), one || /^(sheet|full|hoja|feuille)\s*\d*$/i.test(sn) ? base : sn)).filter(Boolean);
+}
+// Rúbrica → full de càlcul (plantilla o còpia per editar-la fora)
+async function rubToXlsx(r, file) {
+  const X = await loadXLSX(), aoa = [['Rúbrica: ' + r.n], [], ['Criteri', 'Pes', 'Expert (4)', 'Avançat (3)', 'Aprenent (2)', 'Novell (1)', 'Sense fer (0)']].concat(r.crit.map(c => [c.t, Number(c.w) || 0].concat([0, 1, 2, 3, 4].map(i => (c.d || [])[i] || ''))));
+  const ws = X.utils.aoa_to_sheet(aoa); ws['!cols'] = [{ wch: 28 }, { wch: 6 }].concat([0, 1, 2, 3, 4].map(() => ({ wch: 40 })));
+  const wb = X.utils.book_new(); X.utils.book_append_sheet(wb, ws, 'Rúbrica'); X.writeFile(wb, file);
+}
+function rubImpHtml() {
+  if (!rubImp) return '';
+  const L = rubImp.list || [];
+  return card('Importar una rúbrica des d\'un full de càlcul', pad(`<p class="small muted" style="margin-top:0">Fes una fila per a cada criteri, amb aquestes columnes: <b>Criteri · Pes · Expert (4) · Avançat (3) · Aprenent (2) · Novell (1) · Sense fer (0)</b>. El pes i «Sense fer» són opcionals. A la primera fila hi pots posar el nom de la rúbrica.</p>
+    <div class="row"><button type="button" class="btn ghost small" id="rubTpl">${ico('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>')}Baixar una plantilla en Excel</button></div>
+    <div class="pfield" style="margin-top:14px"><label for="rubFile">Fitxer d'Excel, Google Sheets o CSV</label><div class="help">Des de Google Sheets: <b>Fitxer › Baixa › Microsoft Excel (.xlsx)</b>. Si el fitxer té diverses pestanyes, cada pestanya es converteix en una rúbrica.</div><input type="file" id="rubFile" accept=".xlsx,.xls,.ods,.csv,.tsv,.txt"></div>
+    <div class="pfield"><label for="rubPaste">O bé copia les cel·les del full i enganxa-les aquí</label><textarea id="rubPaste" rows="4" placeholder="Selecciona la taula al full de càlcul, copia-la (Ctrl+C) i enganxa-la aquí (Ctrl+V)"></textarea></div>
+    <div id="rubImpMsg">${rubImp.msg ? `<div class="notice">${esc(rubImp.msg)}</div>` : ''}</div>
+    ${L.map((r, i) => `<div class="rubprev"><div class="pfield"><label for="rip${i}">Nom de la rúbrica ${L.length > 1 ? i + 1 : ''}</label><input type="text" id="rip${i}" data-ripn="${i}" value="${esc(r.n)}"></div>
+      <div class="tablebox"><table class="fin zebra rubtab"><thead><tr><th>Criteri</th><th class="n">Pes</th>${[4, 3, 2, 1, 0].map(n => `<th>${LVL_NAMES[n]} (${n})</th>`).join('')}</tr></thead><tbody>${r.crit.map(c => `<tr><td><b>${esc(c.t)}</b></td><td class="n">${f1(c.w)}</td>${c.d.map(x => `<td>${x ? esc(x) : '<span class="muted">—</span>'}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`).join('')}
+    <div class="row" style="margin-top:12px">${L.length ? `<button type="button" class="btn small" id="rubImpOk">Afegir ${L.length === 1 ? 'la rúbrica' : 'les ' + L.length + ' rúbriques'}</button>` : ''}<button type="button" class="btn ghost small" id="rubImpX">Tancar</button></div>`));
+}
 function vRubriques(v) {
   ensureEval();
   const used = id => G.acts.filter(a => a.rub === id);
@@ -2565,13 +2640,14 @@ function vRubriques(v) {
     <p class="muted intro">Cada activitat es corregeix amb la rúbrica que hi triïs. A «Qualificació per activitats» marques el nivell de cada criteri i la nota es calcula sola. La IA també fa servir la rúbrica per proposar el nivell de cada criteri i un comentari.</p>
     ${card('Rúbrica de cada activitat', pad(`<div class="rubass">${G.acts.map((a, i) => `<div class="rubassr"><span><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</span>${rubSel(a, `data-rubact="${i}"`)}</div>`).join('')}</div>
       <div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="rubRec">Posar la rúbrica recomanada on encara no n'hi ha</button></div>`))}
-    <div class="row"><button type="button" class="btn" id="rubNew">+ Nova rúbrica</button><button type="button" class="btn ghost" id="rubReset">Restablir les rúbriques de la programació</button></div>
+    <div class="row"><button type="button" class="btn" id="rubNew">+ Nova rúbrica</button><button type="button" class="btn ghost" id="rubImp">${ico('<path d="M4 4h16v16H4zM4 10h16M10 4v16"/>')}Importar des d'un full de càlcul</button><button type="button" class="btn ghost" id="rubReset">Restablir les rúbriques de la programació</button></div>
+    <div id="rubImpBox">${rubImpHtml()}</div>
     ${G.rubs.map((r, i) => { const u = used(r.id); return `<details class="rubed" data-rid="${esc(r.id)}" ${rubOpen === r.id ? 'open' : ''}><summary><b data-rname="${i}">${esc(r.n)}</b><span class="small muted">${r.crit.length} ${r.crit.length === 1 ? 'criteri' : 'criteris'}${u.length ? ' · ' + u.map(a => esc(a.c)).join(', ') : ' · cap activitat'}</span></summary>
       <div class="rubed-b"><div class="pfield"><label for="rn${i}">Nom de la rúbrica</label><input type="text" id="rn${i}" data-rb="${i}" value="${esc(r.n)}"></div>
       ${r.crit.map((c, j) => `<div class="rcrit"><div class="rcrit-h"><input type="text" data-rb="${i}" data-rc="${j}" data-ck="t" value="${esc(c.t)}" aria-label="Criteri ${j + 1}" placeholder="Nom del criteri"><label class="notein">Pes<input type="number" min="0" step="1" data-rb="${i}" data-rc="${j}" data-ck="w" value="${esc(c.w)}" inputmode="decimal"></label><button type="button" class="btn ghost small" data-rcdel="${i}:${j}" ${r.crit.length < 2 ? 'disabled title="Una rúbrica necessita com a mínim un criteri"' : ''}>Treure</button></div>
         <div class="rcrit-d">${[4, 3, 2, 1, 0].map(n => `<label><span class="small muted">${LVL_NAMES[n]} · ${n}</span><textarea rows="3" data-rb="${i}" data-rc="${j}" data-ck="d${4 - n}">${esc((c.d || [])[4 - n] || '')}</textarea></label>`).join('')}</div></div>`).join('')}
       <p class="small muted">La nota és la mitjana dels nivells dels criteris, tenint en compte el pes de cadascun. Expert (4) val un 10.</p>
-      <div class="row"><button type="button" class="btn ghost small" data-rcadd="${i}">+ Afegir un criteri</button><button type="button" class="btn ghost small" data-rbdup="${i}">Duplicar</button><button type="button" class="btn ghost small" data-rbdel="${i}">Esborrar la rúbrica</button></div></div></details>`; }).join('')}`;
+      <div class="row"><button type="button" class="btn ghost small" data-rcadd="${i}">+ Afegir un criteri</button><button type="button" class="btn ghost small" data-rbdup="${i}">Duplicar</button><button type="button" class="btn ghost small" data-rbxls="${i}">Baixar en Excel</button><button type="button" class="btn ghost small" data-rbdel="${i}">Esborrar la rúbrica</button></div></div></details>`; }).join('')}`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('details.rubed').forEach(d => d.ontoggle = () => { if (d.open) rubOpen = d.dataset.rid; else if (rubOpen === d.dataset.rid) rubOpen = null; });
   v.querySelectorAll('[data-rubact]').forEach(s => s.onchange = () => { G.acts[+s.dataset.rubact].rub = s.value || undefined; save(); rr(); });
@@ -2587,6 +2663,20 @@ function vRubriques(v) {
     if (!b.dataset.arm) { b.dataset.arm = 1; b.className = 'btn small'; b.textContent = u.length ? `Segur? La fan servir ${u.map(a => a.c).join(', ')}. Prem de nou` : 'Segur? Prem de nou per esborrar'; return; }
     u.forEach(a => { a.rub = undefined; }); G.rubs.splice(+b.dataset.rbdel, 1); save(); rr(); });
   $('#rubNew').onclick = () => { const r = { id: newId('r'), n: 'Nova rúbrica', crit: [{ k: newId('c'), t: 'Nou criteri', w: 1, d: ['', '', '', '', R0] }] }; G.rubs.push(r); rubOpen = r.id; save(); rr(); setTimeout(() => { const d = v.querySelector(`details[data-rid="${r.id}"]`); if (d) { d.scrollIntoView({ block: 'start' }); const i = d.querySelector('[data-rb]'); if (i) { i.focus(); i.select(); } } }, 0); };
+  v.querySelectorAll('[data-rbxls]').forEach(b => b.onclick = async () => { const r = G.rubs[+b.dataset.rbxls]; try { await rubToXlsx(r, (r.n.replace(/[\\/:*?"<>|]+/g, ' ').trim() || 'Rúbrica') + '.xlsx'); } catch (e) { toast('No s\'ha pogut crear el fitxer. Comprova la connexió a internet.'); } });
+  const imp = () => { const box = $('#rubImpBox'); box.innerHTML = rubImpHtml(); bindImp(); };
+  const setList = (list, msg) => { rubImp = { list, msg: list.length ? '' : msg }; imp(); };
+  const bindImp = () => { if (!rubImp) return;
+    $('#rubTpl').onclick = async () => { try { await rubToXlsx({ n: 'Nom de la rúbrica', crit: RUBS_DEFAULT[0].crit.concat({ t: 'Un altre criteri', w: 1, d: ['', '', '', '', R0] }) }, 'Plantilla de rúbrica.xlsx'); } catch (e) { toast('No s\'ha pogut crear la plantilla. Comprova la connexió a internet.'); } };
+    $('#rubFile').onchange = async e => { const f = e.target.files[0]; if (!f) return; $('#rubImpMsg').innerHTML = '<p class="small"><span class="spin"></span> Llegint el fitxer...</p>';
+      try { setList(await readRubFile(f), 'No he trobat cap criteri al fitxer. Comprova que hi hagi una fila per criteri amb les columnes dels nivells.'); }
+      catch (er) { setList([], er && er.message === 'load' ? 'No s\'ha pogut carregar el lector de fulls de càlcul. Comprova la connexió a internet.' : 'No s\'ha pogut llegir el fitxer. Prova de desar-lo en format .xlsx o .csv.'); } };
+    const rp = $('#rubPaste'); rp.onpaste = () => setTimeout(rp.onchange, 0); rp.onchange = () => { const x = rp.value; if (!x.trim()) return; const r = rowsToRub(parseDelim(x), 'Rúbrica importada'); setList(r ? [r] : [], 'No he trobat cap criteri al text enganxat. Copia la taula sencera, amb la fila dels títols.'); };
+    v.querySelectorAll('[data-ripn]').forEach(i => i.oninput = () => { rubImp.list[+i.dataset.ripn].n = i.value; });
+    if ($('#rubImpOk')) $('#rubImpOk').onclick = () => { const add = rubImp.list.map(r => ({ id: newId('r'), n: cut(r.n, 120) || 'Rúbrica importada', crit: r.crit })); G.rubs.push(...add); rubOpen = add[0].id; rubImp = null; save(); rr(); toast(add.length === 1 ? 'Rúbrica afegida. Ara la pots triar per a una activitat.' : add.length + ' rúbriques afegides.'); };
+    $('#rubImpX').onclick = () => { rubImp = null; imp(); }; };
+  $('#rubImp').onclick = () => { rubImp = rubImp ? null : { list: [] }; imp(); if (rubImp) $('#rubImpBox').scrollIntoView({ block: 'start', behavior: 'smooth' }); };
+  bindImp();
   $('#rubReset').onclick = e => { const b = e.currentTarget; if (!b.dataset.arm) { b.dataset.arm = 1; b.className = 'btn'; b.textContent = 'Segur? Es perdran els canvis a les rúbriques. Prem de nou'; return; }
     G.rubs = JSON.parse(JSON.stringify(RUBS_DEFAULT)); G.acts.forEach(a => { if (a.rub && a.rub !== '__none' && !rubOf(a)) a.rub = undefined; }); save(); rr(); };
 }
