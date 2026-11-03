@@ -1196,7 +1196,40 @@ tbody tr{transition:background var(--t-fast)}
     --tn-ra4:#2d5bea; --tn-ra5:#7a4fb0}
   html.dark .pdfbox .t-ra4{--tone-s:#eef3ff;--tone-m:#dce6ff}html.dark .pdfbox .t-ra5{--tone-s:#f4eeff;--tone-m:#e8dcfa}
 
-@media (prefers-reduced-motion:reduce){#view.vin > *,#view.vin .bar span,#view.vin .gbar span,#view.vin .minibar span,#view.vin .stack i{animation:none}.btn:hover,.stat:hover,.gcard:hover,.rtab:hover{transform:none}}</style>
+@media (prefers-reduced-motion:reduce){#view.vin > *,#view.vin .bar span,#view.vin .gbar span,#view.vin .minibar span,#view.vin .stack i{animation:none}.btn:hover,.stat:hover,.gcard:hover,.rtab:hover{transform:none}}
+/* Menú amagat: s'obre com un calaix des de l'esquerra amb el botó de dalt */
+.app{grid-template-columns:minmax(0,1fr)}
+.panel{margin:12px}
+.side{position:fixed;top:0;bottom:0;left:0;z-index:70;width:min(300px,86vw);height:100%;background:var(--side);padding-top:max(70px,calc(env(safe-area-inset-top,0px) + 70px));box-shadow:none;transform:translateX(-104%);visibility:hidden;transition:transform .42s var(--ease),box-shadow .42s var(--ease),visibility 0s .42s;overscroll-behavior:contain}
+.side.open{transform:none;visibility:visible;box-shadow:0 0 0 1px var(--side-2),24px 0 60px -12px rgba(0,0,0,.45);transition:transform .42s var(--ease),box-shadow .42s var(--ease)}
+.side .menu-toggle{display:none!important}
+.side-back{position:fixed;inset:0;z-index:65;background:rgba(10,10,12,.42);opacity:0;visibility:hidden;transition:opacity .35s var(--ease),visibility 0s .35s;-webkit-backdrop-filter:blur(2px);backdrop-filter:blur(2px)}
+.side-back.on{opacity:1;visibility:visible;transition:opacity .35s var(--ease)}
+.navbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));left:max(14px,env(safe-area-inset-left,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--side-2);border-radius:14px;background:var(--side);color:var(--side-fg);box-shadow:var(--sh-md);cursor:pointer;transition:transform .15s var(--ease),background var(--t-fast)}
+.navbtn:hover{background:var(--side-2)}
+.navbtn:active{transform:scale(.93)}
+.navbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.navbtn i{grid-area:1/1;display:block;width:20px;height:2px;border-radius:2px;background:currentColor;transition:transform .38s var(--ease),opacity .2s var(--ease)}
+.navbtn i:nth-child(1){transform:translateY(-6px)}.navbtn i:nth-child(3){transform:translateY(6px)}
+.navbtn[aria-expanded="true"] i:nth-child(1){transform:rotate(45deg)}
+.navbtn[aria-expanded="true"] i:nth-child(2){opacity:0;transform:scaleX(.2)}
+.navbtn[aria-expanded="true"] i:nth-child(3){transform:rotate(-45deg)}
+@keyframes navin{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.side.open > *{animation:navin .45s var(--ease) both}
+.side.open > :nth-child(2){animation-delay:.04s}.side.open > :nth-child(3){animation-delay:.07s}.side.open > :nth-child(4){animation-delay:.1s}.side.open > :nth-child(n+5){animation-delay:.13s}
+.side.open .ngroup{animation:navin .45s var(--ease) both}
+.side.open .ngroup:nth-child(2){animation-delay:.16s}.side.open .ngroup:nth-child(3){animation-delay:.2s}.side.open .ngroup:nth-child(4){animation-delay:.24s}.side.open .ngroup:nth-child(n+5){animation-delay:.28s}
+body.navopen{overflow:hidden}
+@media (max-width:860px){
+  .side{position:fixed;height:100%;padding-block:max(70px,calc(env(safe-area-inset-top,0px) + 70px)) 22px;padding-left:max(18px,env(safe-area-inset-left,0px));padding-right:18px}
+  .side .side-label{display:block}.side .side-foot{display:grid}
+  .side .nav{display:grid;overflow:visible}
+  .side .nav button{width:100%;white-space:normal}
+  .panel{margin:0}
+  .content{padding-top:76px}
+}
+@media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
+</style>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -1572,7 +1605,16 @@ function renderSide() {
 }
 $('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) go(b.dataset.tab); });
-function go(k) { tab = k; document.querySelector('.side').classList.remove('open'); render(); window.scrollTo(0, 0); }
+function go(k) { tab = k; setNav(false); render(); window.scrollTo(0, 0); }
+// Obre o tanca el menú lateral (calaix)
+function setNav(open) {
+  const s = document.querySelector('.side'), b = $('#navBtn'), bk = document.querySelector('.side-back'); if (!s) return;
+  const was = s.classList.contains('open'); s.classList.toggle('open', open); document.body.classList.toggle('navopen', open);
+  if (bk) bk.classList.toggle('on', open);
+  if (b) { b.setAttribute('aria-expanded', String(open)); b.setAttribute('aria-label', open ? 'Tancar el menú' : 'Obrir el menú'); }
+  if (open && !was) setTimeout(() => { const f = s.querySelector('.nav button[aria-selected="true"]') || s.querySelector('.nav button'); if (f) f.focus({ preventScroll: true }); }, 60);
+  if (!open && was && b && s.contains(document.activeElement)) b.focus();
+}
 let liveFn = null;
 function render() {
   renderSide(); liveFn = null;
@@ -3731,7 +3773,12 @@ const VIEWS = { inici: vInici, equip: vEquip, idea: vIdea, empatia: vEmpatia, en
   seguiment: vSeguiment, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, rubriques: vRubriques, config: vConfig, alumnes: vAlumnes, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, grups: () => { location.hash = ''; } };
 $('#tabs').insertAdjacentHTML('beforebegin', '<button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false"></button>');
 document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>' + themeSw());
-$('#menuToggle').onclick = () => { const s = document.querySelector('.side'); s.classList.toggle('open'); $('#menuToggle').setAttribute('aria-expanded', String(s.classList.contains('open'))); };
+$('#menuToggle').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
+document.querySelector('.side').id = 'sideNav';
+document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navbtn" id="navBtn" aria-controls="sideNav" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><i></i><i></i><i></i></button><div class="side-back" aria-hidden="true"></div>');
+$('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
+document.querySelector('.side-back').onclick = () => setNav(false);
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.side.open')) setNav(false); });
 if (CLOUD) cloudBoot();
 else {
   if (!load()) { G = exampleGroup(); ensureIds(); save(); }
