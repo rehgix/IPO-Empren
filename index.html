@@ -578,6 +578,8 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 [data-g="lliura"]{--gc:#53606f;--gs:#eef1f4;--gl:#a7b2bf}
 [data-g="prof"]{--gc:#b45f06;--gs:#fff1dc;--gl:#fbb040}
 [data-g="rec"]{--gc:#53606f;--gs:#eef1f4;--gl:#a7b2bf}
+[data-g="admin"]{--gc:#6d3fc0;--gs:#f1ebfb;--gl:#a78bfa}
+.nav .ncount{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:99px;background:var(--accent);color:#1c1408;font-size:12px;font-weight:600;text-align:center}
 
 /* Menú: cada bloc amb el seu color */
 .ngroup[data-g] .ghead svg{stroke:var(--gl)}
@@ -1563,6 +1565,7 @@ const GICONS = {
   mkt: '<path d="M3 10v4h4l6 4V6L7 10z"/><path d="M17 9a4 4 0 0 1 0 6M19.5 6.5a8 8 0 0 1 0 11"/>',
   lliura: '<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>',
   prof: '<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>',
+  admin: '<path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/>',
   rec: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.8 1c0 1.7-2.3 2.2-2.3 3.5M12 17.5h0"/>'
 };
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
@@ -3085,6 +3088,7 @@ function hashGid() { const m = location.hash.match(/g=([\w-]+)/); return m ? m[1
 async function route() {
   stopListen(); syncStatus('idle');
   if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
+  if (location.hash === '#config') return homeConfig();
   const gid = hashGid();
   if (!gid) return homeView();
   $('#view').innerHTML = '<div class="cloud-load"><span class="spin"></span> Obrint el grup...</div>';
@@ -3183,6 +3187,42 @@ function bareView() {
   document.body.classList.add('cloud-msg'); document.body.classList.remove('is-prof', 'is-student');
   $('#tabs').innerHTML = ''; $('#gameName').textContent = ''; $('#quarterTxt').textContent = ''; $('#quarterBar').innerHTML = ''; sideUser();
 }
+/* ---------- Menú lateral de la pàgina principal (fora d'un grup) ---------- */
+let HOME = null, homeNew = false; // HOME: { ok: pot crear grups, groups: en té, nReq: sol·licituds pendents }
+async function homeRole() {
+  if (HOME && HOME.email === USER.email) return HOME;
+  let ok = isAdmin(), nReq = 0, groups = false;
+  if (ok) { try { nReq = (await FB.list('profreq', ['status', '==', 'pending'])).length; } catch (e) {} }
+  else { try { ok = !!(await FB.get('profs/' + USER.email)); } catch (e) {} }
+  try { groups = (await FB.list('groups', ['profs', 'array-contains', USER.email])).length > 0; } catch (e) {}
+  return (HOME = { email: USER.email, ok, nReq, groups });
+}
+function homeNav(cur) {
+  const h = HOME || {}, prof = h.ok || h.groups;
+  const it = (k, l, n) => `<button type="button" data-home="${k}" aria-selected="${cur === k}"><span class="bullet"></span><span>${l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
+  const gr = (t, g, items) => items.filter(Boolean).length ? `<div class="ngroup" data-g="${g}"><div class="ghead">${ico(GICONS[g])}<span>${t}</span></div>${items.join('')}</div>` : '';
+  $('#tabs').innerHTML = gr(prof ? 'Professorat' : 'Inici', 'prof', [prof || cur === 'grups' ? it('grups', 'Els meus grups') : '', h.ok ? it('nou', 'Crear un grup nou') : ''])
+    + (isAdmin() ? gr('Administració', 'admin', [it('admin', 'Panell d\'administrador', h.nReq)]) : '')
+    + gr('Recursos', 'rec', [it('config', 'Configuració')]);
+  $('#tabs').querySelectorAll('[data-home]').forEach(b => b.onclick = () => { const k = b.dataset.home; setNav(false);
+    if (k === 'nou') { homeNew = true; if (location.hash && location.hash !== '#') location.hash = ''; else homeView(); return; }
+    const want = { grups: '', admin: '#admin', config: '#config' }[k];
+    if ((location.hash || '') === want || (want === '' && location.hash === '#')) route(); else location.hash = want; });
+}
+// Configuració general (fora d'un grup): aparença, compte i dades
+async function homeConfig() {
+  bareView(); const v = $('#view');
+  v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
+  const h = await homeRole(); homeNav('config');
+  const perm = isAdmin() ? 'Administrador: pots crear grups i aprovar el professorat.' : h.ok ? 'Professor autoritzat: pots crear grups.' : h.groups ? 'Ets professor d\'algun grup, però encara no en pots crear de nous.' : 'Encara no pots crear grups. Si ets professor, demana-ho a «Els meus grups».';
+  v.innerHTML = `${head('IPO Emprèn', 'Configuració')}
+    ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador.</p>${themeSw()}`))}
+    ${card('El teu compte', pad(`<div class="sumrow"><span class="muted small">Correu</span><div><b>${esc(USER.email)}</b></div></div>${USER.name ? `<div class="sumrow"><span class="muted small">Nom</span><div>${esc(USER.name)}</div></div>` : ''}<div class="sumrow"><span class="muted small">Permisos</span><div>${esc(perm)}</div></div>
+      <div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="cfgOut">Tancar la sessió</button>${isAdmin() ? '<a class="btn ghost small" href="#admin">Anar al panell d\'administrador</a>' : ''}</div>`))}
+    ${card('Les dades', pad(`<p class="small" style="margin:0">Les dades de tots els grups s'esborren automàticament cada 15 de juliol. El proper esborrat serà el <b>${fmtDay(nextExpiry())}</b>. Abans, descarrega els informes dels equips des de cada grup.</p>
+      <p class="small muted">La configuració de cada grup (equips, activitats, rúbriques, IA i alumnat) és dins del grup, a «Configuració».</p>`))}`;
+  $('#cfgOut').onclick = async () => { await FB.signOut(); location.hash = ''; location.reload(); };
+}
 function reqCard(req) { // Què veu qui encara no pot crear grups
   if (req && req.status === 'pending') return `<div class="notice info"><b>Has demanat accés com a professor el ${fmtDay(req.at)}.</b> Quan l'administrador l'aprovi, rebràs un correu i aquí mateix podràs crear els teus grups.</div>`;
   if (req && req.status === 'rejected') return '<div class="notice">La teva sol·licitud d\'accés com a professor no s\'ha aprovat. Si creus que és un error, parla amb l\'administrador de l\'eina.</div>';
@@ -3207,7 +3247,7 @@ function okMailUrl(r) {
   return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(r.email) + '&su=' + encodeURIComponent('Accés de professor aprovat · IPO Emprèn') + '&body=' + encodeURIComponent(body);
 }
 function adminView() {
-  bareView();
+  bareView(); homeRole().then(() => homeNav('admin')); homeNav('admin');
   const v = $('#view'); let reqs = null, profs = null;
   v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
   const who = x => `<span class="rostwho"><span><b>${esc(x.name || x.email)}</b></span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span>`;
@@ -3265,6 +3305,7 @@ async function homeView(msg) {
   let ok = isAdmin(), req = null, nReq = 0; // Pot crear grups? (administrador o professorat autoritzat)
   if (ok) { try { nReq = (await FB.list('profreq', ['status', '==', 'pending'])).length; } catch (e) {} }
   else { try { ok = !!(await FB.get('profs/' + USER.email)); } catch (e) {} if (!ok) try { req = await FB.get('profreq/' + USER.email); } catch (e) {} }
+  HOME = { email: USER.email, ok, nReq, groups: gs.length > 0 }; homeNav('grups');
   const now = Date.now(), dead = gs.filter(g => g.expiresAt && g.expiresAt < now);
   if (dead.length) { await Promise.all(dead.map(g => deleteGroupDeep(g.id).catch(() => {}))); gs = gs.filter(g => !dead.includes(g)); }
   gs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
@@ -3302,6 +3343,7 @@ async function homeView(msg) {
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
   if (ok) { $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); } else bindReq();
+  if (homeNew && $('#ngName')) { homeNew = false; const f = $('#ngName'); f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); }
   v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
