@@ -336,6 +336,9 @@ table.cmp{min-width:860px;font-size:13px}
 .review{display:grid;gap:8px;margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)}
 .review textarea{width:100%;font:15px var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink)}
 .brandprev{padding:22px}
+.side .brand{cursor:pointer;border-radius:12px;transition:opacity var(--t-fast)}
+.side .brand:hover{opacity:.8}
+.side .brand:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .bp{display:flex;gap:16px;align-items:center;padding:24px;border-radius:16px;min-height:140px}
 .bp img{width:84px;height:84px;object-fit:contain;background:#ffffff;border-radius:12px;padding:6px}
 .bp-ph{width:84px;height:84px;border-radius:12px;display:grid;place-items:center;font-size:36px;font-weight:700;color:#ffffff;flex:none}
@@ -3838,6 +3841,12 @@ document.querySelector('.side').id = 'sideNav';
 document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navbtn" id="navBtn" aria-controls="sideNav" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><i></i><i></i><i></i></button><div class="side-back" aria-hidden="true"></div>');
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);
+// El logo porta al tauler: «Els meus grups» (professorat) o l'inici de l'equip (alumnat)
+const brand = document.querySelector('.brand'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Anar al tauler';
+const goHome = () => { setNav(false);
+  if (CLOUD && !(ME && !ME.isProf && GID)) { if (location.hash && location.hash !== '#') location.hash = ''; else if (USER) route(); window.scrollTo(0, 0); return; }
+  go(role === 'prof' ? 'seguiment' : 'inici'); };
+brand.onclick = goHome; brand.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.side.open')) setNav(false); });
 if (CLOUD) cloudBoot();
 else {
