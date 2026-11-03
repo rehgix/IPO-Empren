@@ -1518,7 +1518,8 @@ function sendBarHtml(t, s, ac) {
 function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'prof') return; const s = sec(tab); el.innerHTML = sendBarHtml(T(), s, access(tab)); bindSendBar(); }
 function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); }; }
 function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s => { o[s.k] = { state: openKeys.includes(s.k) ? 'open' : 'closed', from: '' }; }); return o; }
-function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess(['equip', 'idea']), name, sector: sector || 'electricitat', teams: teams.map(n => ({ id: newId(), name: n, members: [], data: emptyData(sector), review: {}, delivered: null, evals: { levels: {}, comment: '' } })) }; }
+// Els grups nous comencen amb tots els apartats tancats: el professor els obre a «Obertura dels apartats»
+function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess([]), name, sector: sector || 'electricitat', teams: teams.map(n => ({ id: newId(), name: n, members: [], data: emptyData(sector), review: {}, delivered: null, evals: { levels: {}, comment: '' } })) }; }
 
 /* ---------- Seccions ---------- */
 const cnt = (obj, keys) => keys.filter(k => filled(obj[k])).length;
@@ -3346,7 +3347,7 @@ async function homeView(msg) {
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${sectors.map(([k, s]) => `<option value="${k}">${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
-      <p class="small muted">Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
+      <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button></div>`))}`;
   const mk = async (example) => {
     const btns = [$('#ngGo'), $('#ngEx')]; btns.forEach(b => { b.disabled = true; });
