@@ -6,7 +6,8 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - **Tota l'aplicació és a `index.html`** (estils, menú, pàgines, revisió, notes, exemples). No hi ha cap pas de compilació: s'obre directament al navegador.
 - `config.js`: configuració pública de Firebase i dominis de correu permesos (`biada.net`). No és secreta.
 - `fbapi.js`: llibreria de Firebase ja empaquetada. **No s'edita.**
-- `firestore.rules`: regles de seguretat de la base de dades. Si es canvien, cal avisar l'usuari que s'han de publicar a Firebase a part (no es publiquen amb el push).
+- `firestore.rules`: regles de seguretat de la base de dades. Si es canvien, cal avisar l'usuari que s'han de publicar a Firebase a part (no es publiquen amb el push). Un apartat nou amb dades pròpies s'ha d'afegir a `studentEditOk` i a `dataKeysOk`, o l'alumnat no el podrà desar.
+- Seguretat: les imatges de l'alumnat es posen amb `imgSrc()` i els colors amb `col()`; les dades d'equip que arriben de la xarxa passen per `shapeLike()` (a `unpackSection`).
 - Les dades es guarden a Firebase i s'esborren cada 15 de juliol.
 - Sense sessió iniciada, la web mostra un grup d'exemple amb 3 equips (Endoll Verd, Llampec, Llar Fàcil). Serveix per provar els canvis.
 

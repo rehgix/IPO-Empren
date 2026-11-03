@@ -1579,12 +1579,12 @@ function onField(e) {
 const PROF_TEAM_TABS = ['revisio', 'qualificacio', 'avaluacio', 'informe'];
 function bannerTeam() { return role !== 'prof' ? T() : PROF_TEAM_TABS.includes(tab) ? G.teams[profTeam] : null; }
 function teamBannerHtml(t) {
-  const m = t.data.marca, logo = /^(data:|https?:)/.test(m.logo || '') ? m.logo : '';
-  return `<div class="tbanner" style="--tb1:${esc(m.color1 || '#2bc46f')};--tb2:${esc(m.color2 || '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
+  const m = t.data.marca, logo = logoSrc(m.logo);
+  return `<div class="tbanner" style="--tb1:${col(m.color1, '#2bc46f')};--tb2:${col(m.color2, '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
 }
 function teamLogoHtml(t, cls = 'hlogo') {
-  const m = t.data.marca, logo = /^(data:|https?:)/.test(m.logo || '') ? m.logo : '';
-  return `<span class="${cls}" style="--tb1:${esc(m.color1 || '#2bc46f')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
+  const m = t.data.marca, logo = logoSrc(m.logo);
+  return `<span class="${cls}" style="--tb1:${col(m.color1, '#2bc46f')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
 }
 function updateTeamBanner() {
   const v = $('#view'), old = v.querySelector(':scope > .tbanner'), t = bannerTeam();
@@ -1601,9 +1601,20 @@ $('#view').addEventListener('input', onField);
 let toastT = null;
 function toast(msg) { let el = $('#toast'); if (!el) { el = document.createElement('div'); el.id = 'toast'; el.setAttribute('role', 'status'); document.body.appendChild(el); } el.textContent = msg; el.classList.add('show'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('show'), 2800); }
 const isTextBox = el => el && (el.tagName === 'TEXTAREA' || (el.tagName === 'INPUT' && !['file', 'checkbox', 'radio', 'color'].includes(el.type)));
-const blockPaste = e => { if (role === 'prof' || G.allowPaste || !isTextBox(e.target) || e.target.dataset.allowPaste) return; e.preventDefault(); toast('Heu de redactar les respostes vosaltres: no es pot enganxar text.'); };
+// Amb sessió iniciada, qui és professor ho diu el servidor (no la variable «role», que es pot canviar des del navegador)
+const pasteOk = el => !G || (CLOUD && ME ? ME.isProf : role === 'prof') || G.allowPaste || !isTextBox(el) || !!el.dataset.allowPaste;
+const blockPaste = e => { if (pasteOk(e.target)) return; e.preventDefault(); toast('Heu de redactar les respostes vosaltres: no es pot enganxar text.'); };
 ['paste', 'drop'].forEach(ev => $('#view').addEventListener(ev, blockPaste, true));
 $('#view').addEventListener('beforeinput', e => { if (['insertFromPaste', 'insertFromDrop', 'insertFromPasteAsQuotation', 'insertReplacementText'].includes(e.inputType) && e.inputType !== 'insertReplacementText') blockPaste(e); }, true);
+// Text que entra de cop sense passar per «enganxar» (porta-retalls del teclat del mòbil, extensions, programes que escriuen sols): es desfà
+const JUMP = 40;
+$('#view').addEventListener('focusin', e => { if (isTextBox(e.target)) e.target._pv = e.target.value; }, true);
+$('#view').addEventListener('input', e => {
+  const el = e.target; if (!isTextBox(el)) return;
+  const pv = el._pv ?? el.defaultValue;
+  if (!pasteOk(el) && !/^(delete|history)/.test(e.inputType || '') && el.value.length - pv.length > JUMP) { el.value = pv; e.stopImmediatePropagation(); toast('Heu de redactar les respostes vosaltres: no es pot posar tant text de cop.'); return; }
+  el._pv = el.value;
+}, true);
 $('#view').addEventListener('change', e => { if (e.target.type === 'radio' || e.target.type === 'checkbox' || e.target.tagName === 'SELECT' || e.target.dataset.rerender) onField(e); });
 function updateHeadProgress() { const el = $('#secProg'); if (!el) return; const s = sec(tab); if (!s || !s.p) return; const [d, n] = s.p(T()); el.textContent = `${Math.min(d, n)} de ${n} apartats`; }
 // Pàgina d'una secció de l'equip
@@ -1755,7 +1766,7 @@ const fmtSize = b => b > 1048576 ? (b / 1048576).toFixed(1).replace('.', ',') + 
 function protoFilesHtml(fs, edit) {
   fs = fs || []; if (!fs.length) return edit ? '' : '';
   const imgs = fs.map((f, i) => [f, i]).filter(([f]) => f.kind === 'img'), docs = fs.map((f, i) => [f, i]).filter(([f]) => f.kind !== 'img');
-  return `${imgs.length ? `<div class="pgal">${imgs.map(([f, i]) => `<figure class="pimg"><img src="${f.data}" alt="${esc(f.name)}"><figcaption><span>${esc(f.name)}</span>${edit ? `<button type="button" class="btn ghost small" data-pdel="${i}">Treure</button>` : ''}</figcaption></figure>`).join('')}</div>` : ''}
+  return `${imgs.length ? `<div class="pgal">${imgs.map(([f, i]) => `<figure class="pimg"><img src="${imgSrc(f.data)}" alt="${esc(f.name)}"><figcaption><span>${esc(f.name)}</span>${edit ? `<button type="button" class="btn ghost small" data-pdel="${i}">Treure</button>` : ''}</figcaption></figure>`).join('')}</div>` : ''}
     ${docs.length ? `<div class="pdocs">${docs.map(([f, i]) => `<div class="pdoc"><span class="pext">${esc((f.name.split('.').pop() || '').toUpperCase())}</span><div style="min-width:0"><b>${esc(f.name)}</b><div class="small muted">${fmtSize(f.size || 0)}</div></div>${edit ? `<button type="button" class="btn ghost small keep" data-pget="${i}">Descarregar</button><button type="button" class="btn ghost small" data-pdel="${i}">Treure</button>` : ''}</div>`).join('')}</div>` : ''}`;
 }
 function dataUrlBlob(u) { const [h, b] = u.split(','); const bin = atob(b); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: (h.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream' }); }
@@ -1962,7 +1973,7 @@ function vMarca(v) {
     card('Esbossos del logo', pad(`<div class="help">Abans del logo final, dibuixeu i pugeu com a mínim ${ESB_MIN} versions diferents (fotos dels dibuixos a mà o captures de proves fetes a l'ordinador). Proveu colors, icones i tipus de lletra diferents. Màxim ${ESB_MAX}.</div>
       <label class="upl ${nEsb >= ESB_MAX ? 'off' : ''}" style="margin-top:10px"><input type="file" id="esbIn" multiple accept="image/*">${ico('<path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>')}<span>Pujar esbossos</span></label>
       <div id="esbMsg" class="small" role="status"></div>
-      ${nEsb ? `<div class="pgal" id="esbFiles">${d.esbossos.map((f, i) => `<figure class="pimg"><img src="${f.data}" alt="Esbós ${i + 1}"><figcaption><span>Versió ${i + 1}</span><button type="button" class="btn ghost small" data-pdel="${i}">Treure</button></figcaption></figure>`).join('')}</div>` : ''}`), nEsb >= ESB_MIN ? `${nEsb} versions` : `${nEsb} de ${ESB_MIN} versions`)
+      ${nEsb ? `<div class="pgal" id="esbFiles">${d.esbossos.map((f, i) => `<figure class="pimg"><img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}"><figcaption><span>Versió ${i + 1}</span><button type="button" class="btn ghost small" data-pdel="${i}">Treure</button></figcaption></figure>`).join('')}</div>` : ''}`), nEsb >= ESB_MIN ? `${nEsb} versions` : `${nEsb} de ${ESB_MIN} versions`)
     + `<div class="grid2">${card('Identitat', pad(txt('marca.nom', 'Nom de l\'empresa') + txt('marca.eslogan', 'Eslògan') + `<div class="pfield"><label for="logoIn">Logo final</label>${logoOk ? `<div class="help">Pugeu la versió definitiva (PNG o JPG). Podeu crear-la amb una eina en línia com <a href="https://es.freelogodesign.org/" target="_blank" rel="noopener">FreeLogoDesign</a>.</div><input type="file" id="logoIn" accept="image/*">${d.logo ? '<button type="button" class="btn ghost small" id="logoDel">Treure el logo</button>' : ''}` : `<div class="help">Primer heu de pujar com a mínim ${ESB_MIN} esbossos. Us en ${ESB_MIN - nEsb === 1 ? 'falta 1' : 'falten ' + (ESB_MIN - nEsb)}.</div><input type="file" id="logoIn" accept="image/*" disabled>`}</div>
       <div class="grid2" style="gap:12px"><div class="pfield"><label for="c1">Color principal</label><input type="color" id="c1" data-path="marca.color1" value="${esc(d.color1)}"></div><div class="pfield"><label for="c2">Color secundari</label><input type="color" id="c2" data-path="marca.color2" value="${esc(d.color2)}"></div></div>`))}
     ${card('Vista prèvia', `<div class="brandprev" id="brandPrev"></div>`)}</div>`
@@ -1972,7 +1983,7 @@ function vMarca(v) {
       + ta('marca.justTipo', 'Tipografia', 'Quin tipus de lletra fa servir (rodona, recta, de pal sec, manuscrita, gruixuda...)? Quina sensació dona i per què l\'heu triada?', 3)))
     + card('Cultura empresarial', pad(ta('marca.missio', 'Missió', 'Per què existeix l\'empresa? Què fa i per a qui?', 2) + ta('marca.visio', 'Visió', 'Què vol arribar a ser l\'empresa d\'aquí a uns anys?', 2) + ta('marca.valors', 'Valors', 'Els principis que guien el comportament de l\'empresa.', 2))));
   const prev = () => { const m = T().data.marca, el = $('#brandPrev'); if (!el) return;
-    el.innerHTML = `<div class="bp" style="background:${esc(m.color2)};color:#fff">${logoSrc(m.logo) ? `<img src="${logoSrc(m.logo)}" alt="Logo">` : `<div class="bp-ph" style="background:${esc(m.color1)}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${esc(m.color1)}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
+    el.innerHTML = `<div class="bp" style="background:${col(m.color2, '#111113')};color:#fff">${logoSrc(m.logo) ? `<img src="${imgSrc(m.logo)}" alt="Logo">` : `<div class="bp-ph" style="background:${col(m.color1, '#2bc46f')}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${esc(m.color1)}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
   liveFn = prev; prev();
   const rer = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   const esbIn = $('#esbIn');
@@ -2075,7 +2086,7 @@ function secHtml(t, k, who = false) {
   const ps = pairs(t, k).filter(([, x]) => x && String(x).trim());
   let extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
-  if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
+  if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
   if (k === 'marca' && esbImgs(t).length) extra += `<div class="small muted">Esbossos del logo</div>` + protoFilesHtml(esbImgs(t), false);
   if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
   const row = ([l, x]) => { const [c, h] = who ? whoRow(t, k, x) : ['', esc(x).replace(/\n/g, '<br>')]; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; };
@@ -2212,7 +2223,7 @@ ${list.map(a => `=== ACTIVITAT ${a.c} · ${a.n} (${a.ra}${a.ca ? ', CA ' + a.ca 
 Què s'avalua: ${a.crit || a.n}
 Feina de l'equip:
 <<<
-${evidenceText(t, a)}
+${evidenceText(t, a).replace(/<<<|>>>/g, '« »')}
 >>>`).join('\n\n')}
 
 Respon només amb un objecte JSON amb una clau per activitat (${list.map(a => `"${a.c}"`).join(', ')}). Cada valor ha de tenir aquesta forma:
@@ -2325,9 +2336,9 @@ function reportBody(t, forStudents) {
   const acts = G.acts.map(a => { const g = t.grades[a.c] || {}, ev = actEvidence(t, a);
     return `<section class="ract ra-${a.ra.toLowerCase()}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
       ${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
-      ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${f.data}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${f.data}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
+      ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${imgSrc(f.data)}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(t.name)} · ${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
-      ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${logoSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
+      ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
     <div class="rgrades"><div class="ra-ra4"><span>RA4</span><b class="${gcls(r4.nota)}">${f1(r4.nota)}</b></div><div class="ra-ra5"><span>RA5</span><b class="${gcls(r5.nota)}">${f1(r5.nota)}</b></div></div>
     ${roles ? `<h2>Equip</h2><table class="rtab fin zebra"><thead><tr><th>Persona</th><th>Rols</th><th>Responsabilitats</th></tr></thead><tbody>${roles}</tbody></table>` : ''}
     <h2>Resum de les qualificacions</h2><table class="rtab fin"><thead><tr><th>Codi</th><th>Activitat</th><th>RA</th><th class="n">Pes</th><th>Nivell</th><th class="n">Nota</th></tr></thead><tbody>${summary}</tbody></table>
@@ -2472,7 +2483,11 @@ function merge3(b, l, r) {
   if (Array.isArray(b) && Array.isArray(l) && Array.isArray(r) && b.length === l.length && l.length === r.length) return l.map((x, i) => merge3(b[i], x, r[i]));
   return l;
 }
-const logoSrc = l => /^data:image\//.test(String(l || '')) ? l : '';
+const logoSrc = l => /^data:image\//.test(String(l || '')) ? String(l) : '';
+// Imatges i colors que venen de l'alumnat: protegits perquè no hi puguin colar codi a la pàgina
+const imgSrc = l => esc(logoSrc(l));
+const col = (c, d) => /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : d;
+const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
 
 /* ---------- Qui ha escrit cada cosa ----------
    t.data._who = { u: { id: nom }, f: { camí: [[id, lletres], ...] } }: per a cada camp, quin alumne ha escrit cada tros del text */
@@ -2553,16 +2568,32 @@ function teamFiles(t) {
   ((t.data.marca && t.data.marca.esbossos) || []).forEach(f => { if (!f.id) f.id = newId('f'); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
   return out;
 }
+// Les dades d'un equip venen de la xarxa: es refan amb la forma esperada perquè un valor estrany no trenqui cap pàgina
+function shapeLike(tpl, v) {
+  if (typeof tpl === 'string') return typeof v === 'string' ? v : typeof v === 'number' ? String(v) : '';
+  if (typeof tpl === 'boolean') return !!v;
+  if (Array.isArray(tpl)) return Array.isArray(v) ? v.filter(x => x != null) : tpl;
+  if (isObj(tpl)) { const o = isObj(v) ? v : {}; Object.keys(tpl).forEach(k => { o[k] = shapeLike(tpl[k], o[k]); }); return o; }
+  return v;
+}
+function cleanWho(w) {
+  const f = {}, ok = isObj(w);
+  if (ok && isObj(w.f)) Object.keys(w.f).forEach(p => { if (Array.isArray(w.f[p])) f[p] = w.f[p].filter(Array.isArray).map(([a, l]) => [String(a ?? ''), Math.min(1e5, Math.max(0, Math.floor(Number(l) || 0)))]); });
+  return { u: ok && isObj(w.u) ? w.u : {}, f };
+}
 function unpackSection(t, k, str) {
-  const v = P(str); if (v == null) return;
-  if (k === 'prototip') v.fitxers = (v.fitxers || []).map(f => Object.assign({}, f, { data: (FILES[t.id] || {})[f.id] || '' }));
-  if (k === 'marca') { v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || v.logo) : (v.logo || ''); v.esbossos = (v.esbossos || []).map(f => Object.assign({}, f, { data: (FILES[t.id] || {})[f.id] || '' })); }
+  let v = P(str); if (v == null) return;
+  const tpl = emptyData(G && G.sector)[k];
+  if (tpl) v = shapeLike(tpl, v); else if (k === '_who') v = cleanWho(v); else if (k === '_meta') v = isObj(v) ? Object.assign(v, { sent: isObj(v.sent) ? v.sent : {} }) : { sent: {} };
+  const fl = a => a.filter(isObj).map(f => Object.assign({}, f, { name: String(f.name ?? 'arxiu'), data: (FILES[t.id] || {})[f.id] || '' }));
+  if (k === 'prototip') v.fitxers = fl(v.fitxers);
+  if (k === 'marca') { v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || v.logo) : (v.logo || ''); v.esbossos = fl(v.esbossos); }
   t.data[k] = v;
 }
 const profPart = t => ({ review: J(t.review || {}), grades: J({ grades: t.grades || {}, evals: t.evals || { levels: {}, comment: '' } }), ai: J(t.ai || {}) });
 function teamDocOf(t, exp) { const data = {}; Object.keys(t.data).forEach(k => { data[k] = packSection(t, k); }); return { name: t.name, members: J(t.members || []), data, delivered: t.delivered || null, updated: t.updated || Date.now(), expiresAt: { __ts: exp } }; }
 function snapTeam(t) { const s = { name: t.name, members: J(t.members || []), delivered: J(t.delivered || null), data: {}, prof: profPart(t), files: Object.keys(teamFiles(t)) }; Object.keys(t.data).forEach(k => { s.data[k] = packSection(t, k); }); SNAP.teams[t.id] = s; }
-function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; t.members = t.members || []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
+function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; t.members = Array.isArray(t.members) ? t.members.filter(isObj) : []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
 function teamFromDoc(d) {
   const t = normTeam({ id: d.id, name: d.name, members: P(d.members) || [], delivered: d.delivered || null, updated: d.updated || 0, data: {} });
   Object.keys(d.data || {}).forEach(k => unpackSection(t, k, d.data[k]));
@@ -2571,7 +2602,7 @@ function teamFromDoc(d) {
 const groupFields = () => {
   const cfg = {}; ['sector', 'acts', 'aiCfg', 'access', 'allowPaste'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
-  return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows() };
+  return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
 };
 /* ---------- Quan pot escriure l'alumnat cada dada (ho comproven també les regles de seguretat) ---------- */
 const NEVER = 9e15, DATA_SECS = { finan: ['inversio'], sost: ['sost', 'lean'], members: ['equip'] };
@@ -2594,7 +2625,7 @@ function writeWindows() {
   return w;
 }
 const canWrite = k => { const x = writeWindows()[k], n = Date.now(); return !x || (n >= x.f && n < x.u); };
-function groupToG(g) { const cfg = P(g.cfg) || {}; return Object.assign(cfg, { v: 1, name: g.name, profs: (g.profs || []).filter(x => x !== (ME && ME.email)), showGrades: !!g.showGrades, teams: [] }); }
+function groupToG(g) { const cfg = P(g.cfg) || {}; return Object.assign(cfg, { v: 1, name: g.name, profs: (g.profs || []).filter(x => x !== (ME && ME.email)), showGrades: !!g.showGrades, join: g.join !== false, teams: [] }); }
 
 /* ---------- Indicador de desat ---------- */
 function syncStatus(st) {
@@ -2706,7 +2737,7 @@ function applyGroup(g) {
   GROUP = Object.assign({ id: GID }, g);
   if (ME.isProf) {
     if (J(groupFields()) !== SNAP.group || syncT || syncBusy) return;
-    const remote = J({ name: g.name, profs: g.profs, showGrades: !!g.showGrades, cfg: g.cfg, teamList: g.teamList, teamIds: g.teamIds, w: g.w });
+    const remote = J({ name: g.name, profs: g.profs, showGrades: !!g.showGrades, cfg: g.cfg, teamList: g.teamList, teamIds: g.teamIds, w: g.w, join: g.join !== false });
     if (remote === SNAP.group) return;
     Object.assign(G, groupToG(g), { teams: G.teams });
     const order = g.teamIds || []; G.teams.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
@@ -2813,7 +2844,7 @@ async function openProf() {
   await Promise.all(G.teams.map(async t => { const ps = await FB.list(gpath('teams', t.id, 'prof')).catch(() => []); ps.forEach(p => { const v = P(p.v) || {}; if (p.id === 'review') t.review = v; else if (p.id === 'ai') t.ai = v; else if (p.id === 'grades') { t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }); }));
   ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
-  if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w })) { SNAP.group = ''; cloudSave(); }
+  if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w, join: GROUP.join !== false })) { SNAP.group = ''; cloudSave(); }
   ROSTER = await FB.list(gpath('members')).catch(() => []); INVITES = await FB.list(gpath('invites')).catch(() => []);
   role = 'prof'; if (lastGid !== GID || !tab || !['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'config', 'alumnes'].includes(tab)) tab = 'seguiment'; lastGid = GID;
   render(); sideUser();
@@ -2848,7 +2879,7 @@ function joinView(g, m) {
   v.innerHTML = `${head(esc(g.name), 'Tria el teu equip')}
     <p class="intro muted">Entres com a <b>${esc(USER.email)}</b>. Tria l'equip on treballes. Només ho has de fer el primer dia: si t'equivoques, demana al professor que et canviï.</p>
     ${m ? '<div class="notice">El teu equip anterior ja no existeix. Tria\'n un altre.</div>' : ''}
-    <div class="joinlist">${(g.teamList || []).map(t => `<button class="btn ghost" data-join="${esc(t.id)}">${esc(t.name)}</button>`).join('') || '<p class="muted">El professor encara no ha creat cap equip.</p>'}</div><div id="joinMsg"></div>`;
+    ${g.join === false ? '<div class="notice">El professor ha tancat l\'entrada lliure en aquest grup. Demana-li que t\'hi afegeixi.</div>' : `<div class="joinlist">${(g.teamList || []).map(t => `<button class="btn ghost" data-join="${esc(t.id)}">${esc(t.name)}</button>`).join('') || '<p class="muted">El professor encara no ha creat cap equip.</p>'}</div>`}<div id="joinMsg"></div>`;
   v.querySelectorAll('[data-join]').forEach(b => b.onclick = async () => {
     v.querySelectorAll('[data-join]').forEach(x => { x.disabled = true; }); b.textContent = 'Entrant...';
     try { await FB.set(gpath('members', USER.uid), { email: USER.email, name: USER.name || '', team: b.dataset.join, joined: Date.now(), expiresAt: { __ts: g.expiresAt } }); route(); }
@@ -3079,6 +3110,7 @@ function vAlumnes(v) {
       <p class="small muted" style="margin-top:14px">O copia aquest missatge ja preparat, amb l'enllaç i les instruccions:</p>
       <div class="cmsg" id="cMsg">${esc(classMsg(link))}</div>
       <div class="row"><button type="button" class="btn ghost small" id="cMsgCp">Copiar el missatge</button><button type="button" class="btn ghost small" id="qrBtn" title="Mostra un codi QR gran per projectar-lo a classe">${ico('<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v1M14 20h1M17 20h4v-3"/>')}Mostrar el codi QR</button></div>
+      ${CLOUD ? `<label class="choice" style="margin-top:14px"><input type="checkbox" id="gJoin" ${G.join !== false ? 'checked' : ''}><span><b>Els alumnes poden entrar amb l'enllaç i triar equip</b><span class="small muted">Desactiva-ho quan ja hi hagin entrat tots: així ningú més (per exemple, algú d'una altra classe que aconsegueixi l'enllaç) podrà entrar a un equip i veure'n la feina. Els alumnes que afegeixis a mà a sota sí que podran entrar.</span></span></label>` : ''}
       ${CLOUD ? `<p class="small muted" style="margin-top:10px">Les dades d'aquest grup s'esborraran automàticament el <b>${fmtDay(GROUP.expiresAt)}</b>.</p>` : ''}`))}
     ${card('Alumnes del grup', pad(`${CLOUD ? '<p class="small muted">Cada alumne tria el seu equip el primer cop que entra, o bé l\'afegeixes tu a sota i entra directament al seu equip. Aquí el pots canviar d\'equip o eliminar-lo del grup.</p>' : ''}
       ${G.teams.map(t => `<div class="rost"><b>${esc(t.name)} <span class="small muted" style="font-weight:400">· ${byTeam(t.id).length}</span></b>${byTeam(t.id).length ? byTeam(t.id).map(CLOUD ? rostRow : locRow).join('') : '<p class="small muted">Encara no hi ha ningú.</p>'}</div>`).join('')}
@@ -3101,7 +3133,7 @@ function rostRow(x) { const k = x.inv ? 'invites' : 'members';
 // Data d'entrada i historial de connexions (data, hora i dispositiu)
 const fmtWhen = ms => new Date(ms).toLocaleString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function rostLog(x) {
-  const log = (x.log || []).slice().reverse(), last = x.last || (log[0] && log[0].at);
+  const log = (Array.isArray(x.log) ? x.log : []).filter(isObj).reverse(), last = x.last || (log[0] && log[0].at);
   return `<div class="rlog small muted">${x.joined ? `Va entrar per primer cop el ${fmtDay(x.joined)}` : 'Data d\'entrada desconeguda'}${last ? ` · Última connexió: ${fmtWhen(last)}` : ''}
     ${log.length ? `<details><summary>Historial de connexions (${log.length})</summary><table><thead><tr><th>Data i hora</th><th>Dispositiu</th></tr></thead><tbody>${log.map(l => `<tr><td>${fmtWhen(l.at)}</td><td>${esc(l.dev || '—')}</td></tr>`).join('')}</tbody></table></details>` : ''}</div>`;
 }
@@ -3116,6 +3148,7 @@ function bindCloudConfig(v) {
   v.querySelectorAll('[data-unassign]').forEach(b => b.onclick = async () => { b.disabled = true;
     try { await FB.del(gpath(b.dataset.k, b.dataset.unassign)); if (b.dataset.k === 'members' && INVITES.some(i => i.id === b.dataset.mail)) await FB.del(gpath('invites', b.dataset.mail)); toast('Alumne eliminat del grup.'); } catch (e) { toast('No s\'ha pogut fer.'); b.disabled = false; } });
   v.querySelectorAll('[data-move]').forEach(s => s.onchange = async () => { try { await FB.update(gpath(s.dataset.k, s.dataset.move), { team: s.value }); toast('Alumne canviat d\'equip.'); } catch (e) { toast('No s\'ha pogut fer.'); } });
+  const gj = $('#gJoin'); if (gj) gj.onchange = () => { G.join = gj.checked; save(); toast(gj.checked ? 'Entrada oberta: els alumnes poden triar equip.' : 'Entrada tancada: només hi entren els alumnes que afegeixis.'); };
   v.querySelectorAll('[data-invmail]').forEach(b => b.onclick = () => { const x = INVITES.find(i => i.id === b.dataset.invmail); if (x) window.open(invMailUrl(x), '_blank'); });
   const ia = $('#ivAdd'); if (ia) ia.onclick = async () => {
     const nom = $('#ivNom').value.trim(), cog = $('#ivCog').value.trim(), mail = $('#ivMail').value.trim().toLowerCase(), team = $('#ivTeam').value, msg = m => { $('#ivMsg').innerHTML = m ? `<div class="notice">${m}</div>` : ''; };

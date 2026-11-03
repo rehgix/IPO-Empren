@@ -41,15 +41,29 @@ service cloud.firestore {
         && keyOk(aff, w, 'pitch') && keyOk(aff, w, 'p7')
         && keyOk(request.resource.data.diff(resource.data).affectedKeys(), w, 'members');
     }
+    // DADES DE L'EQUIP: només els apartats que existeixen (més _meta: enviats, i _who: qui ha escrit cada cosa)
+    function dataKeysOk() {
+      return request.resource.data.get('data', {}).diff(resource.data.get('data', {})).affectedKeys().hasOnly(['idea', 'empatia', 'entrevistes', 'definir',
+        'prototip', 'micro', 'pestel', 'dafo', 'lean', 'sost', 'ebc', 'agents', 'juridica', 'fiscal', 'inversio', 'finan',
+        'prestec', 'treso', 'viab', 'marca', 'pitch', 'p7', '_meta', '_who']);
+    }
+    // LLIURAMENT: la data ha de ser la d'ara (amb un marge d'una hora pel rellotge de l'ordinador); no es pot posar una data antiga
+    function deliveredOk() {
+      let r = request.resource.data;
+      let now = request.time.toMillis();
+      return !r.diff(resource.data).affectedKeys().hasAny(['delivered']) || r.delivered == null
+        || (r.delivered is number && r.delivered > now - 3600000 && r.delivered < now + 3600000);
+    }
     // ARXIUS: imatges i documents del prototip i el logo (màxim 1 MB i amb data d'esborrat del grup)
     function studentFileOk(gid) {
       let f = request.resource.data;
-      let w = grp(gid).get('w', {});
       return f.keys().hasOnly(['name', 'kind', 'size', 'data', 'expiresAt'])
+        && f.name is string && f.name.size() <= 300 && f.kind in ['img', 'doc', 'logo']
         && f.data is string && f.data.size() < 1000000
         && f.expiresAt is timestamp && f.expiresAt <= grp(gid).expiresAt
-        && (winOk(w, 'prototip') || winOk(w, 'marca'));
+        && filesOpen(gid);
     }
+    function filesOpen(gid) { let w = grp(gid).get('w', {}); return winOk(w, 'prototip') || winOk(w, 'marca'); }
 
     // PROFESSORAT AUTORITZAT: el document es diu com el correu
     match /profs/{email} {
@@ -73,9 +87,15 @@ service cloud.firestore {
       match /members/{uid} {
         allow get: if (signed() && request.auth.uid == uid) || isProf(gid);
         allow list: if isProf(gid);
+        // Entrar al grup: amb l'entrada lliure oberta (join) o amb una invitació del professor al mateix equip
         allow create: if signed() && request.auth.uid == uid
+          && request.resource.data.keys().hasOnly(['email', 'name', 'team', 'joined', 'expiresAt'])
           && request.resource.data.email == me()
-          && request.resource.data.team in grp(gid).teamIds;
+          && request.resource.data.name is string && request.resource.data.name.size() <= 150
+          && request.resource.data.team in grp(gid).teamIds
+          && (grp(gid).get('join', true) != false
+              || (exists(/databases/$(database)/documents/groups/$(gid)/invites/$(me()))
+                  && get(/databases/$(database)/documents/groups/$(gid)/invites/$(me())).data.team == request.resource.data.team));
         allow update, delete: if isProf(gid);
         // L'alumne només pot afegir les seves connexions (data i dispositiu, com a molt 30)
         allow update: if signed() && request.auth.uid == uid
@@ -96,10 +116,13 @@ service cloud.firestore {
         allow create, delete: if isProf(gid);
         allow update: if isProf(gid)
           || (inTeam(gid, tid) && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['members', 'data', 'delivered', 'updated'])
-              && studentEditOk(gid));
+              && request.resource.data.get('updated', 0) is number
+              && dataKeysOk() && deliveredOk() && studentEditOk(gid));
 
         match /files/{fid} {
-          allow read, delete: if isProf(gid) || inTeam(gid, tid);
+          allow read: if isProf(gid) || inTeam(gid, tid);
+          // L'alumnat només pot treure arxius mentre el prototip o la marca estan oberts
+          allow delete: if isProf(gid) || (inTeam(gid, tid) && filesOpen(gid));
           allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid));
         }
         match /prof/{part} {
