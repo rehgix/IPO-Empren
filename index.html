@@ -2915,8 +2915,8 @@ function bindReq() {
 }
 function okMailUrl(r) {
   const link = location.origin + location.pathname;
-  const body = `Hola ${String(r.name || '').split(' ')[0]},\n\nHe aprovat la teva sol·licitud: ja pots crear els teus grups a l'eina Emprèn.\n\nEntra amb el teu compte de l'institut (${r.email}) en aquest enllaç:\n${link}\n\nSalutacions,\n${(USER && USER.name) || ''}`;
-  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(r.email) + '&su=' + encodeURIComponent('Accés de professor aprovat · Emprèn') + '&body=' + encodeURIComponent(body);
+  const body = `Hola ${String(r.name || '').split(' ')[0]},\n\nHe aprovat la teva sol·licitud: ja pots crear els teus grups a l'eina IPO Emprèn.\n\nEntra amb el teu compte de l'institut (${r.email}) en aquest enllaç:\n${link}\n\nSalutacions,\n${(USER && USER.name) || ''}`;
+  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(r.email) + '&su=' + encodeURIComponent('Accés de professor aprovat · IPO Emprèn') + '&body=' + encodeURIComponent(body);
 }
 function adminView() {
   bareView();
@@ -3088,7 +3088,7 @@ function showQR(link) {
   loadQR().then(() => { const q = qrcode(0, 'M'); q.addData(link); q.make(); o.querySelector('.qrimg').innerHTML = q.createSvgTag({ cellSize: 8, margin: 2, scalable: true }); })
     .catch(() => { o.querySelector('.qrimg').innerHTML = '<p class="small">No s\'ha pogut crear el codi QR. Comprova la connexió a internet.</p>'; });
 }
-const classMsg = link => `Hola! Per al projecte emprenedor farem servir l'eina Emprèn.\n\n1. Obre aquest enllaç: ${link}\n2. Entra amb el teu compte de l'institut${DOMAINS().length ? ' (@' + DOMAINS()[0] + ')' : ''}.\n3. Tria el teu equip. Només ho has de fer el primer dia.\n\nSi t'equivoques d'equip, avisa'm i et canvio.`;
+const classMsg = link => `Hola! Per al projecte emprenedor farem servir l'eina IPO Emprèn.\n\n1. Obre aquest enllaç: ${link}\n2. Entra amb el teu compte de l'institut${DOMAINS().length ? ' (@' + DOMAINS()[0] + ')' : ''}.\n3. Tria el teu equip. Només ho has de fer el primer dia.\n\nSi t'equivoques d'equip, avisa'm i et canvio.`;
 function vAlumnes(v) {
   const link = location.origin + location.pathname + (CLOUD ? '#g=' + GID : '');
   // Invitats que encara no han entrat: surten com a «pendents»
@@ -3140,8 +3140,8 @@ function rostLog(x) {
 // Correu d'invitació: obre el Gmail del professor amb el text ja escrit
 function invMailUrl(x) {
   const t = G.teams.find(t => t.id === x.team), link = location.origin + location.pathname + '#g=' + GID;
-  const body = `Hola ${String(x.name || '').split(' ')[0]},\n\nT'he afegit al grup «${G.name}» de l'eina Emprèn, a l'equip «${t ? t.name : ''}».\n\nEntra amb el teu compte de l'institut (${x.id}) en aquest enllaç:\n${link}\n\nEntraràs directament al teu equip.\n\nSalutacions,\n${(USER && USER.name) || ''}`;
-  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(x.id) + '&su=' + encodeURIComponent('Invitació al projecte emprenedor · ' + G.name) + '&body=' + encodeURIComponent(body);
+  const body = `Hola ${String(x.name || '').split(' ')[0]},\n\nT'he afegit al grup «${G.name}» de l'eina IPO Emprèn, a l'equip «${t ? t.name : ''}».\n\nEntra amb el teu compte de l'institut (${x.id}) en aquest enllaç:\n${link}\n\nEntraràs directament al teu equip.\n\nSalutacions,\n${(USER && USER.name) || ''}`;
+  return 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(x.id) + '&su=' + encodeURIComponent('Invitació a IPO Emprèn · ' + G.name) + '&body=' + encodeURIComponent(body);
 }
 function bindCloudConfig(v) {
   if (!CLOUD || !ME || !ME.isProf) return;
