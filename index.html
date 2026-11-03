@@ -1240,9 +1240,9 @@ const PE = (() => {
       clients: ['Centre Mèdic Salut', 'Supermercats Bonpreu de Mar', 'Gimnàs Força', 'Consorci de Turisme', 'Transports Ràpids', 'Restaurant Can Pere', 'Escola d\'Idiomes', 'Ajuntament de Vilanova', 'Club de Tennis', 'Farmàcia Central', 'Cinema Odeó', 'Fira d\'Artesania'] }
   };
   const ROLES = {
-    accio: { label: 'Rol d\'acció', opts: [['Impulsor', 'Persona activa que anima els altres.'], ['Implementador', 'Organitzador pràctic que transforma idees en realitzacions.'], ['Finalitzador/Comunicador', 'Meticulós: assegura que tot s\'ha fet correctament i entrega les tasques.']] },
-    social: { label: 'Rol social', opts: [['Coordinador', 'Coordina esforços i promou la presa de decisions.'], ['Investigador', 'Explora oportunitats i genera contactes.'], ['Cohesionador', 'Resol conflictes i manté l\'harmonia.']] },
-    mental: { label: 'Rol mental', opts: [['Creador/Redactor', 'Font d\'idees i propostes originals.'], ['Avaluador', 'Analitza idees i proporciona instruments d\'anàlisi.'], ['Especialista', 'Aporta coneixements i habilitats tècniques.']] }
+    accio: { label: 'Rol d\'acció', title: 'Rols d\'acció', opts: [['Impulsor', 'Persona activa que anima els altres.'], ['Implementador', 'Organitzador pràctic que transforma idees en realitzacions.'], ['Finalitzador/Comunicador', 'Meticulós: assegura que tot s\'ha fet correctament i entrega les tasques.']] },
+    social: { label: 'Rol social', title: 'Rols socials', opts: [['Coordinador', 'Coordina esforços i promou la presa de decisions.'], ['Investigador', 'Explora oportunitats i genera contactes.'], ['Cohesionador', 'Resol conflictes i manté l\'harmonia.']] },
+    mental: { label: 'Rol mental', title: 'Rols mentals', opts: [['Creador/Redactor', 'Font d\'idees i propostes originals.'], ['Avaluador', 'Analitza idees i proporciona instruments d\'anàlisi.'], ['Especialista', 'Aporta coneixements i habilitats tècniques.']] }
   };
   // Formes jurídiques (dades orientatives; cal contrastar-les al Canal Empresa)
   const FORMS = {
@@ -1263,7 +1263,7 @@ const PE = (() => {
     ['is', 'Impost sobre societats', 'Societats: pagaments a compte i declaració anual (model 200).', ['sl', 'sll', 'sa', 'sal', 'coop']],
     ['iva', 'IVA', 'Es repercuteix als clients i es paga a Hisenda cada trimestre (model 303) amb un resum anual (model 390).', null],
     ['iae', 'IAE', 'Impost municipal. Exempts: persones físiques i societats amb una xifra de negoci inferior a 1.000.000 €.', null],
-    ['ret', 'Retencions', 'Si contracteu personal o lloguer un local: models 111 i 115.', null],
+    ['ret', 'Retencions', 'Si contracteu personal o llogueu un local: models 111 i 115.', null],
     ['taxes', 'Taxes i contribucions especials', 'Taxes municipals (escombraries, gual...) i contribucions per obres públiques.', null],
     ['llibres', 'Llibres obligatoris', 'Comptables (diari, inventaris i comptes anuals), fiscals (factures emeses i rebudes, béns d\'inversió) i mercantils (actes, registre de socis).', null]
   ];
@@ -1694,9 +1694,9 @@ function vEquip(v) {
     <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.name)}">
     <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}"><option value="">${r.label}</option>${r.opts.map(([o]) => `<option ${m[k] === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`).join('')}</div>
     <textarea rows="2" placeholder="Responsabilitats concretes d'aquesta persona en el projecte" aria-label="Responsabilitats" data-member="resp" data-idx="${i}">${esc(m.resp)}</textarea></div>`).join('');
-  page(v, 'equip', 'Creeu un equip de màxim tres persones. Cada persona s\'assigna un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats.',
+  page(v, 'equip', 'Creeu un equip d\'un màxim de tres persones. Cada persona tria un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats.',
     card('Membres de l\'equip', pad((rows || '<p class="muted">Encara no heu afegit cap persona.</p>') + (t.members.length < 3 ? '<button type="button" class="btn ghost small" id="addMember">+ Afegir una persona</button>' : '')), `${t.members.length} de 3`)
-    + card('Els rols d\'equip', pad(`<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">${Object.values(PE.ROLES).map(r => `<div><b>${r.label}s</b><ul class="plain">${r.opts.map(([o, d]) => `<li><b>${o}</b>: ${esc(d)}</li>`).join('')}</ul></div>`).join('')}</div>`)));
+    + card('Els rols d\'equip', pad(`<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">${Object.values(PE.ROLES).map(r => `<div><b>${r.title}</b><ul class="plain">${r.opts.map(([o, d]) => `<li><b>${o}</b>: ${esc(d)}</li>`).join('')}</ul></div>`).join('')}</div>`)));
   const a = $('#addMember'); if (a) a.onclick = () => { t.members.push({ name: '', accio: '', social: '', mental: '', resp: '' }); save(); render(); };
   v.querySelectorAll('[data-del-member]').forEach(b => b.onclick = () => { t.members.splice(+b.dataset.delMember, 1); whoShift(t, 'members', +b.dataset.delMember); save(); render(); });
 }
@@ -1709,7 +1709,7 @@ function vIdea(v) {
     card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Sector (cicle formatiu)</label><select class="field-sel" id="sectorSel" data-path="idea.sector">${secOpts.map(([k, l]) => `<option value="${k}" ${t.data.idea.sector === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`
       + txt('idea.nom', 'Nom provisional del projecte') + ta('idea.activitat', 'Activitat', 'El producte o servei que oferireu al mercat.') + ta('idea.diferenciador', 'Element diferenciador', 'El valor afegit que aporteu al client i que us distingeix de la competència.') + ta('idea.benefici', 'Expectativa de benefici', 'Com i per què l\'activitat generarà un benefici econòmic, social o cultural.')))
     + card('Golden Circle', pad(`<div class="golden"><svg class="gc-svg" viewBox="0 0 240 240" role="img" aria-label="Golden Circle: Why al centre, How al mig i What a fora"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="22" class="tw">WHAT</text><text x="120" y="35" class="ts tw">Què</text><text x="120" y="60" class="th">HOW</text><text x="120" y="73" class="ts th">Com</text><text x="120" y="118" class="ty">WHY</text><text x="120" y="133" class="ts ty">Per a què</text></svg><div class="gc-fields">
-      <div class="gc-f gc-why">${ta('idea.why', 'Why · Per a què? (propòsit)', 'Què voleu aportar? Per què inicieu aquesta aventura? Què es perdrà el món si aquesta idea no tira endavant?', 4)}</div>
+      <div class="gc-f gc-why">${ta('idea.why', 'Why · Per a què? (propòsit)', 'Què voleu aportar? Per què inicieu aquesta aventura? Què es perdria el món si aquesta idea no tira endavant?', 4)}</div>
       <div class="gc-f gc-how">${ta('idea.how', 'How · Com? (procés)', 'Quina estratègia us permetrà assolir el propòsit? Quins seran els pilars?', 3)}</div>
       <div class="gc-f gc-what">${ta('idea.what', 'What · Què? (resultat)', 'Els productes, serveis o plataformes que oferireu per fer possible el propòsit.', 3)}</div></div></div>`))
     + card('Què us motiva?', pad(ta('idea.motExt', 'Motivació extrínseca', 'Guanyar diners, reconeixement, estatus...', 2) + ta('idea.motInt', 'Motivació intrínseca', 'Gaudir de la feina, el repte personal...', 2) + ta('idea.motTrans', 'Motivació transcendent', 'Com afectarà els altres? Quin bé podeu fer?', 2)
@@ -1818,7 +1818,7 @@ function vPestel(v) {
 function vDafo(v) {
   const d = T().data;
   const ops = PE.PESTEL.map(([k, l]) => d.pestel[k].o && `${l}: ${d.pestel[k].o}`).filter(Boolean), ams = PE.PESTEL.map(([k, l]) => d.pestel[k].a && `${l}: ${d.pestel[k].a}`).filter(Boolean);
-  page(v, 'dafo', 'El DAFO resumeix l\'anàlisi. Les <b>fortaleses</b> i les <b>debilitats</b> són internes (depenen de vosaltres). Les <b>oportunitats</b> i les <b>amenaces</b> vénen de l\'entorn: les podeu treure del PESTEL i del microentorn.',
+  page(v, 'dafo', 'El DAFO resumeix l\'anàlisi. Les <b>fortaleses</b> i les <b>debilitats</b> són internes (depenen de vosaltres). Les <b>oportunitats</b> i les <b>amenaces</b> venen de l\'entorn: les podeu treure del PESTEL i del microentorn.',
     `<div class="dafo">${[['f', 'Fortaleses', 'Què feu bé? Què us fa forts?'], ['d', 'Debilitats', 'Què us falta? On sou febles?'], ['o', 'Oportunitats', 'Quines tendències us poden ajudar?'], ['a', 'Amenaces', 'Què us pot perjudicar?']].map(([k, l, h]) => `<div class="dafo-${k}">${card(l, pad(ta('dafo.' + k, l, h, 4)))}</div>`).join('')}</div>`
     + (ops.length || ams.length ? details('Recordatori del vostre PESTEL', `<p><b>Oportunitats:</b></p><ul class="plain">${ops.map(x => `<li>${esc(x)}</li>`).join('')}</ul><p><b>Amenaces:</b></p><ul class="plain">${ams.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`) : ''));
 }
@@ -2139,7 +2139,7 @@ const ACTS_DEFAULT = [
   { c: 'Act8', n: 'ODS i Canvas sostenible', ra: 'RA5', w: 5, ext: false, ca: '4.5 · 5.3 · 5.5 · 5.6 · 5.9', ev: [['sost'], ['agents']],
     crit: 'Tria ODS relacionats amb el projecte i explica com els integra al model de negoci; completa el Canvas sostenible (costos i beneficis socials, ambientals, de cicle de vida i circulars), reflexiona sobre la tecnologia i identifica els agents implicats i la seva participació.' },
   { c: 'Act9', n: 'Pla de tresoreria del primer any', ra: 'RA5', w: 10, ext: false, ca: '5.7 · 5.8', ev: [['inversio'], ['prestec'], ['treso'], ['viab']],
-    crit: 'Pla d\'inversió i finançament equilibrat que considera opcions socialment responsables; préstec calculat; pla de tresoreria de 12 mesos amb cobraments i pagaments realistes i sense mesos negatius sense solució; conclusió de viabilitat argumentada amb el resultat i el punt mort.' },
+    crit: 'Pla d\'inversió i finançament equilibrat que considera opcions socialment responsables; préstec calculat; pla de tresoreria de 12 mesos amb cobraments i pagaments realistes i cap mes en negatiu sense solució; conclusió de viabilitat argumentada amb el resultat i el punt mort.' },
   { c: 'Pt6', n: 'Comunicació del projecte', ra: 'RA5', w: 20, ext: false, ca: '4.10', ev: [['pitch']],
     crit: 'El guió del pitch té tots els apartats (ganxo, problema, solució, mercat, model de negoci, impacte, equip i crida a l\'acció), és clar, persuasiu i adequat a la durada, i tria un format de presentació.' },
   { c: 'Pe5', n: 'Qüestionari sobre economia social i solidària', ra: 'RA5', w: 10, ext: true, ca: '4.4 · 4.5 · 5.2', ev: [['ebc']],
@@ -2151,7 +2151,7 @@ const ACTS_DEFAULT = [
 const AI_PROVIDERS = {
   haiku: { label: 'Claude Haiku', desc: 'La més ràpida. Correccions breus i senzilles.', model: 'claude-haiku-5-5', tier: 'quick' },
   sonnet: { label: 'Claude Sonnet', desc: 'Equilibri entre rapidesa i qualitat. Recomanada.', model: 'claude-sonnet-5-5', tier: 'default' },
-  opus: { label: 'Claude Opus', desc: 'La més potent i detallada, però més lenta i consumeix més ús.', model: 'claude-opus-5-5', tier: 'complex' },
+  opus: { label: 'Claude Opus', desc: 'La més potent i detallada, però més lenta i gasta més límit d\'ús.', model: 'claude-opus-5-5', tier: 'complex' },
   manual: { label: 'Una altra IA (ChatGPT, Gemini, Copilot...)', desc: 'Copies la petició, l\'enganxes a la IA que vulguis i tornes a enganxar aquí la resposta.' }
 };
 const aiCfg = () => { G.aiCfg = G.aiCfg || { enabled: true, provider: 'sonnet' }; return G.aiCfg; };
@@ -2896,7 +2896,7 @@ function bareView() {
   $('#tabs').innerHTML = ''; $('#gameName').textContent = ''; $('#quarterTxt').textContent = ''; $('#quarterBar').innerHTML = ''; sideUser();
 }
 function reqCard(req) { // Què veu qui encara no pot crear grups
-  if (req && req.status === 'pending') return `<div class="notice info"><b>Has demanat accés com a professor el ${fmtDay(req.at)}.</b> Quan l'administrador l'aprovi rebràs un correu i aquí mateix podràs crear els teus grups.</div>`;
+  if (req && req.status === 'pending') return `<div class="notice info"><b>Has demanat accés com a professor el ${fmtDay(req.at)}.</b> Quan l'administrador l'aprovi, rebràs un correu i aquí mateix podràs crear els teus grups.</div>`;
   if (req && req.status === 'rejected') return '<div class="notice">La teva sol·licitud d\'accés com a professor no s\'ha aprovat. Si creus que és un error, parla amb l\'administrador de l\'eina.</div>';
   return card('Ets professor? Demana accés', pad(`<p class="small muted">Per crear grups cal que l'administrador de l'eina t'autoritzi. Envia-li la sol·licitud i rebràs un correu quan l'aprovi.</p>
     <div class="pfield"><label for="rqName">Nom i cognoms</label><input type="text" id="rqName" maxlength="100" value="${esc(USER.name || '')}"></div>
