@@ -9,7 +9,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `firestore.rules`: regles de seguretat de la base de dades. Si es canvien, cal avisar l'usuari que s'han de publicar a Firebase a part (no es publiquen amb el push). Un apartat nou amb dades pròpies s'ha d'afegir a `studentEditOk` i a `dataKeysOk`, o l'alumnat no el podrà desar.
 - Seguretat: les imatges de l'alumnat es posen amb `imgSrc()` i els colors amb `col()`; les dades d'equip que arriben de la xarxa passen per `shapeLike()` (a `unpackSection`).
 - Les dades es guarden a Firebase i s'esborren cada 15 de juliol.
-- Sense sessió iniciada, la web mostra un grup d'exemple amb 3 equips (Endoll Verd, Llampec, Llar Fàcil). Serveix per provar els canvis.
+- Sense sessió iniciada, la web mostra un grup d'exemple amb 3 equips (La Pinya, Sant Jordi, El Patufet). Serveix per provar els canvis. Les seves caselles parlen de tradicions, llegendes i contes catalans, no de cap projecte real, perquè l'alumnat no les pugui copiar.
 
 ## Peces clau d'`index.html`
 - `SECS`: els blocs i apartats del menú (ordre, títols, criteris CA, activitats i com es calcula el progrés). Per moure o afegir apartats, es toca aquí.
