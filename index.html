@@ -1991,16 +1991,132 @@ function balanceHtml(d) {
       ${ln('TOTAL PATRIMONI NET I PASSIU', B.total, 'pas', 'tot')}</tbody></table></div></div>
     <p class="small ${ok ? 'muted' : 'neg'}">${ok ? 'El balanç quadra: actiu = patrimoni net + passiu.' : 'El balanç no quadra.'} ${B.cash < 0 ? '<b class="neg">La tresoreria inicial és negativa: falta finançament.</b>' : ''} Les despeses que no tenen vida útil (com les de constitució) no són actiu: redueixen el patrimoni net.</p>`);
 }
+/* ---------- Exemples de finançament per sector (dades orientatives) ---------- */
+const FINSEC = {
+  gestoria: {
+    inv: [["Ordinadors i pantalles dobles", 2800, 4], ["Escàner de documents i impressora", 900, 5], ["Mobiliari d'oficina i atenció al client", 2500, 10], ["Arxivadors i armari ignífug", 700, 10], ["Despeses de constitució i alta", 600, 0]],
+    desp: [["Programari de comptabilitat i nòmines", 90, "mensual"], ["Assegurança de responsabilitat civil", 450, "anual"], ["Base de dades legal i fiscal", 50, "mensual"], ["Certificats digitals i signatura", 60, "anual"]],
+    cobra: "Es cobra sobretot per iguala mensual i els clients paguen per domiciliació, així que els ingressos són estables. Hi ha molta feina als trimestres d'impostos i a la renda, i cal vigilar els clients que s'endarrereixen.",
+    pista: "La inversió inicial és petita, així que investigueu si n'hi ha prou amb estalvis propis, la capitalització de l'atur o un microcrèdit. Mireu també les subvencions generals per a la digitalització de petits negocis."
+  },
+  electricitat: {
+    inv: [["Furgoneta de segona mà equipada", 14000, 6], ["Eines elèctriques i bateries", 2500, 4], ["Aparells de mesura i certificació", 2200, 5], ["Escales, bastides i EPI", 1200, 5], ["Estoc inicial de cable i material", 2000, 0]],
+    desp: [["Assegurança RC d'instal·lador", 900, "anual"], ["Combustible i peatges", 350, "mensual"], ["Renovació d'EPI i roba de treball", 300, "trimestral"], ["Manteniment i ITV de la furgoneta", 600, "anual"]],
+    cobra: "Sovint cal comprar el material abans de cobrar, i les constructores poden pagar a 60 o 90 dies. Demanar una paga i senyal als particulars ajuda molt a no quedar-se sense diners a la caixa.",
+    pista: "Compareu comprar la furgoneta amb préstec, amb leasing o amb renting. Investigueu també si podeu negociar amb els proveïdors de material elèctric pagar a 30 o 60 dies per igualar-ho amb els cobraments."
+  },
+  automatitzacio: {
+    inv: [["Portàtils potents i llicències PLC", 6000, 4], ["Banc de proves amb PLC i robot petit", 9000, 6], ["Instruments de mesura i comunicacions", 2500, 5], ["Furgoneta per anar a les fàbriques", 13000, 6], ["Eines i material de muntatge", 1800, 5]],
+    desp: [["Manteniment de llicències de programari", 1800, "anual"], ["Assegurança RC professional industrial", 1500, "anual"], ["Formació i certificacions de fabricants", 900, "anual"], ["Components per a prototips i proves", 400, "mensual"]],
+    cobra: "Es treballa per projectes grans que es cobren per fites: una part a l'inici, una altra al muntatge i la resta a la posada en marxa. Les indústries paguen a 60-90 dies, i cal avançar molts components cars.",
+    pista: "Investigueu com negociar pagaments a compte amb el client i si una pòlissa de crèdit us pot cobrir els mesos sense cobrar. Mireu també les ajudes generals a la innovació i la digitalització de la indústria."
+  },
+  manteniment: {
+    inv: [["Furgoneta taller equipada", 15000, 6], ["Equip de soldadura i oxitall", 2500, 8], ["Analitzador de vibracions i termografia", 4500, 5], ["Eines mecàniques i hidràuliques", 3000, 6], ["Estoc de recanvis i rodaments", 1500, 0]],
+    desp: [["Assegurança RC per treballar en fàbriques", 1200, "anual"], ["Gasos de soldadura i consumibles", 150, "mensual"], ["Calibratge d'aparells de mesura", 400, "anual"], ["Formació en prevenció de riscos", 300, "anual"]],
+    cobra: "Els contractes de manteniment preventiu donen un ingrés fix cada mes, però les avaries urgents es facturen a part i les empreses paguen a 60 dies. Convé tenir sempre recanvis i un coixí de diners.",
+    pista: "Investigueu si us surt més a compte llogar els equips de diagnòstic cars (renting) que comprar-los amb un préstec. Valoreu si la capitalització de l'atur us pot pagar la furgoneta inicial."
+  },
+  tallerauto: {
+    inv: [["Elevadors de vehicles (2)", 7000, 10], ["Màquina de diagnosi i programari", 4000, 4], ["Eines, compressor i banc de treball", 5000, 8], ["Equip de càrrega d'aire condicionat", 3000, 6], ["Adequació del local i permisos", 6000, 10]],
+    desp: [["Actualització del programari de diagnosi", 900, "anual"], ["Recollida d'olis i residus perillosos", 120, "mensual"], ["Assegurança RC i de vehicles en dipòsit", 1200, "anual"], ["Lubricants, filtres i consumibles", 600, "mensual"]],
+    cobra: "Els particulars paguen en el moment de recollir el cotxe, però les flotes i asseguradores poden trigar 30-60 dies. Cal pagar els recanvis al proveïdor abans o al mateix temps, i a l'estiu i abans de vacances hi ha més feina.",
+    pista: "Investigueu si és millor comprar elevadors de segona mà o fer leasing d'equips nous. Mireu els requisits i costos de la llicència d'activitat del taller, que poden endarrerir l'obertura i els ingressos."
+  },
+  nautic: {
+    inv: [["Furgoneta amb remolc", 16000, 6], ["Diagnosi de motors fora borda i intraborda", 3500, 5], ["Eines i equip de fibra i pintura", 3000, 6], ["Embarcació auxiliar petita", 4000, 8], ["Estoc d'antiincrustant i recanvis", 2000, 0]],
+    desp: [["Lloguer d'espai al port o varador", 600, "mensual"], ["Assegurança RC nàutica", 1100, "anual"], ["Resines, pintures i consumibles", 300, "mensual"], ["Gestió de residus de pintura i olis", 250, "trimestral"]],
+    cobra: "És molt estacional: a la primavera tothom vol la barca a punt i a l'hivern hi ha poca feina. Cal guardar diners de la temporada alta per pagar les despeses fixes dels mesos fluixos.",
+    pista: "Investigueu com fer un pla de tresoreria amb mesos molt desiguals i si una pòlissa de crèdit us ajudaria a l'hivern. Penseu si podeu oferir contractes d'hivernada pagats per avançat."
+  },
+  ferroviari: {
+    inv: [["Eines especialitzades i dinamomètriques", 4000, 6], ["Equips de mesura elèctrica i electrònica", 4500, 5], ["Furgoneta per anar a tallers i cotxeres", 14000, 6], ["Portàtil i programari de diagnosi", 2500, 4], ["Homologacions i formació inicial", 3000, 0]],
+    desp: [["Assegurança RC d'alt risc ferroviari", 2000, "anual"], ["Renovació de certificacions i formació", 1200, "anual"], ["EPI i roba d'alta visibilitat", 400, "trimestral"], ["Calibratge d'eines i aparells", 600, "anual"]],
+    cobra: "Els clients són pocs i grans (operadors i empreses de manteniment) que contracten per projectes o subcontractes i paguen a 60-90 dies. Un sol client que s'endarrereix pot deixar-vos sense liquiditat.",
+    pista: "Investigueu quins requisits de solvència i assegurances demanen els grans clients abans de contractar-vos. Valoreu el risc de dependre d'un sol client i si us cal una línia de crèdit per als mesos d'espera."
+  },
+  reformes: {
+    inv: [["Furgoneta de segona mà", 12000, 6], ["Eines elèctriques i radial", 2500, 4], ["Bastides, escales i puntals", 1800, 8], ["Mesurador làser i programari 3D", 1200, 4], ["Mostrari de materials i acabats", 800, 3]],
+    desp: [["Assegurança RC per obres", 800, "anual"], ["Contenidors i gestió de runa", 250, "mensual"], ["Combustible i aparcament", 300, "mensual"], ["Consumibles: discos, broques, cintes", 150, "mensual"]],
+    cobra: "Es cobra per pressupost i per fases: una paga i senyal a l'inici, una part a meitat d'obra i la resta en acabar. Si no es demana avançament, cal pagar materials i industrials abans de cobrar.",
+    pista: "Investigueu com fer contractes amb pagaments per fases per no avançar diners. Valoreu el micromecenatge o la banca ètica si feu rehabilitació sostenible, i el risc de clients que no paguen el final."
+  },
+  edificacio: {
+    inv: [["Ordinadors per a CAD i BIM", 5000, 4], ["Llicències de programari BIM", 3000, 3], ["Estació total o escàner làser", 6000, 6], ["Dron per a inspecció de façanes", 1500, 4], ["Mobiliari i plotter", 3000, 8]],
+    desp: [["Assegurança RC professional tècnica", 1500, "anual"], ["Quota del col·legi professional", 300, "trimestral"], ["Subscripció de programari BIM", 250, "mensual"], ["Visats i tràmits de projectes", 200, "mensual"]],
+    cobra: "Els projectes duren mesos i es cobren per fases (avantprojecte, projecte, direcció d'obra). Si l'obra s'atura per llicències, el cobrament s'endarrereix molt, i cal aguantar mesos amb pocs ingressos.",
+    pista: "Investigueu si us convé llogar el programari i equips cars en lloc de comprar-los. Mireu les ajudes públiques generals a la rehabilitació d'edificis, que poden fer que més clients us encarreguin projectes."
+  },
+  mecanitzat: {
+    inv: [["Centre de mecanitzat CNC de segona mà", 45000, 10], ["Torn convencional i fresadora", 12000, 12], ["Eines de tall i portaeines", 5000, 3], ["Instruments de metrologia", 3000, 6], ["Programari CAD/CAM", 4000, 4]],
+    desp: [["Plaquetes, fresses i eines de tall", 600, "mensual"], ["Taladrina, olis i gestió de residus", 200, "mensual"], ["Manteniment preventiu de màquines", 1500, "anual"], ["Assegurança de maquinària i RC", 1800, "anual"]],
+    cobra: "Es treballa per encàrrecs de lots de peces: cal comprar el metall i fer hores de màquina abans de lliurar, i la indústria paga a 60-90 dies. Necessiteu molt fons de maniobra per no ofegar-vos.",
+    pista: "Investigueu els riscos de finançar una CNC cara amb préstec si no arriben encàrrecs, i compareu-ho amb leasing o comprar de segona mà. Mireu també ajudes generals a la inversió industrial."
+  },
+  laboratori: {
+    inv: [["Equips d'anàlisi (espectrofotòmetre)", 15000, 8], ["Balances, estufes i pH-metres", 5000, 8], ["Campana d'extracció i mobiliari", 8000, 10], ["Programari de gestió de mostres", 2500, 4], ["Material de vidre i reactius inicials", 2000, 0]],
+    desp: [["Reactius i patrons de referència", 500, "mensual"], ["Calibratge i verificació d'equips", 2000, "anual"], ["Auditoria i acreditació de qualitat", 3000, "anual"], ["Gestió de residus químics", 200, "mensual"]],
+    cobra: "Es cobra per anàlisi o per contracte periòdic amb empreses (alimentàries, aigües, indústria) que paguen a 30-60 dies. Abans de cobrar res cal pagar equips, reactius i l'acreditació de qualitat.",
+    pista: "Investigueu quant costa i quant triga obtenir una acreditació de qualitat, perquè molts clients la demanen. Valoreu leasing per als equips d'anàlisi cars i ajudes generals a la innovació i la R+D."
+  },
+  farmacia: {
+    inv: [["Reactor i agitador per a cremes", 8000, 8], ["Envasadora i etiquetadora", 6000, 8], ["Sala neta i adequació del local", 10000, 10], ["Balances i material de laboratori", 3000, 6], ["Estoc inicial de matèries primeres", 3000, 0]],
+    desp: [["Matèries primeres i envasos", 1200, "mensual"], ["Informe de seguretat del producte", 1500, "trimestral"], ["Assegurança RC de producte", 1500, "anual"], ["Anàlisis microbiològiques de lots", 300, "mensual"]],
+    cobra: "Es fabrica per encàrrec de marques: cal comprar matèries primeres i envasos en quantitats mínimes abans de produir, i el client paga en lliurar o a 30-60 dies. Demanar un avançament ajuda la tresoreria.",
+    pista: "Investigueu els permisos sanitaris i l'assegurança obligatòria per fabricar cosmètics, que s'han de pagar abans de vendre. Penseu si el micromecenatge pot finançar una primera línia de producte pròpia."
+  },
+  videojocs: {
+    inv: [["Ordinadors potents amb targeta gràfica", 7000, 4], ["Kits de desenvolupament i consoles", 2500, 4], ["Tauletes gràfiques i perifèrics", 1500, 4], ["Llicències d'art 3D i so", 2000, 3], ["Mobiliari i equip de gravació", 1500, 6]],
+    desp: [["Subscripcions de programari d'art i 3D", 150, "mensual"], ["Servidors i control de versions", 80, "mensual"], ["Botigues d'actius (assets) i música", 300, "trimestral"], ["Assistència a fires del sector", 1500, "anual"]],
+    cobra: "Els encàrrecs es cobren per fites (prototip, versió beta, versió final) i els projectes duren mesos. Si el client endarrereix una fita, l'estudi passa mesos sense ingressos però pagant ordinadors i llicències.",
+    pista: "Investigueu el micromecenatge per finançar un joc propi i les ajudes públiques generals a la cultura digital i les indústries creatives. Valoreu el risc de dependre d'un sol client gran."
+  },
+  web: {
+    inv: [["Portàtils i pantalles", 3000, 4], ["Mòbils i tauletes de prova", 1200, 3], ["Llicències de plantilles i connectors", 600, 2], ["Mobiliari d'oficina bàsic", 1200, 8], ["Web pròpia i imatge de marca", 800, 3]],
+    desp: [["Allotjament i servidors dels clients", 120, "mensual"], ["Dominis i certificats", 200, "anual"], ["Eines de disseny i desenvolupament", 60, "mensual"], ["Publicitat en línia per captar clients", 200, "mensual"]],
+    cobra: "Es cobra un 50% en començar la web i la resta en entregar-la, i després quotes mensuals de manteniment i allotjament. Aquestes quotes donen ingressos fixos, però els retards dels clients a donar textos allarguen el cobrament.",
+    pista: "La inversió és baixa: investigueu si n'hi ha prou amb estalvis, la capitalització de l'atur o la tarifa plana d'autònoms. Mireu les subvencions generals per a la digitalització de pimes, que poden portar-vos clients."
+  },
+  disseny: {
+    inv: [["Ordinador i pantalla calibrada", 3500, 4], ["Càmera, objectius i il·luminació", 3000, 5], ["Tauleta gràfica", 600, 4], ["Impressora de proves en color", 800, 5], ["Mobiliari i espai de reunions", 1500, 8]],
+    desp: [["Subscripció de programari de disseny", 70, "mensual"], ["Bancs d'imatges i tipografies", 40, "mensual"], ["Impressions i proves per a clients", 150, "mensual"], ["Registre i protecció de marques", 300, "anual"]],
+    cobra: "Es cobra per projecte (logotip, campanya, catàleg) amb un avançament i la resta en entregar, o per iguala mensual de xarxes socials. Els projectes amb molts canvis s'allarguen i endarrereixen el cobrament.",
+    pista: "Investigueu com posar un límit de revisions al pressupost perquè no s'allarguin els cobraments. Valoreu la tarifa plana d'autònoms, els microcrèdits i les ajudes generals a les indústries creatives."
+  },
+  apps: {
+    inv: [["Portàtils capaços de compilar per a iOS", 4500, 4], ["Mòbils Android i iPhone de prova", 2000, 3], ["Registre a les botigues d'apps", 150, 0], ["Llicències d'eines de desenvolupament", 800, 2], ["Despeses de constitució", 600, 0]],
+    desp: [["Servidors i base de dades al núvol", 150, "mensual"], ["Quota de desenvolupador d'Apple", 100, "anual"], ["Eines de proves i errors", 50, "mensual"], ["Serveis de notificacions i correu", 40, "mensual"]],
+    cobra: "Si feu apps per encàrrec, es cobra per fites (disseny, versió beta, publicació). Si és una app pròpia, els ingressos per subscripció arriben de mica en mica i les botigues es queden una comissió i paguen amb retard.",
+    pista: "Investigueu quant de temps podeu aguantar sense ingressos si feu una app pròpia, i si encàrrecs paral·lels us poden finançar. Mireu el micromecenatge, els microcrèdits i les ajudes generals a la innovació."
+  }
+};
+/* ---------- Exemples de finançament segons el sector de l'equip ---------- */
+// Les claus de FINSEC han de coincidir amb les de PE.SECTORS. Els imports són orientatius.
+const finSec = () => { const k = T().data.idea.sector || G.sector; return FINSEC[k] ? Object.assign({ k }, FINSEC[k]) : null; };
+const FREQ_TXT = { mensual: 'al mes', trimestral: 'al trimestre', anual: 'a l\'any' };
+function finSecCard(kind) {
+  const f = finSec(), s = T().data.idea.sector || G.sector;
+  if (!f) return s ? '' : card('Exemples del vostre sector', pad('<p class="muted">Trieu el sector del projecte a «La idea de negoci» i aquí us sortiran exemples pensats per al vostre tipus d\'empresa.</p>'));
+  const sh = esc(PE.SECTORS[f.k].short), eur = x => Number(x).toLocaleString('ca-ES') + ' €';
+  if (kind === 'inv') return card('Exemples d\'inversions · ' + sh, pad(`<p class="small muted">Són imports orientatius per a una empresa que comença. Cerqueu preus reals, ajusteu-los al vostre projecte i afegiu només el que us calgui (l'import l'heu d'omplir vosaltres).</p>
+    <div class="row">${f.inv.map(([c, i, v]) => `<button type="button" class="btn ghost small" data-add="inversio.items" data-concepte="${esc(c)}" data-vida="${v || ''}">+ ${esc(c)} <span class="muted">≈ ${eur(i)}</span></button>`).join('')}</div>
+    <div class="notice info" style="margin-top:12px"><b>Per investigar:</b> ${esc(f.pista)}</div>`));
+  return card('Despeses típiques · ' + sh, pad(`<p class="small muted">Despeses pròpies del vostre sector, a més de les generals. Els imports són orientatius: contrasteu-los i poseu-hi els vostres.</p>
+    <div class="row">${f.desp.map(([c, i, q]) => `<button type="button" class="btn ghost small" data-add="treso.rows" data-kind="out" data-label="${esc(c)}" data-freq="${esc(q)}">+ ${esc(c)} <span class="muted">≈ ${eur(i)} ${FREQ_TXT[q] || ''}</span></button>`).join('')}</div>
+    <div class="notice info" style="margin-top:12px"><b>Com cobra i paga aquest sector:</b> ${esc(f.cobra)}</div>`));
+}
+
 function vInversio(v) {
   const d = T().data;
   const inv = d.inversio.items.map((x, i) => `<div class="irow">${li('inversio.items', i, 'concepte', x.concepte, 'Concepte')}${lnum('inversio.items', i, 'import', x.import, 'Import (€)', 100, 'placeholder="Import €"')}${lnum('inversio.items', i, 'vida', x.vida, 'Vida útil (anys)', 1, 'placeholder="Anys"')}${delBtn('inversio.items', i)}</div>`).join('');
   const fin = d.finan.items.map((x, i) => `<div class="irow">${lsel('finan.items', i, 'cat', x.cat, PE.FIN_CATS.map(c => [c[0], c[1] + (c[2] ? ' ★' : '')]), 'Font')}${li('finan.items', i, 'font', x.font, 'Entitat o descripció')}${lnum('finan.items', i, 'import', x.import, 'Import (€)', 100, 'placeholder="Import €"')}${lnum('finan.items', i, 'mes', x.mes, 'Mes de cobrament', 1, 'placeholder="Mes" max="12"')}${delBtn('finan.items', i)}</div>`).join('');
   page(v, 'inversio', 'Què necessiteu per començar i quants diners heu d\'aconseguir? Llisteu les inversions i les fonts de finançament. Investigueu les opcions financeres socialment responsables, com la banca ètica, les cooperatives de serveis financers, els microcrèdits o el micromecenatge.',
     card('Inversions inicials', pad(`<div class="irow head"><span>Concepte</span><span>Import (€)</span><span>Vida útil</span><span></span></div>${inv}<button type="button" class="btn ghost small" data-add="inversio.items">+ Afegir una inversió</button><p class="small muted">La vida útil (anys) serveix per calcular l'amortització. Deixeu-la en blanc per a les despeses que no s'amortitzen.</p>`))
+    + finSecCard('inv')
     + card('Fons de maniobra', numf('inversio.fons', 'Diners per començar (€)', 'Per pagar les despeses dels primers mesos, mentre no arriben prou ingressos. Es recomana cobrir com a mínim 3 mesos.', 500))
     + card('Fonts de finançament', pad(`${fin}<button type="button" class="btn ghost small" data-add="finan.items">+ Afegir una font</button><p class="small muted">★ Opció socialment responsable. El mes de cobrament s'utilitza al pla de tresoreria.</p>`))
     + card('Balanç inicial', `<div id="balTbl">${balanceHtml(d)}</div>`), { aside: t => { invAside(t); const el = $('#balTbl'); if (el) el.innerHTML = balanceHtml(t.data); } });
-  bindList(v, 'inversio.items', { concepte: '', import: '', vida: '5' });
+  bindList(v, 'inversio.items', b => b.dataset.concepte ? { concepte: b.dataset.concepte, import: '', vida: b.dataset.vida || '' } : { concepte: '', import: '', vida: '5' });
   bindList(v, 'finan.items', { cat: 'propis', font: '', import: '', mes: '1' });
 }
 function loanAside(t) {
@@ -2036,9 +2152,10 @@ function vTreso(v) {
     card('Cobraments i pagaments', pad(`${numf('treso.saldoInicial', 'Saldo inicial (€)', 'Normalment 0: el finançament ja entra com a cobrament.', 100, true)}${ed}
       <div class="row"><button type="button" class="btn ghost small" data-add="treso.rows" data-kind="in">+ Cobrament</button><button type="button" class="btn ghost small" data-add="treso.rows" data-kind="out">+ Pagament</button><button type="button" class="btn ghost small" data-add="treso.rows" data-kind="pct">+ Pagament variable (% de vendes)</button></div>
       <p class="small muted">Consells: la tarifa plana d'autònoms és de 80 € al mes durant el primer any; les vendes del principi solen ser baixes i creixen a poc a poc; recordeu les assegurances i la gestoria.</p>`))
+    + finSecCard('desp')
     + card('Pla de tresoreria del primer any', `<div id="tresoTbl">${tresoTable(t)}</div>`));
   liveFn = () => { const el = $('#tresoTbl'); if (el) el.innerHTML = tresoTable(t); };
-  bindList(v, 'treso.rows', b => b.dataset.kind === 'pct' ? { label: 'Materials i compres', type: 'out', pct: '10' } : { label: '', type: b.dataset.kind, amount: '', freq: 'mensual', month: '1' });
+  bindList(v, 'treso.rows', b => b.dataset.kind === 'pct' ? { label: 'Materials i compres', type: 'out', pct: '10' } : { label: b.dataset.label || '', type: b.dataset.kind, amount: '', freq: b.dataset.freq || 'mensual', month: '1' });
 }
 function vViab(v) {
   const t = T(), V = PE.viability(t.data, t.data.juridica.forma), R = PE.treasury(t.data);
