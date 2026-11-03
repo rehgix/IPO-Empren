@@ -230,6 +230,13 @@ ul.fb.good li::marker{color:var(--ws-ok,#26884f)} ul.fb.bad li::marker{color:var
 .pfield textarea:focus,.member input:focus,.interview input:focus,.interview textarea:focus{background:var(--bg);border-color:var(--ink);outline:none}
 .member{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:10px;align-items:center;margin-bottom:10px}
 @media (max-width:620px){.member{grid-template-columns:1fr}}
+.grpbar{display:flex;flex-wrap:wrap;align-items:center;gap:6px 16px;padding:10px 14px;border:1px solid var(--line);border-radius:14px;background:var(--soft);font-size:13.5px;min-width:0}
+.grpbar .gb-n{display:inline-flex;align-items:center;gap:8px}
+.grpbar svg{width:17px;height:17px;flex:none;stroke:var(--accent-ink);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.grpbar .linkbtn{margin-left:auto}
+@media (max-width:620px){.grpbar{font-size:13px}.grpbar .linkbtn{margin-left:0}}
+.member.tsrow{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto}
+@media (max-width:620px){.member.tsrow{grid-template-columns:1fr}}
 .interview{display:grid;gap:8px;padding:14px;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
 .canvas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line)}
 .canvas .cbox{background:var(--bg);padding:16px}
@@ -1626,9 +1633,15 @@ function render() {
   const vk = `${role}|${tab}|${profTeam}`; v.classList.toggle('vin', vk !== render.k); render.k = vk;
   if (role !== 'prof' && sec(tab) && sec(tab).p && access(tab) === 'closed') lockedPage(v, tab);
   else (VIEWS[tab] || (() => { v.innerHTML = ''; }))(v);
+  if (role === 'prof' && G) v.insertAdjacentHTML('afterbegin', grpBar());
   updateTeamBanner();
   if (CLOUD) cloudAfterRender(v);
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+}
+// Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
+function grpBar() {
+  const S = PE.SECTORS[G.sector], alt = G.teams.filter(t => t.data.idea.sector && t.data.idea.sector !== G.sector).length;
+  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s"><span class="muted">Tipus d'empresa:</span> <b>${esc(S ? (S.family ? S.family + ' · ' + S.label : S.label) : 'Sense triar')}</b>${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
 }
 // Desa qualsevol canvi dels camps de l'equip
 function onField(e) {
@@ -2974,6 +2987,8 @@ async function profPush() {
       after.push(() => snapTeam(t)); return;
     }
     if (t.name !== s.name) { ops.push({ op: 'update', path: gpath('teams', t.id), data: { name: t.name } }); after.push(() => { s.name = t.name; }); }
+    const si = P(s.data.idea) || {}, sc = t.data.idea.sector || '';
+    if ((si.sector || '') !== sc) { const nv = J(Object.assign({}, si, { sector: sc })); ops.push({ op: 'update', path: gpath('teams', t.id), data: { 'data.idea': nv, updated: Date.now() } }); after.push(() => { s.data.idea = nv; }); }
     ['review', 'grades', 'ai'].forEach(p => { if (pp[p] !== s.prof[p]) { ops.push({ op: 'set', path: gpath('teams', t.id, 'prof', p), data: { v: pp[p], expiresAt: { __ts: exp } } }); after.push(() => { s.prof[p] = pp[p]; }); } });
   });
   if (!ops.length) return;
@@ -3776,12 +3791,14 @@ function vGuia(v) {
 // Interruptor d'aparença: el mateix al menú lateral i a Configuració
 const themeSw = () => `<div class="themesw" role="group" aria-label="Aparença">${[['auto', 'Automàtic', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'], ['light', 'Clar', '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'], ['dark', 'Fosc', '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>']]
   .map(([k, l, p]) => `<button type="button" data-theme-set="${k}" aria-pressed="${themePref() === k}">${ico(p)}${l}</button>`).join('')}</div>`;
+// Opcions de sector (tipus d'empresa) per als desplegables del professor
+const secOptsAll = (cur, blank) => (blank ? `<option value="" ${!cur ? 'selected' : ''}>Sense triar</option>` : '') + Object.entries(PE.SECTORS).map(([k, s]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('');
 function vConfig(v) {
   v.innerHTML = `${flashHtml()}${head('Configuració', esc(G.name))}
     ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador: cada persona pot triar el seu.</p>${themeSw()}`))}
     ${card('Grup classe', pad(`<div class="pfield"><label for="gName">Nom del grup</label><input type="text" id="gName" value="${esc(G.name)}"></div>
-      <div class="pfield"><label for="gSector">Sector per defecte dels projectes</label><select class="field-sel" id="gSector">${Object.entries(PE.SECTORS).map(([k, s]) => `<option value="${k}" ${G.sector === k ? 'selected' : ''}>${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
-      <div class="pfield"><label>Equips</label>${G.teams.map((t, i) => `<div class="member" style="grid-template-columns:minmax(0,1fr) auto"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>`))}
+      <div class="pfield"><label for="gSector">Tipus d'empresa (sector) del grup</label><div class="help">Si el canvies, també canvia als equips que tenien el sector anterior. Els equips que n'han triat un altre el conserven. Sota pots canviar el de cada equip.</div><select class="field-sel" id="gSector">${secOptsAll(G.sector)}</select></div>
+      <div class="pfield"><label>Equips i tipus d'empresa de cadascun</label>${G.teams.map((t, i) => `<div class="member tsrow"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><select class="field-sel" data-tsec="${i}" aria-label="Sector de ${esc(t.name)}">${secOptsAll(t.data.idea.sector, true)}</select><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>`))}
     ${cloudConfigHtml()}
     ${actsConfigHtml()}
     ${CLOUD ? '' : card('Començar un grup nou', pad(`<p class="muted small">Esborra tots els projectes ${CLOUD ? 'del grup' : 'd\'aquest navegador'} i crea un grup buit. Si els vols conservar, fes primer una còpia de seguretat.</p>
@@ -3794,7 +3811,8 @@ function vConfig(v) {
     </div>`}`;
   bindActsConfig(v); bindCloudConfig(v);
   $('#gName').oninput = e => { G.name = e.target.value; save(); renderSide(); };
-  $('#gSector').onchange = e => { G.sector = e.target.value; G.teams.forEach(t => { if (!t.data.idea.sector) t.data.idea.sector = G.sector; }); save(); };
+  $('#gSector').onchange = e => { const old = G.sector, n = G.teams.filter(t => !t.data.idea.sector || t.data.idea.sector === old); G.sector = e.target.value; n.forEach(t => { t.data.idea.sector = G.sector; }); save(); const y = window.scrollY; render(); window.scrollTo(0, y); toast(n.length ? `Sector canviat al grup i a ${n.length === 1 ? '1 equip' : n.length + ' equips'}.` : 'Sector del grup canviat.'); };
+  v.querySelectorAll('[data-tsec]').forEach(s => s.onchange = () => { const t = G.teams[+s.dataset.tsec]; t.data.idea.sector = s.value; t.updated = Date.now(); save(); toast(`Sector de ${t.name} canviat.`); });
   v.querySelectorAll('[data-tn]').forEach(i => i.oninput = () => { G.teams[+i.dataset.tn].name = i.value; save(); renderSide(); });
   v.querySelectorAll('[data-tdel]').forEach(b => b.onclick = () => { const i = +b.dataset.tdel; $('#delBox').innerHTML = `<div class="notice">Vols esborrar «${esc(G.teams[i].name)}» i tot el seu projecte? <button class="btn small" id="delYes">Esborrar</button> <button class="btn ghost small" id="delNo">Cancel·lar</button></div>`; $('#delYes').onclick = () => { G.teams.splice(i, 1); profTeam = 0; save(); render(); }; $('#delNo').onclick = () => { $('#delBox').innerHTML = ''; }; });
   $('#tAdd').onclick = () => { G.teams.push({ id: newId(), name: 'Equip ' + (G.teams.length + 1), members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); render(); };
