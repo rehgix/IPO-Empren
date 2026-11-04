@@ -37,3 +37,11 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 ## Token de GitHub
 - El token és a `token.txt`, a l'arrel del projecte. Està a `.gitignore`: **mai s'ha de pujar, copiar, mostrar ni enganxar enlloc**.
 - Per fer pull/push, passa'l amb un script `GIT_ASKPASS` (usuari `x-access-token`, contrasenya = contingut de `token.txt`) i `-c credential.helper=`. No el posis mai dins de l'URL del remot.
+
+## Com actuar
+- Abans de llegir un arxiu semcer, busca amb grep i llegeix només el que necessitis.
+- Per explorar el projecte, fes servir un subagent i porta'm només el resum.
+- Mostra'm el diff, no l'arxiu complet.
+- No repeteixis el que ja hem decidit en aquesta sessió.
+- Si canviem de tasca, proposa /compact o una sessió nova.
+- Respostes curtes por defecte.
