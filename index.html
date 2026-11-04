@@ -1732,7 +1732,7 @@ function pageBody(v, k, intro, body, opts = {}) {
   bindSendBar();
   if (opts.aside) { liveFn = () => opts.aside(t); opts.aside(t); }
   if (ac === 'readonly') {
-    $('#pageBody').insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : '<div class="notice">Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.</div>');
+    $('#pageBody').parentElement.insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : '<div class="notice">Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.</div>');
     $('#pageBody').querySelectorAll('input, textarea, select, button:not(.keep)').forEach(el => { el.disabled = true; }); $('#pageBody').querySelectorAll('[data-pdel]').forEach(el => el.remove());
   }
 }
