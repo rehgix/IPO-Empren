@@ -3658,13 +3658,26 @@ async function cloudBoot() {
   window.addEventListener('hashchange', () => { if (USER) route(); });
 }
 function hashGid() { const m = location.hash.match(/g=([\w-]+)/); return m ? m[1] : null; }
-async function route() {
+let ROUTE_SEQ = 0;
+// Obre el grup amb reintents: si falla, ho torna a provar sol; si segueix fallant, mostra un botó
+async function guarded(fn, seq, retry) {
+  try { await fn(); }
+  catch (e) {
+    console.warn(e); if (seq !== ROUTE_SEQ) return;
+    stopListen();
+    if (retry < 2) setTimeout(() => { if (seq === ROUTE_SEQ) route(retry + 1); }, 900);
+    else cloudMsg('No s\'ha pogut obrir el grup', 'Hi ha hagut un problema de connexió. Torna-ho a provar.', '<div class="row" style="margin-top:14px"><button class="btn" onclick="route()">Tornar-ho a provar</button></div>');
+  }
+}
+async function route(retry = 0) {
+  const seq = ++ROUTE_SEQ;
   stopListen(); syncStatus('idle');
   if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
   if (location.hash === '#config') return homeConfig();
   const gid = hashGid();
   if (!gid) return homeView();
   $('#view').innerHTML = '<div class="cloud-load"><span class="spin"></span> Obrint el grup...</div>';
+  setTimeout(() => { if (seq === ROUTE_SEQ && retry < 1 && $('#view .cloud-load')) route(retry + 1); }, 12000); // si segueix carregant als 12 s, ho reintenta sol
   let g;
   try { g = await FB.get('groups/' + gid); } catch (e) { g = null; }
   if (!g) return cloudMsg('No s\'ha trobat el grup', 'Comprova l\'enllaç que t\'ha donat el professor. Pot ser que el grup s\'hagi esborrat en acabar el curs.', '<div class="row" style="margin-top:14px"><a class="btn ghost" href="#">Anar a l\'inici</a></div>');
@@ -3673,7 +3686,7 @@ async function route() {
   ME = { email: USER.email, uid: USER.uid, isProf };
   SNAP = { group: '', teams: {} }; FILES = {};
   G = groupToG(g);
-  if (isProf) return openProf();
+  if (isProf) return guarded(openProf, seq, retry);
   let m = null; try { m = await FB.get(gpath('members', USER.uid)); } catch (e) {}
   let tid = m && (g.teamIds || []).includes(m.team) ? m.team : null;
   if (!tid) { // Si el professor l'ha afegit a mà, entra directament al seu equip
@@ -3682,7 +3695,7 @@ async function route() {
   }
   if (!tid) return joinView(g, m);
   logIn(m);
-  return openStudent(tid);
+  return guarded(() => openStudent(tid), seq, retry);
 }
 // Historial de connexions de l'alumne: data i dispositiu (les 30 últimes, una per sessió del navegador)
 function devName() {
