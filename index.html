@@ -1794,8 +1794,9 @@ function vIdea(v) {
   const t = T();
   const secOpts = [['', 'Tria el sector del teu cicle'], ...Object.entries(PE.SECTORS).filter(([, s]) => s.group === 'biada').map(([k, s]) => [k, `${s.family} · ${s.label}`]), ...Object.entries(PE.SECTORS).filter(([, s]) => s.group !== 'biada').map(([k, s]) => [k, s.label])];
   page(v, 'idea', 'Tot projecte emprenedor es basa en una idea de negoci: l\'activitat a què us dedicareu, l\'element que us diferencia de la competència i l\'expectativa d\'obtenir un benefici. La idea ha de ser del vostre sector.',
-    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Sector (cicle formatiu)</label><select class="field-sel" id="sectorSel" data-path="idea.sector">${secOpts.map(([k, l]) => `<option value="${k}" ${t.data.idea.sector === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`
+    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Sector (cicle formatiu)</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1">${secOpts.map(([k, l]) => `<option value="${k}" ${t.data.idea.sector === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`
       + txt('idea.nom', 'Nom provisional del projecte') + ta('idea.activitat', 'Activitat', 'El producte o servei que oferireu al mercat.') + ta('idea.diferenciador', 'Element diferenciador', 'El valor afegit que aporteu al client i que us distingeix de la competència.') + ta('idea.benefici', 'Expectativa de benefici', 'Com i per què l\'activitat generarà un benefici econòmic, social o cultural.')))
+    + secIdeaCard('act')
     + card('Golden Circle', pad(`<div class="golden"><svg class="gc-svg" viewBox="0 0 240 240" role="img" aria-label="Golden Circle: Why al centre, How al mig i What a fora"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="22" class="tw">WHAT</text><text x="120" y="35" class="ts tw">Què</text><text x="120" y="60" class="th">HOW</text><text x="120" y="73" class="ts th">Com</text><text x="120" y="118" class="ty">WHY</text><text x="120" y="133" class="ts ty">Per a què</text></svg><div class="gc-fields">
       <div class="gc-f gc-why">${ta('idea.why', 'Why · Per a què? (propòsit)', 'Què voleu aportar? Per què inicieu aquesta aventura? Què es perdria el món si aquesta idea no tira endavant?', 4)}</div>
       <div class="gc-f gc-how">${ta('idea.how', 'How · Com? (procés)', 'Quina estratègia us permetrà assolir el propòsit? Quins seran els pilars?', 3)}</div>
@@ -1807,6 +1808,7 @@ function vEmpatia(v) {
   const box = (k, n, l, h) => `<div class="emp emp-${k}">${ta('empatia.' + k, `${n}. ${l}`, h, 3)}</div>`;
   page(v, 'empatia', 'El Design Thinking és una metodologia centrada en la persona. La primera fase és <b>empatitzar</b>: investigar i entendre a fons les necessitats i els problemes de les persones a qui voleu ajudar. Feu servir el mapa d\'empatia.',
     card('Buyer persona', pad(ta('empatia.persona', 'A qui volem ajudar?', 'Descriviu la persona destinatària tipus: edat, situació, feina, hàbits... Doneu-li un nom.', 3, 'Ex.: La Rosa, 58 anys, presidenta de la comunitat de veïns...')))
+    + secIdeaCard('cli')
     + card('Mapa d\'empatia', `<div class="empmap">${box('veu', 1, 'Què veu?', 'Què observa al seu entorn? Tendències, problemes, experiències.')}${box('escolta', 2, 'Què escolta?', 'Què li diuen altres persones o els mitjans?')}${box('pensa', 3, 'Què pensa i sent?', 'Preocupacions, pors, esperances i desitjos.')}${box('diu', 4, 'Què diu i fa?', 'Què explica i com actua habitualment?')}${box('frustracions', 5, 'Frustracions', 'Obstacles o problemes que té.')}${box('motivacions', 6, 'Motivacions', 'Objectius i beneficis que espera aconseguir.')}</div>`));
 }
 function vEntrevistes(v) {
@@ -2094,6 +2096,14 @@ const FINSEC = {
 // Les claus de FINSEC han de coincidir amb les de PE.SECTORS. Els imports són orientatius.
 const finSec = () => { const k = T().data.idea.sector || G.sector; return FINSEC[k] ? Object.assign({ k }, FINSEC[k]) : null; };
 const FREQ_TXT = { mensual: 'al mes', trimestral: 'al trimestre', anual: 'a l\'any' };
+// Exemples d'activitats (pàgina Idea) i de clients (pàgina Empatia) del sector de l'equip
+function secIdeaCard(kind) {
+  const k = T().data.idea.sector || G.sector, S = PE.SECTORS[k];
+  const pills = a => `<div class="row">${a.map(x => `<span class="pill grey" style="white-space:normal">${esc(x)}</span>`).join('')}</div>`;
+  if (!S) return card(kind === 'act' ? 'Exemples d\'activitats del vostre sector' : 'Clients habituals del vostre sector', pad('<p class="muted">Trieu el sector del projecte a «La idea de negoci» i aquí us sortiran exemples pensats per al vostre tipus d\'empresa.</p>'));
+  if (kind === 'act') return card('Exemples d\'activitats · ' + esc(S.short), pad(`<p class="small muted">${S.cicles ? 'Cicles relacionats: ' + esc(S.cicles) + '. ' : ''}Són exemples de feines habituals del sector per ajudar-vos a començar. La vostra activitat ha de ser pròpia: trieu què farà diferent el vostre projecte.</p>${pills(S.types)}`));
+  return card('Clients habituals · ' + esc(S.short), pad(`<p class="small muted">Aquests són alguns tipus de clients d'aquest sector. Escolliu-ne un i pregunteu-vos: qui és la persona concreta que decideix la compra? Què necessita? Aquesta és la vostra buyer persona.</p>${pills(S.clients)}`));
+}
 function finSecCard(kind) {
   const f = finSec(), s = T().data.idea.sector || G.sector;
   if (!f) return s ? '' : card('Exemples del vostre sector', pad('<p class="muted">Trieu el sector del projecte a «La idea de negoci» i aquí us sortiran exemples pensats per al vostre tipus d\'empresa.</p>'));
