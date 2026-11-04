@@ -1,1 +1,20 @@
-token.txt
+# Claus, tokens i contrasenyes: mai s'han de pujar a GitHub
+token*
+*token*.txt
+*.pat
+.env
+.env.*
+*.pem
+*.key
+
+# Claus d'accés de Firebase / Google
+*-firebase-adminsdk-*.json
+service-account*.json
+serviceAccount*.json
+
+# Fitxers interns de Firebase i de l'ordinador
+.firebase/
+firebase-debug.log*
+node_modules/
+.DS_Store
+Thumbs.db
