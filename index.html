@@ -3906,7 +3906,7 @@ async function homeView(msg) {
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length ? `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
         <a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a>
-        <span class="small muted">Curs ${esc(g.course || '')} · les dades s'esborren el ${fmtDay(g.expiresAt)}</span>
+        <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">…</b> alumnes</span><span><b data-st="prog">…</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:0%"></span></div>
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
