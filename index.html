@@ -1896,13 +1896,15 @@ function readImgFile(f, maxSide) {
 /* ---------- L'entorn ---------- */
 function vMicro(v) {
   page(v, 'micro', 'El microentorn són les variables que afecten l\'empresa o el sector de manera específica i sobre les quals podeu influir: la competència, els clients, els proveïdors i els intermediaris.',
-    card('La competència', pad(ta('micro.compActual', 'Competència actual', 'Empreses ja establertes que capten els mateixos clients.', 3) + ta('micro.compFutura', 'Competència futura', 'Noves empreses que podrien entrar al mercat.', 2) + ta('micro.substitutius', 'Productes substitutius', 'Productes o serveis diferents que satisfan la mateixa necessitat.', 2)))
+    secPistesCard('micro')
+    + card('La competència', pad(ta('micro.compActual', 'Competència actual', 'Empreses ja establertes que capten els mateixos clients.', 3) + ta('micro.compFutura', 'Competència futura', 'Noves empreses que podrien entrar al mercat.', 2) + ta('micro.substitutius', 'Productes substitutius', 'Productes o serveis diferents que satisfan la mateixa necessitat.', 2)))
     + card('Clients, proveïdors i intermediaris', pad(ta('micro.clients', 'Clients', 'Com és la demanda? Canvis de gustos, modes, obsolescència...', 3) + ta('micro.proveidors', 'Proveïdors', 'Qui us proveirà? Terminis de lliurament, preus, capacitat de negociació.', 3) + ta('micro.intermediaris', 'Intermediaris', 'Distribuïdors, plataformes, agents... que us connecten amb els clients.', 2))));
 }
 function vPestel(v) {
   const d = T().data.pestel;
   page(v, 'pestel', 'El macroentorn són les variables que afecten totes les empreses i que no podeu controlar. Amb el PESTEL reflexioneu sobre com influeixen en la vostra empresa els factors polítics, econòmics, socioculturals, tecnològics, ecològics i legals.',
-    card('Anàlisi PESTEL', `<div class="pestel"><div class="ph"></div><div class="ph pos">Impacte positiu (oportunitat)</div><div class="ph neg">Impacte negatiu (amenaça)</div>${PE.PESTEL.map(([k, l]) => `<div class="pf"><b>${k}</b><span>${l}</span></div><div>${ta(`pestel.${k}.o`, l + ' · oportunitat', '', 2)}</div><div>${ta(`pestel.${k}.a`, l + ' · amenaça', '', 2)}</div>`).join('')}</div>`)
+    secPistesCard('pestel')
+    + card('Anàlisi PESTEL', `<div class="pestel"><div class="ph"></div><div class="ph pos">Impacte positiu (oportunitat)</div><div class="ph neg">Impacte negatiu (amenaça)</div>${PE.PESTEL.map(([k, l]) => `<div class="pf"><b>${k}</b><span>${l}</span></div><div>${ta(`pestel.${k}.o`, l + ' · oportunitat', '', 2)}</div><div>${ta(`pestel.${k}.a`, l + ' · amenaça', '', 2)}</div>`).join('')}</div>`)
     + details('Veure l\'exemple d\'una cafeteria', '<div class="tablebox"><table><thead><tr><th>Factor</th><th>Oportunitat</th><th>Amenaça</th></tr></thead><tbody><tr><td>Polític</td><td>Ajuts per a petits negocis locals.</td><td>Més impostos a l\'hostaleria.</td></tr><tr><td>Econòmic</td><td>Creixement del turisme.</td><td>Pujada del cost dels ingredients.</td></tr><tr><td>Sociocultural</td><td>Interès pels productes ecològics.</td><td>Més gent fa el cafè a casa.</td></tr><tr><td>Tecnològic</td><td>Xarxes socials i apps de comandes.</td><td>Cost de les noves tecnologies.</td></tr><tr><td>Ecològic</td><td>Envasos sostenibles que diferencien.</td><td>Normes ambientals que encareixen els materials.</td></tr><tr><td>Legal</td><td>Normes que afavoreixen les terrasses.</td><td>Normes sanitàries més estrictes.</td></tr></tbody></table></div>'));
 }
 function vDafo(v) {
@@ -2096,6 +2098,275 @@ const FINSEC = {
 // Les claus de FINSEC han de coincidir amb les de PE.SECTORS. Els imports són orientatius.
 const finSec = () => { const k = T().data.idea.sector || G.sector; return FINSEC[k] ? Object.assign({ k }, FINSEC[k]) : null; };
 const FREQ_TXT = { mensual: 'al mes', trimestral: 'al trimestre', anual: 'a l\'any' };
+/* ---------- Pistes de recerca per sector (només preguntes, sense respostes) ---------- */
+const PISTES = {
+  gestoria: {
+    micro: {
+      comp: "Busqueu a Google Maps quantes gestories i assessories hi ha a Mataró. Quins serveis anuncien a la web i quines tenen millors ressenyes? Què us faria diferents?",
+      cli: "Qui necessita una gestoria: autònoms, pimes, particulars per a la renda? Pregunteu a 3 autònoms del vostre entorn si en tenen una i què hi valoren més.",
+      prov: "Quins programes de comptabilitat, nòmines o certificats digitals necessitaríeu? Busqueu-ne dos o tres i compareu-ne el preu mensual.",
+      int: "Com arriben els clients a una gestoria? Esbrineu si bancs, associacions de comerciants o col·legis professionals us podrien recomanar."
+    },
+    pestel: {
+      P: "Quins tràmits amb l'Administració fan les gestories per als seus clients? Mireu a les webs de la Generalitat i de l'Ajuntament de Mataró quins ja es poden fer en línia.",
+      E: "Esbrineu a Idescat quantes empreses i autònoms hi ha a Mataró i com ha evolucionat el nombre. Què significa per a la vostra clientela potencial?",
+      S: "Els joves autònoms volen una gestoria presencial o en línia? Feu una petita enquesta a persones que treballin pel seu compte i compareu les respostes per edats.",
+      T: "Quines eines d'intel·ligència artificial o d'automatització fan servir les gestories? Busqueu-ne exemples i penseu quines tasques us podrien estalviar.",
+      Ec: "Quant paper fa servir una gestoria? Esbrineu com podríeu treballar sense paper (signatura digital, arxiu al núvol) i si els clients ho valorarien.",
+      L: "Quines titulacions o col·legiació calen per oferir serveis de gestoria? Busqueu també què implica la protecció de dades quan guardeu documents dels clients."
+    }
+  },
+  electricitat: {
+    micro: {
+      comp: "Busqueu a Google Maps empreses instal·ladores elèctriques a Mataró i rodalia. Són petites o grans? Quins serveis anuncien (urgències, plaques, domòtica)?",
+      cli: "Qui contracta un electricista: particulars, comunitats de veïns, comerços, constructores? Escolliu el vostre client principal i expliqueu per què.",
+      prov: "On compren el material els instal·ladors? Visiteu o mireu la web d'un magatzem de material elèctric de la zona i pregunteu com treballen amb professionals.",
+      int: "Esbrineu si els instal·ladors aconsegueixen feina a través d'administradors de finques, constructores o webs de pressupostos. Quina comissió cobren?"
+    },
+    pestel: {
+      P: "Busqueu a les webs de la Generalitat i de l'Ajuntament de Mataró si ara hi ha ajuts per a autoconsum o punts de recàrrega. Us podrien portar clients nous?",
+      E: "Com ha evolucionat el preu de la llum els darrers anys? Busqueu-ho i penseu com afecta les ganes de la gent d'instal·lar plaques o millorar l'eficiència.",
+      S: "Feu una petita enquesta: els vostres veïns pensen posar plaques solars, cotxe elèctric o domòtica a casa? Què els frena?",
+      T: "Quines tecnologies noves ha d'aprendre un electricista (domòtica, punts de recàrrega, bateries)? Pregunteu a un professional quina formació ha hagut de fer.",
+      Ec: "Què es fa amb el cablejat, els fluorescents o les bateries vells que es retiren d'una obra? Busqueu com es gestionen aquests residus a Catalunya.",
+      L: "Quina habilitació o registre necessita una empresa per fer instal·lacions elèctriques? Busqueu-ho a la web de la Generalitat (paraula clau: empresa instal·ladora)."
+    }
+  },
+  automatitzacio: {
+    micro: {
+      comp: "Busqueu empreses integradores d'automatització al Maresme i al Vallès. Amb quines marques de robots i autòmats treballen? En quina indústria s'especialitzen?",
+      cli: "Quines indústries de la zona podrien automatitzar processos? Mireu polígons industrials propers a Google Maps i classifiqueu-ne les empreses per sector.",
+      prov: "A qui compraríeu els autòmats, robots i sensors? Compareu dues o tres marques: preu, formació que ofereixen i suport tècnic.",
+      int: "Esbrineu si els fabricants de robots tenen xarxes d'integradors oficials. Què cal fer per entrar-hi i quins avantatges dona?"
+    },
+    pestel: {
+      P: "Busqueu a la web de la Generalitat si hi ha programes per digitalitzar o modernitzar la indústria. Com podríeu ajudar els clients a aprofitar-los?",
+      E: "Com influeixen el cost de la mà d'obra i de l'energia en la decisió d'una fàbrica d'automatitzar? Entrevisteu un responsable de producció.",
+      S: "Què en pensen els treballadors d'una fàbrica que hi arribin robots? Pregunteu-ho a algú que treballi en una indústria i penseu com ho gestionaríeu.",
+      T: "Busqueu què són els robots col·laboratius (cobots) i la visió artificial. Per a quines feines de les empreses de la zona serien útils?",
+      Ec: "Com pot ajudar l'automatització a estalviar energia o material en una fàbrica? Busqueu un cas real d'una empresa que ho hagi aconseguit.",
+      L: "Quines normes de seguretat cal complir en instal·lar un robot? Busqueu les paraules clau marcatge CE i seguretat de màquines i resumiu què implica."
+    }
+  },
+  manteniment: {
+    micro: {
+      comp: "Busqueu empreses de manteniment industrial al Maresme. Ofereixen contractes fixos, urgències 24 h o només reparacions? Quina especialitat hi trobeu a faltar?",
+      cli: "Quines empreses dels polígons de Mataró tenen maquinària que s'ha de mantenir? Esbrineu si ho fan amb personal propi o ho subcontracten.",
+      prov: "Quins recanvis i eines necessitareu (rodaments, motors, components electrònics)? Busqueu distribuïdors industrials propers i com fan les entregues urgents.",
+      int: "Esbrineu si els fabricants de maquinària subcontracten el servei postvenda a empreses locals. Com podríeu ser el seu servei tècnic a la zona?"
+    },
+    pestel: {
+      P: "Busqueu si la Generalitat o l'Ajuntament de Mataró tenen polítiques per atraure o mantenir indústria a la zona. Com us afectarien?",
+      E: "Quant perd una fàbrica per cada hora que una màquina està aturada? Pregunteu-ho a un responsable de manteniment i feu-lo servir com a argument de venda.",
+      S: "Costa trobar tècnics de manteniment qualificats? Mireu ofertes de feina del sector als portals d'ocupació, compteu-les i apunteu què demanen.",
+      T: "Què és el manteniment predictiu amb sensors? Busqueu-ne exemples i penseu si el podríeu oferir com a servei diferent.",
+      Ec: "Què es fa amb els olis, greixos i peces usades que es retiren d'una màquina? Busqueu com s'han de gestionar aquests residus industrials.",
+      L: "Quines mesures de prevenció de riscos laborals cal tenir en treballar en màquines d'altres empreses? Busqueu què és la coordinació d'activitats empresarials."
+    }
+  },
+  tallerauto: {
+    micro: {
+      comp: "Busqueu a Google Maps els tallers de Mataró. Quants són oficials d'una marca i quants independents o de cadena? Llegiu-ne les ressenyes: de què es queixen els clients?",
+      cli: "Qui porta el cotxe al taller: particulars, flotes d'empresa, taxis, autoescoles? Escolliu un tipus de client i esbrineu cada quan necessita revisions.",
+      prov: "On compren els recanvis els tallers? Busqueu distribuïdors de la zona i pregunteu en quant de temps serveixen una peça.",
+      int: "Esbrineu com treballen els tallers amb les asseguradores i amb les webs que comparen preus de revisions. Us convé ser-hi?"
+    },
+    pestel: {
+      P: "Busqueu a la web de l'Ajuntament de Mataró si hi ha o hi haurà zona de baixes emissions. Com canviaria el tipus de cotxes que arribarien al taller?",
+      E: "Quant gasta de mitjana una família en el manteniment del cotxe? Busqueu-ho i penseu si en èpoques difícils la gent repara més o canvia menys de cotxe.",
+      S: "Els joves de Mataró tenen cotxe propi o fan servir més el transport públic, el patinet o el cotxe compartit? Feu una enquesta a classe i a la família.",
+      T: "Quina formació i quines eines calen per reparar cotxes elèctrics i híbrids? Pregunteu a un mecànic si ja n'arriben al seu taller.",
+      Ec: "Què fa un taller amb l'oli usat, les bateries i els pneumàtics vells? Busqueu quins d'aquests residus es consideren perillosos i qui els recull.",
+      L: "Quin tipus de llicència o permís necessita un taller per obrir? Qui l'ha de concedir i quant triga?"
+    }
+  },
+  nautic: {
+    micro: {
+      comp: "Busqueu quines empreses fan manteniment d'embarcacions als ports de Mataró, Arenys i el Masnou. Treballen només dins del port o també es desplacen?",
+      cli: "Qui té una embarcació d'esbarjo: particulars, escoles de vela, empreses de lloguer? Visiteu el port i pregunteu quines feines encarreguen fora.",
+      prov: "On es compren pintures antiincrustants, recanvis de motors fora borda o electrònica nàutica? Busqueu botigues especialitzades i compareu-ne preus.",
+      int: "Esbrineu quin paper tenen el port, els clubs nàutics i les escoles de vela a l'hora de recomanar un taller. Hi podríeu fer un acord?"
+    },
+    pestel: {
+      P: "Qui gestiona els ports del Maresme i quines condicions demana a les empreses que hi volen treballar? Busqueu-ho a la web de la Generalitat.",
+      E: "Com varia la feina d'un taller nàutic entre l'estiu i l'hivern? Pregunteu-ho a un professional i penseu com repartiríeu els ingressos durant l'any.",
+      S: "Qui practica la nàutica d'esbarjo al Maresme i com està canviant (lloguer, embarcació compartida)? Busqueu notícies i pregunteu en un club nàutic.",
+      T: "Quines novetats hi ha en motors elèctrics per a embarcacions i en electrònica de navegació? Busqueu-ne exemples i penseu quina formació us caldria.",
+      Ec: "Quins productes per netejar i pintar cascos poden contaminar el mar? Busqueu com es controlen els abocaments als ports.",
+      L: "Quina documentació i quines revisions obligatòries té una embarcació d'esbarjo? Busqueu qui les fa i si un taller hi pot intervenir."
+    }
+  },
+  ferroviari: {
+    micro: {
+      comp: "Quines empreses fan el manteniment de trens a Catalunya? Busqueu-les i esbrineu si són els mateixos fabricants o empreses especialitzades.",
+      cli: "Qui té trens o tramvies a Catalunya? Busqueu quins operadors públics i privats hi ha i quin tipus de material rodant fan servir.",
+      prov: "Quins components necessita el manteniment d'un tren (frens, rodes, electrònica)? Busqueu fabricants de components ferroviaris i on són.",
+      int: "Com aconsegueix contractes una empresa petita en aquest sector? Esbrineu què vol dir ser subcontractista d'una gran empresa i què se li demana."
+    },
+    pestel: {
+      P: "Busqueu notícies sobre plans de millora de Rodalies i del transport ferroviari a Catalunya. Quines oportunitats de feina podrien generar?",
+      E: "Com funcionen les licitacions públiques de manteniment? Busqueu-ne una a la plataforma de contractació pública de la Generalitat i mireu què es demana.",
+      S: "Quanta gent fa servir el tren cada dia a la línia del Maresme? Busqueu dades o notícies i penseu com afecta la puntualitat la feina de manteniment.",
+      T: "Quines tecnologies de diagnosi i sensors es fan servir per detectar avaries als trens? Busqueu-ne exemples i quina formació demanen.",
+      Ec: "Com es compara el tren amb el cotxe en emissions? Busqueu dades i penseu com podríeu fer més net el mateix manteniment (olis, pintures, residus).",
+      L: "Quines certificacions o homologacions ha de tenir una empresa per treballar en trens? Busqueu la paraula clau seguretat ferroviària i qui la supervisa."
+    }
+  },
+  reformes: {
+    micro: {
+      comp: "Busqueu a Google Maps i a Instagram empreses de reformes i interiorisme de Mataró. Quin estil tenen i com ensenyen els seus treballs?",
+      cli: "Qui fa reformes: famílies que compren pis, propietaris que lloguen, botigues, restaurants? Escolliu el vostre client i esbrineu què li preocupa més.",
+      prov: "On compraríeu rajoles, pintura, parquet o mobles a mida? Visiteu un magatzem de materials de la zona i pregunteu quins descomptes fan als professionals.",
+      int: "Quin paper tenen les immobiliàries, els arquitectes i les webs de pressupostos de reformes? Esbrineu com us podrien portar clients i què cobren."
+    },
+    pestel: {
+      P: "Busqueu a les webs de la Generalitat i de l'Ajuntament de Mataró si hi ha ajuts per rehabilitar habitatges o millorar-ne l'eficiència energètica.",
+      E: "Com estan els preus dels pisos a Mataró? Busqueu-ho a Idescat o a portals immobiliaris i penseu si la gent compra pisos per reformar.",
+      S: "Quins estils de decoració estan de moda ara? Mireu Pinterest, Instagram i revistes i penseu quin encaixa amb el vostre client.",
+      T: "Quines eines us ajudarien a ensenyar el projecte abans de fer-lo (renders 3D, realitat virtual, programes de disseny)? Busqueu-ne i compareu-les.",
+      Ec: "Què es fa amb la runa i els materials que surten d'una reforma? Busqueu on es porten a Mataró i quins materials ecològics podríeu oferir.",
+      L: "Quin permís d'obres demana l'Ajuntament de Mataró per a una reforma? Esbrineu a la seva web si hi ha diferència entre obres petites i grans."
+    }
+  },
+  edificacio: {
+    micro: {
+      comp: "Busqueu estudis d'arquitectura i empreses de rehabilitació a Mataró. Quins edificis han restaurat i com ho expliquen a la seva web?",
+      cli: "Qui encarrega la rehabilitació d'un edifici: comunitats de veïns, propietaris, l'Ajuntament? Esbrineu com es pren la decisió en una comunitat.",
+      prov: "Quins materials i tècniques calen per restaurar façanes antigues (calç, pedra, fusta)? Busqueu proveïdors especialitzats a Catalunya.",
+      int: "Quin paper tenen els administradors de finques en una rehabilitació? Entrevisteu-ne un i pregunteu com escullen l'empresa."
+    },
+    pestel: {
+      P: "Busqueu a la web de l'Ajuntament de Mataró quins edificis estan protegits al centre històric. Què implica per a qui els vol rehabilitar?",
+      E: "Quants anys tenen els edificis de Mataró? Busqueu dades a Idescat sobre l'antiguitat dels habitatges i penseu quanta feina de rehabilitació hi pot haver.",
+      S: "Què valoren els veïns d'un edifici antic: conservar l'aspecte original, la comoditat, l'accessibilitat? Pregunteu-ho en una comunitat de veïns.",
+      T: "Què és el BIM i com s'utilitza en projectes d'edificació? Busqueu també què aporten els drons o els escàners 3D per inspeccionar edificis.",
+      Ec: "Com es pot millorar l'aïllament d'un edifici antic sense malmetre'l? Busqueu exemples de rehabilitació energètica i què és la certificació energètica.",
+      L: "Quina inspecció tècnica han de passar els edificis antics i qui la pot fer? Busqueu les paraules clau inspecció tècnica d'edificis a la web de la Generalitat."
+    }
+  },
+  mecanitzat: {
+    micro: {
+      comp: "Busqueu tallers de mecanitzat als polígons de Mataró i el Maresme. Quines màquines tenen (CNC, torns, fresadores) i quin tipus de peces fan?",
+      cli: "Qui necessita peces per encàrrec: fàbriques, tallers de reparació, startups que fan prototips? Escolliu-ne un tipus i esbrineu què us demanaria.",
+      prov: "On compraríeu l'acer, l'alumini i les eines de tall? Busqueu dos proveïdors i pregunteu-los terminis d'entrega i comandes mínimes.",
+      int: "Esbrineu si hi ha plataformes web on les empreses pugen plànols i reben pressupostos de tallers. Com funcionen i quant cobren?"
+    },
+    pestel: {
+      P: "Busqueu si la Generalitat té programes de suport a la indústria i a la innovació per a pimes. Com podrien ajudar un taller petit?",
+      E: "Com han variat els preus de l'acer i l'alumini aquests anys? Busqueu-ho i penseu com ho repercutiríeu en els pressupostos.",
+      S: "És fàcil trobar operaris de CNC? Mireu ofertes de feina del sector i pregunteu a un professor de fabricació mecànica què en pensa.",
+      T: "Quines tecnologies poden canviar el sector (impressió 3D en metall, programació CAM, automatització)? Busqueu-ne exemples i trieu-ne una per a vosaltres.",
+      Ec: "Què es fa amb els encenalls de metall i els olis de tall? Busqueu com es reciclen i si us podrien aportar algun ingrés.",
+      L: "Quines mesures de prevenció de riscos laborals necessita un taller amb màquines eina? Busqueu també què cal per tenir una certificació de qualitat."
+    }
+  },
+  laboratori: {
+    micro: {
+      comp: "Busqueu laboratoris d'anàlisi i control de qualitat a la província de Barcelona. Quins tipus d'anàlisi ofereixen (aigües, aliments, materials)?",
+      cli: "Quines empreses del Maresme necessiten analitzar els seus productes: alimentàries, tèxtils, químiques? Mireu polígons a Google Maps i feu-ne una llista.",
+      prov: "Quins equips i reactius necessita un laboratori? Busqueu proveïdors de material de laboratori i compareu el preu d'un aparell bàsic.",
+      int: "Esbrineu si els laboratoris treballen per a consultories de qualitat o per a grans laboratoris que subcontracten anàlisis. Com hi arribaríeu?"
+    },
+    pestel: {
+      P: "Quins controls sanitaris o ambientals fa l'Administració a les empreses? Busqueu a la web de la Generalitat qui inspecciona i si demana anàlisis externes.",
+      E: "Quant costa una anàlisi típica? Busqueu tarifes publicades de laboratoris i calculeu quantes en necessitaríeu al mes per cobrir despeses.",
+      S: "Els consumidors miren més les etiquetes, els al·lèrgens i l'origen dels productes? Feu una enquesta i penseu com afecta la demanda d'anàlisis.",
+      T: "Quins aparells o programes fan les anàlisis més ràpides o automàtiques? Busqueu-ne exemples i què costen aproximadament.",
+      Ec: "Com s'han de llençar els reactius i les mostres d'un laboratori? Busqueu com es gestionen els residus de laboratori i qui els recull.",
+      L: "Què vol dir que un laboratori està acreditat i per què ho podrien demanar els clients? Busqueu les paraules clau acreditació de laboratoris i qui l'atorga."
+    }
+  },
+  farmacia: {
+    micro: {
+      comp: "Busqueu empreses que fabriquen cosmètics per a altres marques (paraules clau: fabricació a tercers, marca blanca). On són i quins productes fan?",
+      cli: "Qui encarregaria cosmètics o complements: influencers, farmàcies, perruqueries, centres d'estètica? Escolliu-ne un i entrevisteu algú d'aquest negoci.",
+      prov: "On compraríeu les matèries primeres, els envasos i les etiquetes? Busqueu proveïdors i esbrineu quines quantitats mínimes demanen.",
+      int: "Com arriben aquests productes al consumidor: farmàcies, botigues en línia, marketplaces? Esbrineu quin percentatge es queda cada intermediari."
+    },
+    pestel: {
+      P: "Quin organisme controla els cosmètics i els complements alimentaris? Busqueu a quina administració cal notificar un producte nou abans de vendre'l.",
+      E: "Quant costa fabricar un lot petit d'una crema? Calculeu-ho aproximadament amb preus de proveïdors i compareu-ho amb el preu de venda a botiga.",
+      S: "Quines tendències veieu a les xarxes: cosmètica natural, vegana, sense plàstic? Mireu TikTok i Instagram i apunteu-ne tres que us puguin servir.",
+      T: "Quins equips calen per fabricar lots petits (mescladores, envasadores)? Busqueu-ne preus i penseu si us convé comprar-los o llogar instal·lacions.",
+      Ec: "Quins envasos són més fàcils de reciclar o reutilitzar? Busqueu marques que facin servir envasos recarregables i què en pensen els clients.",
+      L: "Què ha de dir obligatòriament l'etiqueta d'un cosmètic? Busqueu les paraules clau etiquetatge de cosmètics i bones pràctiques de fabricació."
+    }
+  },
+  videojocs: {
+    micro: {
+      comp: "Busqueu estudis de videojocs de Catalunya que facin jocs per encàrrec (per a marques, museus, escoles). Què ofereixen i quins projectes ensenyen?",
+      cli: "Qui pagaria per un videojoc a mida: empreses per fer publicitat, escoles, museus, ajuntaments? Escolliu-ne un i penseu quin joc li faríeu.",
+      prov: "Quins motors de joc, programes i recursos (música, models 3D) faríeu servir? Busqueu-ne les llicències i quant costen per a una empresa.",
+      int: "Com es distribueix un joc: Steam, botigues d'apps, webs? Esbrineu quina comissió es queda cada plataforma i quins requisits demana."
+    },
+    pestel: {
+      P: "Busqueu a la web de la Generalitat si hi ha suport públic a la indústria del videojoc o a les empreses creatives. Com us hi podríeu presentar?",
+      E: "Quant costa fer un joc petit? Feu una estimació d'hores i sous de l'equip i compareu-la amb el preu que podríeu cobrar.",
+      S: "Qui juga a videojocs avui, per edats i gèneres? Busqueu estudis o enquestes del sector i compareu-ho amb la idea que teníeu del jugador típic.",
+      T: "Quines eines d'intel·ligència artificial es fan servir per crear gràfics, veus o codi de videojocs? Busqueu-ne i penseu-ne els pros i els contres.",
+      Ec: "Quanta energia consumeixen els ordinadors i servidors d'un estudi? Busqueu com es podria reduir i si els jugadors valoren els jocs amb missatge ecològic.",
+      L: "Qui és el propietari d'un joc fet per encàrrec, l'estudi o el client? Busqueu propietat intel·lectual i també la classificació per edats PEGI."
+    }
+  },
+  web: {
+    micro: {
+      comp: "Busqueu agències web de Mataró a Google Maps i mireu-ne les webs. Quins preus publiquen, quin estil tenen i què fan millor o pitjor?",
+      cli: "Quins negocis de Mataró no tenen web o la tenen antiga? Passegeu per una zona comercial o mireu Google Maps i feu-ne una llista de 10.",
+      prov: "Quin allotjament (hosting), dominis, plantilles i eines faríeu servir? Busqueu-ne els preus anuals i calculeu quant us costaria cada web.",
+      int: "Esbrineu si podríeu aconseguir clients a través d'associacions de comerciants, gestories o plataformes de freelancers. Quina comissió cobren?"
+    },
+    pestel: {
+      P: "Busqueu a les webs de la Generalitat i de l'Ajuntament si ara hi ha ajuts per digitalitzar petits negocis. Com podríeu ajudar els clients a demanar-los?",
+      E: "Quant pagaria un petit comerç per una web? Pregunteu-ho a 3 botigues i compareu-ho amb el que li costaria fer-la ell mateix amb Wix o similars.",
+      S: "On busca la gent un negoci avui: Google, Instagram, TikTok? Feu una enquesta per edats i penseu si una web encara és imprescindible.",
+      T: "Com afecten la intel·ligència artificial i els creadors automàtics de webs la feina d'una agència? Proveu-ne un i compareu-ne el resultat.",
+      Ec: "Una web pot contaminar? Busqueu què és el disseny web sostenible i com es pot mesurar el consum d'una pàgina.",
+      L: "Quins textos legals i avisos ha de tenir una web (galetes, protecció de dades)? Busqueu-ho i penseu qui n'és responsable, vosaltres o el client."
+    }
+  },
+  disseny: {
+    micro: {
+      comp: "Busqueu estudis de disseny i comunicació del Maresme a Google Maps i Behance. Quins serveis ofereixen i quin estil els fa reconeixibles?",
+      cli: "Qui necessita disseny: negocis que obren, festivals, entitats, empreses que canvien d'imatge? Escolliu-ne un i esbrineu com contracta aquests serveis.",
+      prov: "Quines impremtes, fotògrafs o programes de disseny necessitaríeu? Demaneu pressupost a una impremta de la zona i compareu llicències de programes.",
+      int: "Esbrineu si les agències de publicitat o de màrqueting subcontracten dissenyadors. Com podríeu treballar per a elles?"
+    },
+    pestel: {
+      P: "Busqueu a la web de l'Ajuntament de Mataró si hi ha concursos o encàrrecs públics de disseny (cartells de festes, campanyes). Com s'hi presenta una proposta?",
+      E: "Quant cobra un estudi per un logotip o una identitat corporativa? Busqueu tarifes publicades i esbrineu si hi ha molta diferència de preu i per què.",
+      S: "Quins estils gràfics us criden l'atenció a les xarxes i als carrers de Mataró? Feu fotos de cartells i aparadors i analitzeu què funciona amb el vostre públic.",
+      T: "Com afecten els generadors d'imatges amb intel·ligència artificial la feina d'un estudi? Proveu-ne un i penseu què pot aportar un dissenyador que la IA no.",
+      Ec: "Quins papers, tintes i acabats són més sostenibles per imprimir? Pregunteu-ho a una impremta i penseu si els clients pagarien més per això.",
+      L: "Com es protegeix un logotip perquè no el copiïn? Busqueu què és registrar una marca i a qui pertanyen els drets d'un disseny fet per encàrrec."
+    }
+  },
+  apps: {
+    micro: {
+      comp: "Busqueu empreses que desenvolupen apps per encàrrec a Catalunya. Quines apps han fet, per a quin tipus de client i què destaquen a la seva web?",
+      cli: "Quins negocis podrien necessitar una app: gimnasos, restaurants, clíniques, entitats? Pregunteu a dos d'aquests negocis si hi tindrien interès i per què.",
+      prov: "Quines eines i serveis us caldrien (servidors, bases de dades, comptes de desenvolupador)? Busqueu quant costa publicar a l'App Store i a Google Play.",
+      int: "Com es fan conèixer les desenvolupadores: plataformes de freelancers, agències, recomanacions? Esbrineu quina comissió cobren aquestes plataformes."
+    },
+    pestel: {
+      P: "Busqueu a la web de la Generalitat si hi ha programes per a startups tecnològiques o per digitalitzar empreses. Quins requisits demanen?",
+      E: "Com guanya diners una app: pagament únic, subscripció, anuncis? Mireu 5 apps conegudes i esbrineu quin model fa servir cadascuna.",
+      S: "Quantes apps fa servir de debò la gent cada dia? Feu una enquesta a classe i penseu si els vostres clients preferirien una app o una web.",
+      T: "Compareu fer una app nativa o una multiplataforma i proveu una eina sense codi. Quins avantatges i limitacions té cada opció?",
+      Ec: "Una app pot ajudar a reduir paper, desplaçaments o malbaratament? Busqueu-ne exemples i penseu com afegir aquest valor a les vostres apps.",
+      L: "Quines dades personals recull una app i què cal fer per protegir-les? Busqueu també quines condicions demanen Apple i Google per publicar una app."
+    }
+  }
+};
+// Pistes de recerca del sector (Microentorn i PESTEL): només preguntes, mai respostes
+const PISTES_MICRO = [['comp', 'Competència'], ['cli', 'Clients'], ['prov', 'Proveïdors'], ['int', 'Intermediaris']];
+function secPistesCard(kind) {
+  const k = T().data.idea.sector || G.sector, S = PE.SECTORS[k], P = PISTES[k];
+  const tit = 'Pistes per investigar';
+  if (!S || !P) return card(tit + ' el vostre sector', pad('<p class="muted">Trieu el sector del projecte a «La idea de negoci» i aquí us sortiran preguntes per ajudar-vos a investigar.</p>'));
+  const llista = kind === 'micro' ? PISTES_MICRO.map(([c, l]) => [l, P.micro[c]]) : PE.PESTEL.map(([c, l]) => [l, P.pestel[c]]);
+  return card(tit + ' · ' + esc(S.short), pad(`<p class="small muted">Preguntes per començar a buscar informació del vostre sector. No hi ha respostes: les heu de trobar vosaltres i escriure-les amb les vostres paraules.</p>${llista.map(([l, q]) => `<p class="small" style="margin:8px 0"><b>${esc(l)}:</b> ${esc(q)}</p>`).join('')}`));
+}
+
 // Exemples d'activitats (pàgina Idea) i de clients (pàgina Empatia) del sector de l'equip
 function secIdeaCard(kind) {
   const k = T().data.idea.sector || G.sector, S = PE.SECTORS[k];
