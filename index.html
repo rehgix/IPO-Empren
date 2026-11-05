@@ -1673,6 +1673,7 @@ function render() {
   updateTeamBanner();
   if (CLOUD) cloudAfterRender(v);
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
+  navSave();
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
@@ -3701,6 +3702,9 @@ async function guarded(fn, seq, retry) {
     else cloudMsg('No s\'ha pogut obrir el grup', 'Hi ha hagut un problema de connexió. Torna-ho a provar.', '<div class="row" style="margin-top:14px"><button class="btn" onclick="route()">Tornar-ho a provar</button></div>');
   }
 }
+// Recorda on estaves (vista, equip i apartat) en aquest navegador, perquè en recarregar la pàgina no es torni a l'inici del grup
+function navSave() { if (!CLOUD || !GID || !G || !USER) return; try { localStorage.setItem('empren-nav', JSON.stringify({ gid: GID, uid: USER.uid, role, tab, team: profTeam })); } catch (e) {} }
+function navLoad() { try { const n = JSON.parse(localStorage.getItem('empren-nav') || 'null'); return n && n.gid === GID && USER && n.uid === USER.uid ? n : null; } catch (e) { return null; } }
 async function route(retry = 0) {
   const seq = ++ROUTE_SEQ;
   stopListen(); syncStatus('idle');
@@ -3756,7 +3760,10 @@ async function openProf() {
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
   if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w, join: GROUP.join !== false })) { SNAP.group = ''; cloudSave(); }
   ROSTER = await FB.list(gpath('members')).catch(() => []); INVITES = await FB.list(gpath('invites')).catch(() => []);
-  role = 'prof'; if (lastGid !== GID || !tab || !['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'].includes(tab)) tab = 'seguiment'; lastGid = GID;
+  const PT = ['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'], nv = lastGid === null ? navLoad() : null; // en recarregar, torna on eres
+  if (nv) { role = Number.isInteger(nv.role) && nv.role >= 0 && nv.role < G.teams.length ? nv.role : 'prof'; tab = nv.tab; if (Number.isInteger(nv.team) && nv.team >= 0 && nv.team < G.teams.length) profTeam = nv.team; if (role === 'prof' && !PT.includes(tab)) tab = 'seguiment'; }
+  else { role = 'prof'; if (lastGid !== GID || !tab || !PT.includes(tab)) tab = 'seguiment'; }
+  lastGid = GID;
   render(); sideUser();
   UNSUB.push(FB.listenDoc(gpath(), applyGroup, () => {}));
   UNSUB.push(FB.listenCol(gpath('teams'), list => { list.forEach(applyTeamDoc); const ids = new Set(list.map(d => d.id)); const gone = G.teams.filter(t => !ids.has(t.id) && SNAP.teams[t.id]); if (gone.length && !syncT && !syncBusy) { G.teams = G.teams.filter(t => !gone.includes(t)); gone.forEach(t => delete SNAP.teams[t.id]); softRender(); } }, () => {}));
@@ -3775,7 +3782,8 @@ async function openStudent(tid) {
   const rv = await FB.get(gpath('teams', tid, 'prof', 'review')).catch(() => null); if (rv) t.review = P(rv.v) || {};
   if (G.showGrades) { const gr = await FB.get(gpath('teams', tid, 'prof', 'grades')).catch(() => null); if (gr) { const v = P(gr.v) || {}; t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }
   G.teams = [t]; ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
-  snapTeam(t); role = 0; if (lastGid !== GID || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
+  const nv = lastGid === null ? navLoad() : null; if (nv) tab = nv.tab; // en recarregar, torna on eres
+  snapTeam(t); role = 0; if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
   render(); sideUser();
   UNSUB.push(FB.listenDoc(gpath(), applyGroup, () => {}));
   UNSUB.push(FB.listenDoc(gpath('teams', tid), x => x ? applyTeamDoc(Object.assign({ id: tid }, x)) : route(), () => route()));
