@@ -783,6 +783,31 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .gact{margin-top:6px}
 .glist{grid-template-columns:repeat(auto-fill,minmax(320px,1fr))}
 
+/* Pàgina principal del professorat: benvinguda, resum, accessos i guia */
+.hhero{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:24px 28px;margin:6px 0 16px;border-radius:22px;overflow:hidden;border:1px solid color-mix(in srgb,var(--gc) 22%,var(--line));background:linear-gradient(120deg,var(--gs),color-mix(in srgb,var(--gs) 35%,var(--bg)))}
+.hhero h2{margin:0 0 6px;font-size:24px;letter-spacing:-.02em}
+.hhero p{margin:0;max-width:56ch;line-height:1.55;color:var(--muted)}
+.hhero .hill{flex:none;width:150px;height:auto}
+.hstats{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,150px),1fr));gap:12px;margin:0 0 16px}
+.hstats .stat{background:var(--gs);border:1px solid color-mix(in srgb,var(--gc) 14%,transparent)}
+.hstats .bar{margin-top:6px}
+.hsec{margin:22px 0 -6px;font-size:15px;font-weight:600}
+.hquick{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:10px;margin:0 0 6px}
+.hq{display:flex;align-items:center;gap:12px;min-width:0;padding:14px 16px;border:1px solid var(--line);border-radius:16px;background:var(--bg);color:var(--ink);font:inherit;text-align:left;text-decoration:none;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.hq:hover{border-color:var(--gc);box-shadow:0 4px 16px color-mix(in srgb,var(--gc) 16%,transparent)}
+.hq .hqi{flex:none;display:grid;place-items:center;width:38px;height:38px;border-radius:12px;background:var(--gs)}
+.hq .hqi svg{width:19px;height:19px;stroke:var(--gc);fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.hq b{display:block;font-size:14.5px}
+.hq .s{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hq .pill{margin-left:auto}
+.hsteps{display:grid;gap:14px;margin:0;padding:0;list-style:none}
+.hsteps li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start}
+.hsteps .n{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-weight:600;background:var(--gs);color:var(--gc)}
+.hsteps li.ok .n{background:#26884f;color:#fff}
+.hsteps b{display:block}
+.hsteps p{margin:2px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
+@media (max-width:620px){.hhero{padding:18px}.hhero h2{font-size:21px}.hhero .hill{display:none}}
+
 a.btn{text-decoration:none}
 
 /* Imatges del prototip sense franges */
@@ -3901,16 +3926,39 @@ async function homeView(msg) {
       <p class="intro muted"><b>Si ets alumne</b>, obre l'enllaç del grup que t'ha donat el professor. No cal que demanis res.</p>${reqCard(req)}`;
     bindReq(); return;
   }
+  // Benvinguda, resum, accessos ràpids i guia de primers passos
+  const first = String(USER.name || '').trim().split(/\s+/)[0], nTeams = gs.reduce((a, g) => a + (g.teamList || []).length, 0);
+  const hq = (tag, at, ic, t, s, n = '') => `<${tag} class="hq" ${at}><span class="hqi">${ico(ic)}</span><span style="min-width:0"><b>${t}</b><span class="s">${s}</span></span>${n}</${tag}>`;
+  const hero = `<div class="hhero" data-g="prof"><div><h2>Hola${first ? ', ' + esc(first) : ''}!</h2><p>Des d'aquí gestiones les teves classes: crea grups, dona l'enllaç a l'alumnat i segueix el progrés dels equips.</p><p class="small" style="margin-top:6px">Si ets alumne, obre l'enllaç del grup que t'ha donat el professor.</p></div>
+    <svg class="hill" viewBox="0 0 160 120" aria-hidden="true"><rect x="10" y="84" width="30" height="28" rx="6" fill="var(--gc)" opacity=".25"/><rect x="48" y="68" width="30" height="44" rx="6" fill="var(--gc)" opacity=".4"/><rect x="86" y="50" width="30" height="62" rx="6" fill="var(--gc)" opacity=".6"/>
+      <circle cx="136" cy="40" r="17" fill="var(--gl)"/><rect x="128" y="57" width="16" height="7" rx="3" fill="var(--gc)"/>
+      <g stroke="var(--gc)" stroke-width="3" stroke-linecap="round"><path d="M136 16v-6M153 23l4-4M119 23l-4-4M112 40h-6"/></g></svg></div>`;
+  const stats = gs.length ? `<div class="hstats" data-g="prof">
+    <div class="stat"><span class="muted small">Grups</span><span class="v">${gs.length}</span></div>
+    <div class="stat"><span class="muted small">Equips</span><span class="v">${nTeams}</span></div>
+    <div class="stat"><span class="muted small">Alumnes</span><span class="v" data-hs="alum">…</span></div>
+    <div class="stat"><span class="muted small">Completat de mitjana</span><span class="v" data-hs="prog">…</span><div class="bar"><span data-hs="bar" style="width:0%"></span></div></div></div>` : '';
+  const quick = [
+    ok ? hq('button', 'type="button" data-hq="nou"', '<path d="M12 5v14M5 12h14"/>', 'Crear un grup nou', 'Nom, sector i nombre d\'equips') : '',
+    gs.length ? hq('a', `href="#g=${esc(gs[0].id)}"`, '<path d="M5 12h14M13 6l6 6-6 6"/>', 'Continuar amb l\'últim grup', esc(gs[0].name)) : '',
+    gs.length ? hq('button', `type="button" data-hqcopy="${esc(gs[0].id)}"`, '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>', 'Enllaç per a l\'alumnat', 'Copia\'l per al Classroom') : '',
+    isAdmin() ? hq('a', 'href="#admin"', '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>', 'Panell d\'administrador', nReq ? nReq + (nReq === 1 ? ' sol·licitud pendent' : ' sol·licituds pendents') : 'Aprova el professorat', nReq ? `<span class="pill">${nReq}</span>` : '') : ''].filter(Boolean);
+  const quickHtml = quick.length ? `<div class="hquick" data-g="prof">${quick.join('')}</div>` : '';
+  const steps = [['Crea un grup', 'Posa-li nom, tria el sector i el nombre d\'equips. Si només vols provar l\'eina, crea\'n un d\'exemple.'],
+    ['Dona l\'enllaç a l\'alumnat', 'Copia l\'enllaç del grup i comparteix-lo (per exemple al Classroom). Entren amb el compte de l\'institut i cadascú veu només el seu equip.'],
+    ['Obre els apartats', 'El grup comença amb tot tancat. A «Obertura dels apartats» decideixes què treballa l\'alumnat i quan.'],
+    ['Revisa i qualifica', 'Segueix el progrés dels equips, revisa el que lliuren, posa les notes de RA4 i RA5 i descarrega els informes en PDF.']];
+  const guide = `<div data-g="prof">${card('Primers passos', pad(`<ol class="hsteps">${steps.map(([t, d], i) => `<li${i === 0 && gs.length ? ' class="ok"' : ''}><span class="n">${i === 0 && gs.length ? '✓' : i + 1}</span><div><b>${t}</b><p>${d}</p></div></li>`).join('')}</ol>`))}</div>`;
   v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
-    <p class="intro muted">Aquí gestiones tots els teus grups classe. Si ets alumne, obre l'enllaç del grup que t'ha donat el professor.</p>
+    ${hero}${stats}${quickHtml}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
-    ${gs.length ? `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
+    ${gs.length ? '<h3 class="hsec">Els teus grups</h3>' + `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
         <a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a>
         <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">…</b> alumnes</span><span><b data-st="prog">…</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:0%"></span></div>
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
-        <div data-gdelbox></div></div>`).join('')}</div>` : '<p class="muted">Encara no tens cap grup. Crea\'n un a sota.</p>'}
+        <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${sectors.map(([k, s]) => `<option value="${k}">${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
@@ -3931,10 +3979,15 @@ async function homeView(msg) {
   if (ok) { $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); } else bindReq();
   if (homeNew && $('#ngName')) { homeNew = false; const f = $('#ngName'); f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); }
   v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
+  const nb = v.querySelector('[data-hq="nou"]'); if (nb) nb.onclick = () => { const f = $('#ngName'); if (!f) return; f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); };
+  v.querySelectorAll('[data-hqcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.hqcopy; try { await navigator.clipboard.writeText(link); b.querySelector('.s').textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
     box.querySelector('[data-yes]').onclick = async e => { e.target.disabled = true; try { await deleteGroupDeep(g.id); homeView('Grup esborrat.'); } catch (err) { toast('No s\'ha pogut esborrar.'); } }; });
+  // Totals del resum (alumnes i progrés mitjà), que s'omplen a mesura que carreguen els grups
+  const tot = { alum: 0, n: 0, sum: 0, fail: 0 }, hs = k => v.querySelector(`[data-hs="${k}"]`);
+  const paintTot = () => { if (!hs('alum')) return; const p = tot.n ? Math.round(tot.sum / tot.n * 100) : 0; hs('alum').textContent = tot.alum; hs('prog').textContent = p + ' %'; hs('bar').style.width = p + '%'; };
   gs.forEach(async g => {
     const card = v.querySelector(`.gcard[data-gid="${g.id}"]`); if (!card) return;
     try {
@@ -3943,7 +3996,9 @@ async function homeView(msg) {
       card.querySelector('[data-st="alum"]').textContent = mem.length;
       card.querySelector('[data-st="prog"]').textContent = Math.round(pr * 100) + ' %';
       card.querySelector('[data-st="bar"]').style.width = Math.round(pr * 100) + '%';
-    } catch (e) { card.querySelector('[data-st="alum"]').textContent = '—'; card.querySelector('[data-st="prog"]').textContent = '—'; }
+      tot.alum += mem.length; tot.n += ts.length; tot.sum += pr * ts.length; paintTot();
+    } catch (e) { card.querySelector('[data-st="alum"]').textContent = '—'; card.querySelector('[data-st="prog"]').textContent = '—';
+      if (++tot.fail === gs.length && hs('alum')) { hs('alum').textContent = '—'; hs('prog').textContent = '—'; } }
   });
 }
 async function createGroupDoc() {
