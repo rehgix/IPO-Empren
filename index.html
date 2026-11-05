@@ -1329,6 +1329,7 @@ table.fin{box-shadow:none}
   .iname{padding:24px 20px;border-radius:28px}.iname .k{padding-right:64px}.iname .nlogo{width:54px;height:54px;top:20px;right:20px;border-radius:16px}
   .iname .d{font-size:18px}
   .iprog,.istats{border-radius:28px;padding:20px}
+  .iprog{gap:18px}.inx{flex-basis:130px}
   .iring{width:104px;height:104px}.iring::before{inset:12px}.iring b{font-size:25px}
   .bl{padding:16px;border-radius:24px}
   .stm{padding:16px 18px;border-radius:24px}
@@ -1346,6 +1347,7 @@ html.dark .iname .d{color:#D6DAEA}
 :root.dark .btn:not(.ghost),:root.dark .sendbar.ws-edit .btn{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:none}
 :root.dark .btn:not(.ghost):hover{background:var(--pri-h);border-color:var(--pri-h);box-shadow:none}
 :root.dark #view[data-g] > .head{background:var(--gs)}
+:root.dark .app .panel{border:0;box-shadow:none}
 :root.dark .sendbar.ws-edit{border-color:rgba(251,191,36,.3);color:#fde68a}
 :root.dark .sendbar.ws-millorar{border-color:rgba(248,113,113,.3);color:#fecaca}
 :root.dark .wsbadge.millorar,:root.dark .pill.ws-millorar,:root.dark .wsbadge.rvb.millorar,:root.dark .rsum-i.warn b{color:var(--st-mil-f)}
@@ -1943,7 +1945,7 @@ function onField(e) {
 }
 // Capçalera amb el nom i el logo de l'equip (quan ja n'ha triat el nom)
 const PROF_TEAM_TABS = ['revisio', 'qualificacio', 'avaluacio', 'informe'];
-function bannerTeam() { return role !== 'prof' ? T() : PROF_TEAM_TABS.includes(tab) ? G.teams[profTeam] : null; }
+function bannerTeam() { return role !== 'prof' ? (tab === 'inici' ? null : T()) : PROF_TEAM_TABS.includes(tab) ? G.teams[profTeam] : null; }
 function teamBannerHtml(t) {
   const m = t.data.marca, logo = logoSrc(m.logo);
   return `<div class="tbanner" style="--tb1:${col(m.color1, '#f7a21b')};--tb2:${col(m.color2, '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
@@ -2031,26 +2033,34 @@ const legend = items => `<div class="legend">${items.map(([k, l]) => `<span clas
 const details = (summary, html) => `<details class="ex"><summary>${summary}</summary><div>${html}</div></details>`;
 
 /* ---------- Inici ---------- */
+const LOCK = '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>';
+const dayCa = d => new Date(d + 'T00:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+// Data d'obertura més propera d'un grup d'apartats tancats (o buit si no n'hi ha)
+const openFrom = ks => ks.map(k => G.access && G.access[k] && G.access[k].from).filter(Boolean).sort()[0] || '';
 function vInici(v) {
-  const t = T(), pr = progress(t);
-  const groups = SECS.filter(g => g[0] !== 'proj' && g[0] !== 'lliura');
+  const t = T(), pr = progress(t), m = t.data.marca;
   // Estat de les revisions: quants apartats estan correctes, enviats, a millorar o en edició
   const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }; PROG.forEach(s => { const w = workState(t, s); if (w in wc) wc[w]++; });
-  const nP = PROG.length, seg = (c, n) => n ? `<i class="${c}" style="width:${n / nP * 100}%"></i>` : '';
-  const trend = wc.millorar ? `<span class="trend warn">${ico('<path d="M12 5v14M6 13l6 6 6-6"/>')}${wc.millorar} a millorar</span>`
-    : wc.correcte ? `<span class="trend up">${ico('<path d="M12 19V5M6 11l6-6 6 6"/>')}${wc.correcte} correctes</span>`
-    : `<span class="trend">${wc.sent ? wc.sent + ' per revisar' : 'Encara sense revisions'}</span>`;
-  v.innerHTML = `${flashHtml()}${head(`${esc(t.name)} · Projecte emprenedor · RA4 i RA5`, esc(projName(t)), `<button class="btn" data-go="${(PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || { k: 'dossier' }).k}">${ico('<path d="M5 12h14M13 6l6 6-6 6"/>')}Continuar</button>`)}
-    <div class="grid3">
-      <div class="stat"><span class="muted small">Projecte completat</span><span class="v">${Math.round(pr * 100)} %</span><div class="bar"><span style="width:${pr * 100}%"></span></div></div>
-      <div class="stat"><span class="muted small">Equip</span><span class="v">${t.members.length} <span class="muted" style="font-size:15px;font-weight:400">persones</span></span><span class="small muted">${t.members.map(m => esc(m.name)).filter(Boolean).join(', ') || 'Encara no heu afegit ningú'}</span></div>
-      <div class="stat"><span class="muted small">Sector</span><span class="v" style="font-size:18px;padding-top:4px">${esc(sectorLabel(t.data.idea.sector) || 'Per definir')}</span><span class="small muted">${t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'}</span></div>
-      <div class="stat"><span class="muted small">Revisions</span><span class="v">${wc.correcte} <span class="muted" style="font-size:15px;font-weight:400">de ${nP} correctes</span></span>${trend}<div class="stack" aria-hidden="true">${seg('s-ok', wc.correcte)}${seg('s-sent', wc.sent)}${seg('s-warn', wc.millorar)}${seg('s-edit', wc.edit)}</div></div>
-    </div>
-    ${groups.map(([gk, gl, , items]) => '<div class="gtint" data-g="' + gk + '">' + card(gl, items.map(([k]) => { const s = sec(k), st = secState(t, s), [d, n] = s.p(t), rv = t.review[k];
-      return `<button class="lrow" data-go="${k}"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}</div></div>
-        <div class="mid">${access(k) === 'closed' ? '<span class="pill grey">Encara tancat</span>' : access(k) === 'readonly' ? '<span class="pill grey">Només lectura</span>' : ''}${access(k) === 'closed' ? '' : (ws => `<span class="pill ws-${ws}">${WS_LABEL[ws]}</span>`)(workState(t, s))}</div>
-        <div class="val">${Math.min(d, n)}/${n}</div>${CHEV}</button>`; }).join('')) + '</div>').join('')}`;
+  const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
+  const names = t.members.map(x => esc(x.name)).filter(Boolean).join(', ');
+  const chips = [names || 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir'), t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'];
+  const sub = filled(m.eslogan) ? m.eslogan : '';
+  const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g, g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(([, ss]) => ss.length);
+  const tiles = groups.map(([[gk, gl], ss], i) => {
+    const cl = ss.every(s => access(s.k) === 'closed'), from = cl ? openFrom(ss.map(s => s.k)) : '';
+    const ok = ss.filter(s => workState(t, s) === 'correcte').length;
+    const rows = ss.map(s => { const ac = access(s.k), w = workState(t, s), rv = t.review[s.k];
+      const meta = [s.act || s.ca, ac === 'readonly' ? 'Només lectura' : ''].filter(Boolean).join(' · ');
+      return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>El professor us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
+    return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
+  v.innerHTML = `${flashHtml()}<section class="ihero">
+    <div class="iname">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">${esc(t.name)} · Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
+      <div class="ichips">${chips.map(c => `<span>${c}</span>`).join('')}</div></div>
+    <div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
+      <div class="inx"><small>Següent apartat</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">Continuar</button></div></div>
+    <div class="istats"><div><b style="color:var(--st-ok-f)">${wc.correcte}</b><small>correctes</small></div><div><b style="color:var(--st-sent-f)">${wc.sent}</b><small>enviats</small></div><div><b style="color:var(--st-mil-f)">${wc.millorar}</b><small>a millorar</small></div><div><b style="color:var(--st-edit-f)">${wc.edit}</b><small>en edició</small></div></div>
+  </section>
+  <section class="bento">${tiles}</section>`;
 }
 
 /* ---------- Equip ---------- */
