@@ -1880,7 +1880,7 @@ function menu() {
 }
 function renderSide() {
   $('#gameName').textContent = G.name;
-  $('#roleSel').innerHTML = `<option value="prof">Professor/a</option>` + G.teams.map((t, i) => `<option value="${i}">${esc(t.name)}${t.data.marca.nom || t.data.idea.nom ? ' · ' + esc(t.data.marca.nom || t.data.idea.nom) : ''}</option>`).join('');
+  $('#roleSel').innerHTML = `<option value="prof">Professor/a</option>` + G.teams.map((t, i) => `<option value="${i}">${esc(projName(t))}</option>`).join('');
   $('#roleSel').value = String(role);
   const pr = role === 'prof' ? (G.teams.length ? G.teams.reduce((a, t) => a + progress(t), 0) / G.teams.length : 0) : progress(T());
   $('#quarterTxt').textContent = role === 'prof' ? `Progrés mitjà dels equips: ${Math.round(pr * 100)}%` : `Projecte completat al ${Math.round(pr * 100)}%`;
@@ -2054,7 +2054,7 @@ function vInici(v) {
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>El professor us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   v.innerHTML = `${flashHtml()}<section class="ihero">
-    <div class="iname">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">${esc(t.name)} · Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
+    <div class="iname">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
       <div class="ichips">${chips.map(c => `<span>${c}</span>`).join('')}</div></div>
     <div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
       <div class="inx"><small>Següent apartat</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">Continuar</button></div></div>
@@ -3031,7 +3031,7 @@ function dossierText(t) {
 }
 function vDossier(v) {
   const t = T(), pr = progress(t), missing = PROG.filter(s => secState(t, s) !== 'done');
-  v.innerHTML = `${flashHtml()}${head(`${esc(t.name)} · Dossier del projecte`, esc(projName(t)), `<button class="btn ghost" id="copyDos">Copiar el text</button><button class="btn" id="deliver">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${t.delivered ? 'Tornar a lliurar' : 'Lliurar al professor'}</button>`)}
+  v.innerHTML = `${flashHtml()}${head(`Dossier del projecte`, esc(projName(t)), `<button class="btn ghost" id="copyDos">Copiar el text</button><button class="btn" id="deliver">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${t.delivered ? 'Tornar a lliurar' : 'Lliurar al professor'}</button>`)}
     ${t.delivered ? `<div class="notice info">Lliurat el ${new Date(t.delivered).toLocaleString('ca-ES')}.${t.updated > t.delivered ? ' Heu fet canvis després del lliurament: torneu-lo a lliurar quan acabeu.' : ''}</div>` : ''}
     ${missing.length ? `<div class="notice">Projecte completat al ${Math.round(pr * 100)}%. Falten apartats a: ${missing.map(s => `<button class="linkbtn" data-go="${s.k}">${esc(s.l)}</button>`).join(', ')}.</div>` : '<div class="notice info">Heu completat tots els apartats.</div>'}
     <p class="muted intro">Aquest dossier recull tot el projecte. Copieu-ne el text per publicar-lo a la carpeta del projecte al Google Sites (Pt4).</p>
@@ -3311,7 +3311,7 @@ function vQualificacio(v) {
   const C = aiCfg(), manual = true;
   const mScope = manualScope && manualScope.team === t.name ? manualScope : null;
   const mActs = mScope ? G.acts.filter(a => mScope.codes.includes(a.c)) : [];
-  v.innerHTML = `${head(`Qualificació · ${esc(t.name)} · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`, teamSel())}
+  v.innerHTML = `${head(`Qualificació · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`, teamSel())}
     <div class="aipick">${C.enabled ? `<div class="aipick-h"><span><b>Correcció amb IA</b> <span class="muted small">Funciona amb la IA que facis servir habitualment (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="linkbtn small muted" id="aiOff">Desactivar la IA</button></div><p class="small muted" style="margin:0">Prem «Corregir amb IA» i l'eina et prepararà una petició amb la feina de l'equip i els criteris de cada activitat. La copies a la IA, enganxes aquí la resposta i decideixes quines propostes aplicar.</p>` : `<div class="aipick-h"><span><b>La correcció amb IA està desactivada.</b> <span class="muted small">Funciona amb la IA que facis servir (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="btn small" id="aiOn2">Activar la IA</button></div>`}</div>
     <div class="row">${C.enabled ? `<button class="btn" id="aiAll" ${busyAll && busyAll.busy ? 'disabled' : ''}>${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/>')}${busyAll && busyAll.busy ? 'Corregint...' : `Corregir amb IA les ${aiActs.length} activitats`}</button>
       <button class="btn ghost" id="aiApplyAll">Aplicar totes les propostes de la IA</button>` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div>
@@ -3363,7 +3363,7 @@ function reportBody(t, forStudents) {
     return `<section class="ract ra-${a.ra.toLowerCase()}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
       ${rubRep(g)}${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
       ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${imgSrc(f.data)}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
-  return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(t.name)} · ${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
+  return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
       ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
     <div class="rgrades"><div class="ra-ra4"><span>RA4</span><b class="${gcls(r4.nota)}">${f1(r4.nota)}</b></div><div class="ra-ra5"><span>RA5</span><b class="${gcls(r5.nota)}">${f1(r5.nota)}</b></div></div>
     ${roles ? `<h2>Equip</h2><table class="rtab fin zebra"><thead><tr><th>Persona</th><th>Rols</th><th>Responsabilitats</th></tr></thead><tbody>${roles}</tbody></table>` : ''}
@@ -3403,7 +3403,7 @@ const rubUsed = g => g && g.rub && g.rl ? (G.rubs || []).find(r => r.id === g.ru
 function rubRep(g) { const r = rubUsed(g); if (!r) return ''; return `<table class="rtab rrub"><tbody>${r.crit.map(c => `<tr><td>${esc(c.t)}</td><td>${typeof g.rl[c.k] === 'number' ? LVL_NAMES[g.rl[c.k]] + ' (' + g.rl[c.k] + ')' : '—'}</td></tr>`).join('')}</tbody></table>`; }
 function reportText(t) {
   const r4 = raGradeAct(t, 'RA4'), r5 = raGradeAct(t, 'RA5');
-  let x = `INFORME · ${projName(t)} · ${t.name}\nRA4: ${f1(r4.nota)} · RA5: ${f1(r5.nota)}\n`;
+  let x = `INFORME · ${projName(t)}\nRA4: ${f1(r4.nota)} · RA5: ${f1(r5.nota)}\n`;
   G.acts.forEach(a => { const g = t.grades[a.c] || {}; x += `\n## ${a.c} · ${a.n} (${a.ra}, ${f1(a.w)}%) · Nota: ${f1(g.nota)}${g.nivell !== undefined && g.nivell !== null ? ' (' + LVL_NAMES[g.nivell] + ')' : ''}\n${rubUsed(g) ? rubUsed(g).crit.map(c => `- ${c.t}: ${typeof g.rl[c.k] === 'number' ? LVL_NAMES[g.rl[c.k]] + ' (' + g.rl[c.k] + ')' : '—'}\n`).join('') : ''}${g.comentari ? 'Comentari: ' + g.comentari + '\n' : ''}`;
     actEvidence(t, a).forEach(gr => { gr.pairs.filter(([, v]) => v && String(v).trim()).forEach(([l, v]) => { x += `- ${l}: ${v}\n`; }); }); });
   return x;
@@ -3460,7 +3460,7 @@ function vInforme(v) {
 // Vista de l'equip (només si el professor ho activa)
 function vNotes(v) {
   const t = T();
-  v.innerHTML = `${head(`${esc(t.name)} · Informe del professor`, 'Les vostres notes', `<button class="btn" id="pdfMine">${ico('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>')}Descarregar en PDF</button>`)}<div class="reportview">${reportBody(t, true)}</div>`;
+  v.innerHTML = `${head(`${esc(projName(t))} · Informe del professor`, 'Les vostres notes', `<button class="btn" id="pdfMine">${ico('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>')}Descarregar en PDF</button>`)}<div class="reportview">${reportBody(t, true)}</div>`;
   $('#pdfMine').onclick = e => savePdf([t], e.currentTarget);
 }
 /* ---------- Rúbriques: triar-les per activitat, editar-les i crear-ne de noves ---------- */
@@ -3943,7 +3943,7 @@ async function cloudBoot() {
     if (!domainOk(u.email)) { await FB.signOut(); return loginView(`Has entrat amb <b>${esc(u.email)}</b>. Fes servir el compte de Google de l'institut.`); }
     route();
   });
-  window.addEventListener('hashchange', () => { if (USER) route(); });
+  window.addEventListener('hashchange', () => { if (USER) { lastGid = ''; profTeam = 0; route(); } }); // en canviar de grup des de la llista, sempre a «Seguiment»
 }
 function hashGid() { const m = location.hash.match(/g=([\w-]+)/); return m ? m[1] : null; }
 let ROUTE_SEQ = 0;
@@ -4574,7 +4574,7 @@ function suggest(t, r) {
 }
 function raGrade(t, ra) { const rows = RUBRIC.filter(r => r.ra === ra), ls = rows.map(r => t.evals.levels[r.id]); if (ls.some(x => x === undefined)) return null; return ls.reduce((a, b) => a + b, 0) / rows.length / 4 * 10; }
 const fmt1 = x => x === null ? '—' : x.toLocaleString('ca-ES', { maximumFractionDigits: 1 });
-function teamSel() { return `<select class="field-sel" id="teamSel" style="width:auto" aria-label="Equip">${G.teams.map((t, i) => `<option value="${i}" ${i === profTeam ? 'selected' : ''}>${esc(t.name)} · ${esc(projName(t))}</option>`).join('')}</select>`; }
+function teamSel() { return `<select class="field-sel" id="teamSel" style="width:auto" aria-label="Equip">${G.teams.map((t, i) => `<option value="${i}" ${i === profTeam ? 'selected' : ''}>${esc(projName(t))}</option>`).join('')}</select>`; }
 function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { profTeam = Number(e.target.value); render(); }; }
 
 const SQ_COL = ['#FFD23F', '#FFB0D0', '#9BE7D9', '#C9BCFF', '#B9D0FF', '#FFC9A8', '#BDEBC9'];
@@ -4587,7 +4587,7 @@ function vSeguiment(v) {
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<i class="x" title="${esc(gl)}: tancat"></i>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<i data-g="${gk}" style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>`; }).join('');
-    return `<button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(t.name)}</b><small>${esc(projName(t))}</small></span></span>
+    return `<button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b></span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>`; }).join('');
@@ -4625,7 +4625,7 @@ function vRevisio(v) {
   const ws = s => workState(t, s);
   const cnt = w => PROG.filter(s => ws(s) === w).length;
   const show = s => revFilter === 'tots' || ws(s) === revFilter;
-  const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(x.name)}</b><span>${esc(projName(x))}</span><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
+  const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
   const groups = SECS.filter(g => g[0] !== 'lliura');
   const dot = s => ws(s);
   const nav = groups.map(([gk, gl, , items]) => { const ss = items.map(([k]) => sec(k)).filter(s => s.p); if (!ss.length) return ''; return `<div class="rnav-g" data-g="${gk}"><span>${esc(gl)}</span>${ss.map(s => `<button type="button" class="rnav-i ${show(s) ? '' : 'faded'}" data-jump="${s.k}"><i class="rdot ${dot(s)}"></i>${esc(s.l)}</button>`).join('')}</div>`; }).join('');
@@ -4662,7 +4662,7 @@ function vRevisio(v) {
 function vAvaluacio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
   const ev = t.evals, g4 = raGrade(t, 'RA4'), g5 = raGrade(t, 'RA5');
-  v.innerHTML = `${head(`Avaluació · ${esc(t.name)} · ${esc(projName(t))}`, `RA4 ${fmt1(g4)} <span class="muted" style="font-weight:500">·</span> RA5 ${fmt1(g5)}`, teamSel())}
+  v.innerHTML = `${head(`Avaluació · ${esc(projName(t))}`, `RA4 ${fmt1(g4)} <span class="muted" style="font-weight:500">·</span> RA5 ${fmt1(g5)}`, teamSel())}
     <p class="muted intro">Tria el nivell de cada criteri. El punt verd indica el nivell que suggereixen el grau de compleció i les teves revisions; la decisió és teva. La nota de cada RA és la mitjana dels seus criteris sobre 10.</p>
     ${['RA4', 'RA5'].map(ra => card(ra === 'RA4' ? 'RA4 · Identifica, defineix i valida idees d\'emprenedoria' : 'RA5 · Desenvolupa un projecte emprenedor d\'innovació social i/o tecnològica', `<div class="tablebox rubric"><table><thead><tr><th>Criteri</th>${LEVELS.map(([n, l]) => `<th>${l} (${n})</th>`).join('')}</tr></thead><tbody>
       ${RUBRIC.filter(r => r.ra === ra).map(r => { const sg = suggest(t, r), cur = ev.levels[r.id]; return `<tr><td><b>${esc(r.title)}</b><div class="small muted">CA ${r.ca}</div></td>${LEVELS.map(([n], k) => `<td><label class="rcell ${cur === n ? 'sel' : ''}"><input type="radio" name="r_${r.id}" value="${n}" ${cur === n ? 'checked' : ''}><span>${esc(r.d[k])}</span>${sg === n ? '<em class="sug">Suggerit</em>' : ''}</label></td>`).join('')}</tr>`; }).join('')}
@@ -4674,7 +4674,7 @@ function vAvaluacio(v) {
   $('#useSug').onclick = () => { RUBRIC.forEach(r => { ev.levels[r.id] = suggest(t, r); }); save(); render(); };
   $('#evComment').oninput = e => { ev.comment = e.target.value; save(); };
   $('#copyRep').onclick = async () => {
-    const x = `Avaluació IPO II · ${t.name} · ${projName(t)}\n` + ['RA4', 'RA5'].map(ra => `${ra}: ${fmt1(raGrade(t, ra))} / 10\n` + RUBRIC.filter(r => r.ra === ra).map(r => `- ${r.title} (CA ${r.ca}): ${ev.levels[r.id] === undefined ? 'sense avaluar' : LEVELS.find(l => l[0] === ev.levels[r.id])[1] + ' (' + ev.levels[r.id] + ')'}`).join('\n')).join('\n') + (ev.comment ? `\nComentari: ${ev.comment}` : '');
+    const x = `Avaluació IPO II · ${projName(t)}\n` + ['RA4', 'RA5'].map(ra => `${ra}: ${fmt1(raGrade(t, ra))} / 10\n` + RUBRIC.filter(r => r.ra === ra).map(r => `- ${r.title} (CA ${r.ca}): ${ev.levels[r.id] === undefined ? 'sense avaluar' : LEVELS.find(l => l[0] === ev.levels[r.id])[1] + ' (' + ev.levels[r.id] + ')'}`).join('\n')).join('\n') + (ev.comment ? `\nComentari: ${ev.comment}` : '');
     try { await navigator.clipboard.writeText(x); $('#copyRep').textContent = 'Copiat'; } catch (e) { $('#evComment').value = x; $('#evComment').select(); $('#copyRep').textContent = 'Text a la casella: prem Ctrl+C'; }
   };
 }

@@ -15,6 +15,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `SECS`: els blocs i apartats del menú (ordre, títols, criteris CA, activitats i com es calcula el progrés). Per moure o afegir apartats, es toca aquí.
 - `GICONS` i les regles `[data-g="..."]`: icona i colors de cada bloc. Un bloc nou necessita totes dues coses.
 - `VIEWS`: quina funció dibuixa cada pàgina. `render()` és el punt central que redibuixa la pantalla.
+- `projName(t)`: el nom que es mostra de cada equip (el del projecte; si no n'hi ha, «Equip N»). Fes-lo servir en lloc de `t.name` als títols i llistes.
 - `role`: `'prof'` o el número de l'equip. `profTeam`: l'equip que el professor està mirant.
 - `RUBRIC` i `G.acts`: rúbrica i activitats per a la nota. Si es mouen apartats, cal revisar que la nota continuï comptant bé.
 
