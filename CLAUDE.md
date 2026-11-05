@@ -9,7 +9,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `firestore.rules`: regles de seguretat de la base de dades. Si es canvien, cal avisar l'usuari que s'han de publicar a Firebase a part (no es publiquen amb el push). Un apartat nou amb dades pròpies s'ha d'afegir a `studentEditOk` i a `dataKeysOk`, o l'alumnat no el podrà desar.
 - Seguretat: les imatges de l'alumnat es posen amb `imgSrc()` i els colors amb `col()`; les dades d'equip que arriben de la xarxa passen per `shapeLike()` (a `unpackSection`).
 - Les dades es guarden a Firebase i s'esborren cada 15 de juliol.
-- Sense sessió iniciada, la web mostra un grup d'exemple amb 3 equips (Sol a Casa, Endolla't, DomoLlar). Serveix per provar els canvis. Són negocis realistes del sector elèctric (plaques solars, punts de recàrrega i domòtica) amb textos curts a cada apartat.
+- Sense sessió iniciada, la web mostra un grup d'exemple amb 3 equips de sectors diferents (Sol a Casa, d'electricitat; LabMar, de laboratori; Al Dia, de gestoria). Serveix per provar els canvis. Els textos són frases curtes i genèriques, perquè l'alumnat no els pugui copiar. Si algú crea un grup d'exemple a la nuvolatge, queda amb l'entrada lliure tancada (`join: false`) perquè l'alumnat no hi pugui entrar mai.
 
 ## Peces clau d'`index.html`
 - `SECS`: els blocs i apartats del menú (ordre, títols, criteris CA, activitats i com es calcula el progrés). Per moure o afegir apartats, es toca aquí.
