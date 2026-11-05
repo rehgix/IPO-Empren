@@ -4589,13 +4589,25 @@ const fmt1 = x => x === null ? '—' : x.toLocaleString('ca-ES', { maximumFracti
 function teamSel() { return `<select class="field-sel" id="teamSel" style="width:auto" aria-label="Equip">${G.teams.map((t, i) => `<option value="${i}" ${i === profTeam ? 'selected' : ''}>${esc(t.name)} · ${esc(projName(t))}</option>`).join('')}</select>`; }
 function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { profTeam = Number(e.target.value); render(); }; }
 
+const SQ_COL = ['#FFD23F', '#FFB0D0', '#9BE7D9', '#C9BCFF', '#B9D0FF', '#FFC9A8', '#BDEBC9'];
 function vSeguiment(v) {
-  const groups = SECS.filter(g => !['proj', 'lliura'].includes(g[0]));
-  v.innerHTML = `${head(`${esc(G.name)} · Projecte emprenedor RA4 i RA5`, `${G.teams.length} <span class="muted" style="font-weight:500">equips</span>`)}
+  const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g[0], g[1], g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(g => g[2].length);
+  const nT = G.teams.length, nAl = G.teams.reduce((a, t) => a + t.members.length, 0), avg = nT ? G.teams.reduce((a, t) => a + progress(t), 0) / nT : 0;
+  const wsN = (t, w) => PROG.filter(s => workState(t, s) === w).length, nRev = G.teams.reduce((a, t) => a + wsN(t, 'sent'), 0);
+  const rows = G.teams.map((t, i) => { const m = t.data.marca, logo = logoSrc(m.logo), rev = wsN(t, 'sent'), mil = wsN(t, 'millorar');
+    const ini = projName(t).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
+    const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<i class="x" title="${esc(gl)}: tancat"></i>`;
+      const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<i data-g="${gk}" style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>`; }).join('');
+    return `<button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(t.name)}</b><small>${esc(projName(t))}</small></span></span>
+      <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
+      <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
+      <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>`; }).join('');
+  v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
+      <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
-    ${card('Progrés per blocs', pad(`<div class="tablebox"><table class="fin zebra segtbl"><thead><tr><th>Equip i projecte</th>${groups.map(g => `<th class="n">${esc(g[1])}</th>`).join('')}<th class="n">Total</th><th>Dossier</th><th class="n">RA4</th><th class="n">RA5</th></tr></thead><tbody>
-      ${G.teams.map((t, i) => `<tr><td><div class="segteam">${filled(t.data.marca.nom) ? teamLogoHtml(t, 'slogo') : '<span class="slogo empty"></span>'}<div><button class="linkbtn" data-rev="${i}"><b>${esc(t.name)}</b></button><div class="small muted">${esc(projName(t))}</div></div></div></td>${groups.map(g => { const ss = g[3].map(x => sec(x[0])); const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<td class="n"><div class="minibar"><span style="width:${p * 100}%"></span></div>${Math.round(p * 100)}%</td>`; }).join('')}<td class="n"><b>${Math.round(progress(t) * 100)}%</b></td><td>${t.delivered ? `<span class="pill">Lliurat</span>${t.updated > t.delivered ? ' <span class="pill warn">Canvis</span>' : ''}` : '<span class="pill grey">Pendent</span>'}</td><td class="n"><span class="gchip ${gcls(raGradeAct(t, 'RA4').nota)}">${f1(raGradeAct(t, 'RA4').nota)}</span></td><td class="n"><span class="gchip ${gcls(raGradeAct(t, 'RA5').nota)}">${f1(raGradeAct(t, 'RA5').nota)}</span></td></tr>`).join('')}
-    </tbody></table></div><p class="small muted">Toca el nom d'un equip per revisar el projecte i deixar-hi comentaris.</p>`))}`;
+    <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
+    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte; les ratllades encara estan tancades.</p>`;
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
 }
 function vObertura(v) {
