@@ -2913,7 +2913,7 @@ function vMarca(v) {
       + ta('marca.justTipo', 'Tipografia', 'Quin tipus de lletra fa servir (rodona, recta, de pal sec, manuscrita, gruixuda...)? Quina sensació dona i per què l\'heu triada?', 3)))
     + card('Cultura empresarial', pad(ta('marca.missio', 'Missió', 'Per què existeix l\'empresa? Què fa i per a qui?', 2) + ta('marca.visio', 'Visió', 'Què vol arribar a ser l\'empresa d\'aquí a uns anys?', 2) + ta('marca.valors', 'Valors', 'Els principis que guien el comportament de l\'empresa.', 2))));
   const prev = () => { const m = T().data.marca, el = $('#brandPrev'); if (!el) return;
-    el.innerHTML = `<div class="bp" style="background:${col(m.color2, '#111113')};color:#fff">${logoSrc(m.logo) ? `<img src="${imgSrc(m.logo)}" alt="Logo">` : `<div class="bp-ph" style="background:${col(m.color1, '#f7a21b')}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${esc(m.color1)}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
+    el.innerHTML = `<div class="bp" style="background:${col(m.color2, '#111113')};color:#fff">${logoSrc(m.logo) ? `<img src="${imgSrc(m.logo)}" alt="Logo">` : `<div class="bp-ph" style="background:${col(m.color1, '#f7a21b')}">${esc((m.nom || '?').slice(0, 1).toUpperCase())}</div>`}<div><div class="bp-n">${esc(m.nom || 'Nom de l\'empresa')}</div><div class="bp-s" style="color:${col(m.color1, '#f7a21b')}">${esc(m.eslogan || 'El vostre eslògan')}</div></div></div>`; };
   liveFn = prev; prev();
   const rer = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   const esbIn = $('#esbIn');
@@ -2923,7 +2923,7 @@ function vMarca(v) {
     for (const f of [...e.target.files]) {
       if (d.esbossos.length >= ESB_MAX) { skipped.push(`${f.name} (ja n'hi ha ${ESB_MAX})`); continue; }
       if (!/^image\//.test(f.type)) { skipped.push(`${f.name} (ha de ser una imatge)`); continue; }
-      try { const item = await readImgFile(f, 1000); item.id = newId('f'); d.esbossos.push(item); T().updated = Date.now();
+      try { const item = await readImgFile(f, 1000); item.id = freeFid(T(), 'u', 30); d.esbossos.push(item); T().updated = Date.now();
         if (!save()) { d.esbossos.pop(); save(); skipped.push(`${f.name} (no hi ha prou espai al navegador)`); } }
       catch (err) { skipped.push(`${f.name} (${err && err.message === 'big' ? 'la imatge és massa pesada' : 'no s\'ha pogut llegir'})`); }
     }
@@ -3620,7 +3620,9 @@ function bindActsConfig(v) {
 // Estructura: groups/{grup} · members/{alumne} · teams/{equip} · teams/{equip}/files · teams/{equip}/prof/{review|grades|ai}
 let lastGid = null, FB = null, USER = null, ME = null, GID = null, GROUP = null, ROSTER = [], INVITES = [], UNSUB = [], FILES = {};
 let SNAP = { group: '', teams: {} }, syncT = null, syncBusy = false, syncAgain = false, pendRender = false, rT = null;
-const newId = (p = 't') => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+// Identificadors difícils d'endevinar (atzar criptogràfic del navegador)
+const rnd36 = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return Array.from(a, b => (b % 36).toString(36)).join(''); };
+const newId = (p = 't') => p + Date.now().toString(36) + rnd36(8);
 function ensureIds() { (G.teams || []).forEach(t => { if (!t.id) t.id = newId(); }); }
 const J = x => JSON.stringify(x === undefined ? null : x);
 const P = s => { try { return JSON.parse(s); } catch (e) { return null; } };
@@ -3702,20 +3704,36 @@ const DOMAINS = () => (window.FB_DOMAINS || []).map(d => d.toLowerCase());
 const domainOk = e => !DOMAINS().length || DOMAINS().some(d => e.endsWith('@' + d));
 function nextExpiry(now = new Date()) { let y = now.getFullYear(); let d = new Date(y, 6, 15, 12); if (now > new Date(d - 30 * 864e5)) d = new Date(y + 1, 6, 15, 12); return d.getTime(); }
 const fmtDay = ms => new Date(ms).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
+// És el professor que ha creat el grup? (sense sessió, sempre sí)
+const groupOwner = () => !CLOUD || !GROUP || !USER || !GROUP.owner || GROUP.owner === USER.uid;
 const gpath = (...p) => ['groups', GID, ...p].join('/');
 
 /* ---------- Dades d'un equip: text a la fitxa, imatges i documents a part ---------- */
+// Cada arxiu de l'equip té un nom fix d'una llista curta: u0-u29 (prototip i esbossos) i l0-l4 (logo)
+function usedFids(t) {
+  const d = t.data, s = typeof SNAP !== 'undefined' && SNAP && SNAP.teams && SNAP.teams[t.id];
+  return new Set([...((d.prototip || {}).fitxers || []), ...((d.marca || {}).esbossos || [])].map(f => f.id).filter(Boolean)
+    .concat(t._lg ? [t._lg.id] : [], s && s.files ? s.files : [], Object.keys(FILES[t.id] || {})));
+}
+function freeFid(t, pre, n) {
+  const used = usedFids(t), free = Array.from({ length: n }, (_, i) => pre + i).filter(id => !used.has(id));
+  if (!free.length) return newId('f');
+  const a = new Uint32Array(1); crypto.getRandomValues(a); return free[a[0] % free.length];
+}
+const fileId = (t, f) => f.id || (f.id = freeFid(t, 'u', 30));
+// El logo conserva el seu nom mentre no canvia la imatge
+function logoFid(t, data) { const h = logoId(data); if (!t._lg || t._lg.h !== h) t._lg = { h, id: freeFid(t, 'l', 5) }; return t._lg.id; }
 function packSection(t, k) {
   const v = t.data[k];
-  if (k === 'prototip') return J(Object.assign({}, v, { fitxers: (v.fitxers || []).map(f => { if (!f.id) f.id = newId('f'); return { id: f.id, kind: f.kind, name: f.name, size: f.size }; }) }));
-  if (k === 'marca') return J(Object.assign({}, v, { logo: v.logo ? (String(v.logo).startsWith('file:') ? v.logo : 'file:' + logoId(v.logo)) : '', esbossos: (v.esbossos || []).map(f => { if (!f.id) f.id = newId('f'); return { id: f.id, kind: f.kind, name: f.name, size: f.size }; }) }));
+  if (k === 'prototip') return J(Object.assign({}, v, { fitxers: (v.fitxers || []).map(f => { fileId(t, f); return { id: f.id, kind: f.kind, name: f.name, size: f.size }; }) }));
+  if (k === 'marca') return J(Object.assign({}, v, { logo: v.logo ? (String(v.logo).startsWith('file:') ? v.logo : 'file:' + logoFid(t, v.logo)) : '', esbossos: (v.esbossos || []).map(f => { fileId(t, f); return { id: f.id, kind: f.kind, name: f.name, size: f.size }; }) }));
   return J(v);
 }
 function teamFiles(t) {
   const out = {};
-  ((t.data.prototip && t.data.prototip.fitxers) || []).forEach(f => { if (!f.id) f.id = newId('f'); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
-  if (t.data.marca && t.data.marca.logo && String(t.data.marca.logo).startsWith('data:')) out[logoId(t.data.marca.logo)] = { name: 'logo', kind: 'logo', size: 0, data: t.data.marca.logo };
-  ((t.data.marca && t.data.marca.esbossos) || []).forEach(f => { if (!f.id) f.id = newId('f'); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
+  ((t.data.prototip && t.data.prototip.fitxers) || []).forEach(f => { fileId(t, f); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
+  if (t.data.marca && t.data.marca.logo && String(t.data.marca.logo).startsWith('data:')) out[logoFid(t, t.data.marca.logo)] = { name: 'logo', kind: 'logo', size: 0, data: t.data.marca.logo };
+  ((t.data.marca && t.data.marca.esbossos) || []).forEach(f => { fileId(t, f); if (f.data) out[f.id] = { name: f.name, kind: f.kind, size: f.size || 0, data: f.data }; });
   return out;
 }
 // Les dades d'un equip venen de la xarxa: es refan amb la forma esperada perquè un valor estrany no trenqui cap pàgina
@@ -3737,7 +3755,7 @@ function unpackSection(t, k, str) {
   if (tpl) v = shapeLike(tpl, v); else if (k === '_who') v = cleanWho(v); else if (k === '_meta') v = isObj(v) ? Object.assign(v, { sent: isObj(v.sent) ? v.sent : {} }) : { sent: {} };
   const fl = a => a.filter(isObj).map(f => Object.assign({}, f, { name: String(f.name ?? 'arxiu'), data: (FILES[t.id] || {})[f.id] || '' }));
   if (k === 'prototip') v.fitxers = fl(v.fitxers);
-  if (k === 'marca') { v.logo = String(v.logo || '').startsWith('file:') ? ((FILES[t.id] || {})[v.logo.slice(5)] || v.logo) : (v.logo || ''); v.esbossos = fl(v.esbossos); }
+  if (k === 'marca') { const lid = String(v.logo || '').startsWith('file:') ? v.logo.slice(5) : ''; v.logo = lid ? ((FILES[t.id] || {})[lid] || v.logo) : (v.logo || ''); if (lid && String(v.logo).startsWith('data:')) t._lg = { h: logoId(v.logo), id: lid }; v.esbossos = fl(v.esbossos); }
   t.data[k] = v;
 }
 const profPart = t => ({ review: J(t.review || {}), grades: J({ grades: t.grades || {}, evals: t.evals || { levels: {}, comment: '' } }), ai: J(t.ai || {}) });
@@ -3848,12 +3866,13 @@ const typing = () => { const a = document.activeElement; return a && $('#view').
 function softRender() { clearTimeout(rT); rT = setTimeout(() => { if (typing() || syncT || syncBusy) { pendRender = true; renderSide(); return; } pendRender = false; const y = window.scrollY; render(); window.scrollTo(0, y); }, 250); }
 document.addEventListener('focusout', () => { if (pendRender) setTimeout(softRender, 50); });
 async function needFiles(t, ids) {
+  Object.keys(FILES[t.id] || {}).forEach(id => { if (!ids.includes(id)) delete FILES[t.id][id]; });
   const miss = ids.filter(id => !(FILES[t.id] || {})[id]); if (!miss.length) return;
   await Promise.all(miss.map(async id => { const f = await FB.get(gpath('teams', t.id, 'files', id)).catch(() => null); if (f) { FILES[t.id] = FILES[t.id] || {}; FILES[t.id][id] = f.data; } }));
   const F = FILES[t.id] || {}, m = t.data.marca;
   (t.data.prototip.fitxers || []).forEach(f => { if (!f.data && F[f.id]) f.data = F[f.id]; });
   ((m && m.esbossos) || []).forEach(f => { if (!f.data && F[f.id]) f.data = F[f.id]; });
-  if (m && String(m.logo || '').startsWith('file:') && F[m.logo.slice(5)]) m.logo = F[m.logo.slice(5)];
+  if (m && String(m.logo || '').startsWith('file:') && F[m.logo.slice(5)]) { const lid = m.logo.slice(5); m.logo = F[lid]; t._lg = { h: logoId(m.logo), id: lid }; }
   softRender();
 }
 function applyTeamDoc(d) {
@@ -3971,7 +3990,7 @@ async function route(retry = 0) {
   setTimeout(() => { if (seq === ROUTE_SEQ && retry < 1 && $('#view .cloud-load')) route(retry + 1); }, 12000); // si segueix carregant als 12 s, ho reintenta sol
   let g;
   try { g = await FB.get('groups/' + gid); } catch (e) { g = null; }
-  if (!g) return cloudMsg('No s\'ha trobat el grup', 'Comprova l\'enllaç que t\'ha donat el professor. Pot ser que el grup s\'hagi esborrat en acabar el curs.', '<div class="row" style="margin-top:14px"><a class="btn ghost" href="#">Anar a l\'inici</a></div>');
+  if (!g) return cloudMsg('No s\'ha trobat el grup', 'Comprova l\'enllaç que t\'ha donat el professor. Si l\'entrada al grup està tancada, demana-li que l\'obri o que et convidi. També pot ser que el grup s\'hagi esborrat en acabar el curs.', '<div class="row" style="margin-top:14px"><a class="btn ghost" href="#">Anar a l\'inici</a></div>');
   GID = gid; GROUP = Object.assign({ id: gid }, g);
   const isProf = (g.profs || []).includes(USER.email);
   ME = { email: USER.email, uid: USER.uid, isProf };
@@ -4321,8 +4340,8 @@ function cloudAfterRender(v) {
 function cloudConfigHtml() {
   if (!CLOUD || !ME || !ME.isProf) return '';
   return card('Alumnat del grup', pad(`<p class="small muted">L'enllaç per al Classroom i la llista d'alumnes són a «Gestiona l'alumnat», el botó verd de dalt del menú.</p><div class="row"><button type="button" class="btn ghost small" data-go="alumnes">Anar a «Gestiona l'alumnat»</button></div>`))
-    + card('Altres professors del grup', pad(`<div class="pfield"><label for="profsTa">Correus dels professors que també poden gestionar aquest grup</label><div class="help">Un correu per línia. Tindran els mateixos permisos que tu.</div><textarea id="profsTa" rows="3" placeholder="nom.cognom@institut.cat">${esc((G.profs || []).join('\n'))}</textarea></div>`))
-    + card('Esborrar el grup', pad(`<p class="small muted">Esborra ara mateix el grup i tota la feina dels equips. No es pot desfer.</p><div id="gDelBox"></div><button type="button" class="btn ghost small" id="gDel">Esborrar aquest grup</button>`));
+    + card('Altres professors del grup', pad(`<div class="pfield"><label for="profsTa">Correus dels professors que també poden gestionar aquest grup</label><div class="help">${groupOwner() ? 'Un correu per línia. Podran gestionar el grup com tu, però només tu pots canviar aquesta llista i esborrar el grup.' : 'Només el professor que ha creat el grup pot canviar aquesta llista.'}</div><textarea id="profsTa" rows="3" placeholder="nom.cognom@institut.cat" ${groupOwner() ? '' : 'disabled'}>${esc((G.profs || []).join('\n'))}</textarea></div>`))
+    + card('Esborrar el grup', pad(`<p class="small muted">Esborra ara mateix el grup i tota la feina dels equips. No es pot desfer.</p><div id="gDelBox"></div>${groupOwner() ? '<button type="button" class="btn ghost small" id="gDel">Esborrar aquest grup</button>' : '<p class="small muted">Només el professor que ha creat el grup el pot esborrar.</p>'}`));
 }
 /* ---------- Gestiona l'alumnat: enllaç per al Classroom, alumnes que han entrat i invitacions ---------- */
 // Codi QR a pantalla completa per projectar-lo (la llibreria es carrega només quan cal)
@@ -4411,7 +4430,7 @@ function bindCloudConfig(v) {
     catch (e) { if (w) w.close(); msg('No s\'ha pogut afegir. Torna-ho a provar.'); }
     ia.disabled = false;
   };
-  const pt = $('#profsTa'); if (pt) pt.oninput = () => { G.profs = pt.value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(x => x.includes('@') && x !== ME.email); save(); };
+  const pt = $('#profsTa'); if (pt && groupOwner()) pt.oninput = () => { G.profs = pt.value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(x => x.includes('@') && x !== ME.email); save(); };
   const gd = $('#gDel'); if (gd) gd.onclick = () => { $('#gDelBox').innerHTML = `<div class="notice">Segur que vols esborrar «${esc(G.name)}» i tota la feina dels equips? <button class="btn small" id="gDelYes">Sí, esborrar</button> <button class="btn ghost small" id="gDelNo">Cancel·lar</button></div>`;
     $('#gDelNo').onclick = () => { $('#gDelBox').innerHTML = ''; };
     $('#gDelYes').onclick = async () => { $('#gDelYes').disabled = true; stopListen(); try { await deleteGroupDeep(GID); location.hash = ''; homeView('Grup esborrat.'); } catch (e) { toast('No s\'ha pogut esborrar.'); } }; };

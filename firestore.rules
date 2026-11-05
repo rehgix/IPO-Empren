@@ -11,6 +11,7 @@ service cloud.firestore {
     function me() { return request.auth.token.email.lower(); }
     function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
     function isProf(gid) { return signed() && me() in grp(gid).profs; }
+    function isOwner(gid) { return resource.data.get('owner', null) == request.auth.uid; }
     function memberDoc(gid) { return /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid); }
     function inTeam(gid, tid) { return signed() && exists(memberDoc(gid)) && get(memberDoc(gid)).data.team == tid; }
 
@@ -55,13 +56,15 @@ service cloud.firestore {
         || (r.delivered is number && r.delivered > now - 3600000 && r.delivered < now + 3600000);
     }
     // ARXIUS: imatges i documents del prototip i el logo (màxim 1 MB i amb data d'esborrat del grup)
-    function studentFileOk(gid) {
+    // Noms d'arxiu fixos (u0-u29 per a prototip i esbossos, l0-l4 per al logo): així un equip no pot omplir la base de dades
+    function fileIdOk(fid) { return fid.matches('^(u[12]?[0-9]|l[0-4])$'); }
+    function studentFileOk(gid, fid) {
       let f = request.resource.data;
       return f.keys().hasOnly(['name', 'kind', 'size', 'data', 'expiresAt'])
         && f.name is string && f.name.size() <= 300 && f.kind in ['img', 'doc', 'logo']
         && f.data is string && f.data.size() < 1000000
         && f.expiresAt is timestamp && f.expiresAt <= grp(gid).expiresAt
-        && filesOpen(gid);
+        && filesOpen(gid) && fileIdOk(fid);
     }
     function filesOpen(gid) { let w = grp(gid).get('w', {}); return winOk(w, 'prototip') || winOk(w, 'marca'); }
 
@@ -78,11 +81,16 @@ service cloud.firestore {
     }
 
     match /groups/{gid} {
-      allow get: if signed();
+      // Llegir el grup: els seus professors, els seus alumnes, qui té una invitació o qualsevol mentre l'entrada lliure és oberta
+      allow get: if signed() && (me() in resource.data.profs || exists(memberDoc(gid))
+        || resource.data.get('join', true) != false || exists(/databases/$(database)/documents/groups/$(gid)/invites/$(me())));
       allow list: if signed() && me() in resource.data.profs;
       allow create: if canCreate() && request.resource.data.owner == request.auth.uid && me() in request.resource.data.profs;
-      allow update: if isProf(gid) && me() in request.resource.data.profs;
-      allow delete: if isProf(gid);
+      // Només qui ha creat el grup pot canviar la llista de professors; el creador no es pot canviar
+      allow update: if isProf(gid) && me() in request.resource.data.profs
+        && request.resource.data.get('owner', null) == resource.data.get('owner', null)
+        && (isOwner(gid) || (request.resource.data.profs.hasAll(resource.data.profs) && resource.data.profs.hasAll(request.resource.data.profs)));
+      allow delete: if isProf(gid) && isOwner(gid);
 
       match /members/{uid} {
         allow get: if (signed() && request.auth.uid == uid) || isProf(gid);
@@ -123,7 +131,7 @@ service cloud.firestore {
           allow read: if isProf(gid) || inTeam(gid, tid);
           // L'alumnat només pot treure arxius mentre el prototip o la marca estan oberts
           allow delete: if isProf(gid) || (inTeam(gid, tid) && filesOpen(gid));
-          allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid));
+          allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid, fid));
         }
         match /prof/{part} {
           allow read: if isProf(gid)
