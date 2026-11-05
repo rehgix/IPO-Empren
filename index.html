@@ -800,6 +800,12 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .hq b{display:block;font-size:14.5px}
 .hq .s{display:block;font-size:12.5px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .hq .pill{margin-left:auto}
+.hqpick{display:grid;gap:6px;margin:0 0 6px;padding:12px;border:1px solid var(--gc);border-radius:16px;background:var(--bg)}
+.hqpick[hidden]{display:none}
+.hqp-t{padding:2px 4px;font-size:13px;color:var(--muted)}
+.hqp{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border:1px solid var(--line);border-radius:12px;background:var(--bg);color:var(--ink);font:inherit;font-weight:600;text-align:left;cursor:pointer}
+.hqp:hover{border-color:var(--gc);background:var(--gs)}
+.hqp .s{font-weight:400;font-size:13px;color:var(--muted);white-space:nowrap}
 .hsteps{display:grid;gap:14px;margin:0;padding:0;list-style:none}
 .hsteps li{display:grid;grid-template-columns:34px minmax(0,1fr);gap:12px;align-items:start}
 .hsteps .n{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-weight:600;background:var(--gs);color:var(--gc)}
@@ -3941,9 +3947,9 @@ async function homeView(msg) {
   const quick = [
     ok ? hq('button', 'type="button" data-hq="nou"', '<path d="M12 5v14M5 12h14"/>', 'Crear un grup nou', 'Nom, sector i nombre d\'equips') : '',
     gs.length ? hq('a', `href="#g=${esc(gs[0].id)}"`, '<path d="M5 12h14M13 6l6 6-6 6"/>', 'Continuar amb l\'últim grup', esc(gs[0].name)) : '',
-    gs.length ? hq('button', `type="button" data-hqcopy="${esc(gs[0].id)}"`, '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>', 'Enllaç per a l\'alumnat', 'Copia\'l per al Classroom') : '',
+    gs.length ? hq('button', 'type="button" data-hqcopy', '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>', 'Enllaç per a l\'alumnat', gs.length > 1 ? 'Tria per a quin grup' : 'Copia\'l per al Classroom') : '',
     isAdmin() ? hq('a', 'href="#admin"', '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>', 'Panell d\'administrador', nReq ? nReq + (nReq === 1 ? ' sol·licitud pendent' : ' sol·licituds pendents') : 'Aprova el professorat', nReq ? `<span class="pill">${nReq}</span>` : '') : ''].filter(Boolean);
-  const quickHtml = quick.length ? `<div class="hquick" data-g="prof">${quick.join('')}</div>` : '';
+  const quickHtml = quick.length ? `<div class="hquick" data-g="prof">${quick.join('')}</div>` + (gs.length > 1 ? '<div class="hqpick" id="hqPick" data-g="prof" hidden></div>' : '') : '';
   const steps = [['Crea un grup', 'Posa-li nom, tria el sector i el nombre d\'equips. Si només vols provar l\'eina, crea\'n un d\'exemple.'],
     ['Dona l\'enllaç a l\'alumnat', 'Copia l\'enllaç del grup i comparteix-lo (per exemple al Classroom). Entren amb el compte de l\'institut i cadascú veu només el seu equip.'],
     ['Obre els apartats', 'El grup comença amb tot tancat. A «Obertura dels apartats» decideixes què treballa l\'alumnat i quan.'],
@@ -3980,7 +3986,14 @@ async function homeView(msg) {
   if (homeNew && $('#ngName')) { homeNew = false; const f = $('#ngName'); f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); }
   v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   const nb = v.querySelector('[data-hq="nou"]'); if (nb) nb.onclick = () => { const f = $('#ngName'); if (!f) return; f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); };
-  v.querySelectorAll('[data-hqcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.hqcopy; try { await navigator.clipboard.writeText(link); b.querySelector('.s').textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
+  // «Enllaç per a l'alumnat»: amb un sol grup el copia; amb diversos, deixa triar el grup
+  const cp = async (id, el) => { const link = location.origin + location.pathname + '#g=' + id; try { await navigator.clipboard.writeText(link); el.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } };
+  const hb = v.querySelector('[data-hqcopy]'); if (hb) hb.onclick = () => {
+    if (gs.length === 1) return cp(gs[0].id, hb.querySelector('.s'));
+    const box = $('#hqPick'); if (!box.hidden) { box.hidden = true; return; }
+    box.innerHTML = '<div class="hqp-t">Per a quin grup vols l\'enllaç?</div>' + gs.map(g => `<button type="button" class="hqp" data-pid="${esc(g.id)}"><span>${esc(g.name)}</span><span class="s"></span></button>`).join('');
+    box.hidden = false; box.querySelectorAll('[data-pid]').forEach(b => b.onclick = () => cp(b.dataset.pid, b.querySelector('.s')));
+  };
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
