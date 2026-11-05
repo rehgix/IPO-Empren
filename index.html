@@ -2410,8 +2410,8 @@ function finSecCard(kind) {
   const f = finSec(), s = T().data.idea.sector || G.sector;
   if (!f) return s ? '' : card('Exemples del vostre sector', pad('<p class="muted">Trieu el sector del projecte a «La idea de negoci» i aquí us sortiran exemples pensats per al vostre tipus d\'empresa.</p>'));
   const sh = esc(PE.SECTORS[f.k].short), eur = x => Number(x).toLocaleString('ca-ES') + ' €';
-  if (kind === 'inv') return card('Exemples d\'inversions · ' + sh, pad(`<p class="small muted">Són imports orientatius per a una empresa que comença. Cerqueu preus reals, ajusteu-los al vostre projecte i afegiu només el que us calgui (l'import l'heu d'omplir vosaltres).</p>
-    <div class="row">${f.inv.map(([c, i, v]) => `<button type="button" class="btn ghost small" data-add="inversio.items" data-concepte="${esc(c)}" data-vida="${v || ''}">+ ${esc(c)} <span class="muted">≈ ${eur(i)}</span></button>`).join('')}</div>
+  if (kind === 'inv') return card('Exemples d\'inversions · ' + sh, pad(`<p class="small muted">Són exemples de coses en què una empresa del vostre sector pot invertir en començar. Afegiu només el que us calgui i busqueu vosaltres els preus reals (l'import l'heu d'omplir vosaltres).</p>
+    <div class="row">${f.inv.map(([c, , v]) => `<button type="button" class="btn ghost small" data-add="inversio.items" data-concepte="${esc(c)}" data-vida="${v || ''}">+ ${esc(c)}</button>`).join('')}</div>
     <div class="notice info" style="margin-top:12px"><b>Per investigar:</b> ${esc(f.pista)}</div>`));
   return card('Despeses típiques · ' + sh, pad(`<p class="small muted">Despeses pròpies del vostre sector, a més de les generals. Els imports són orientatius: contrasteu-los i poseu-hi els vostres.</p>
     <div class="row">${f.desp.map(([c, i, q]) => `<button type="button" class="btn ghost small" data-add="treso.rows" data-kind="out" data-label="${esc(c)}" data-freq="${esc(q)}">+ ${esc(c)} <span class="muted">≈ ${eur(i)} ${FREQ_TXT[q] || ''}</span></button>`).join('')}</div>
