@@ -1842,7 +1842,7 @@ function access(k) {
   return s;
 }
 // Estat de la feina d'un apartat: 'none' (sense fer), 'edit' (en edició), 'sent' (enviat), 'correcte', 'millorar'
-const SEND_SRC = { equip: t => t.members, lean: t => [t.data.lean, ['costosAmb', 'benSocial', 'benAmbiental', 'cicleVida', 'circular'].map(k => t.data.sost[k])], sost: t => [t.data.sost.ods, t.data.sost.odsAccions, t.data.sost.tecnologia], inversio: t => [t.data.inversio, t.data.finan],
+const SEND_SRC = { equip: t => t.members.map(({ uid, ...m }) => m), lean: t => [t.data.lean, ['costosAmb', 'benSocial', 'benAmbiental', 'cicleVida', 'circular'].map(k => t.data.sost[k])], sost: t => [t.data.sost.ods, t.data.sost.odsAccions, t.data.sost.tecnologia], inversio: t => [t.data.inversio, t.data.finan],
   prototip: t => Object.assign({}, t.data.prototip, { fitxers: (t.data.prototip.fitxers || []).map(f => (f.name || '') + '|' + (f.size || 0)) }), marca: t => Object.assign({}, t.data.marca, { logo: (t.data.marca.logo || '').length ? 1 : 0, esbossos: (t.data.marca.esbossos || []).map(f => (f.name || '') + '|' + (f.size || 0)) }) };
 function secHash(t, k) { const v = (SEND_SRC[k] || (x => x.data[k]))(t); const s = JSON.stringify(v === undefined ? null : v); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
 const sentOf = (t, k) => ((t.data._meta || {}).sent || {})[k];
@@ -1875,7 +1875,7 @@ function claimRow() {
   if (t.members.some(m => m.uid === ME.uid)) { const sn = SNAP.teams[t.id]; if (sn && J(t.members) !== sn.members) save(); return; } // la fila ja hi és: es desa quan l'apartat s'obri
   const nm = String(USER.name || '').trim(), same = nm && t.members.find(m => !m.uid && normNom(m.name) === normNom(nm));
   if (same) same.uid = ME.uid;
-  else if (t.members.length < 3) t.members.push({ name: nm || String(ME.email || '').split('@')[0], uid: ME.uid, accio: '', social: '', mental: '', resp: '' });
+  else if (t.members.length < 3 && !sentOf(t, 'equip')) t.members.push({ name: nm || String(ME.email || '').split('@')[0], uid: ME.uid, accio: '', social: '', mental: '', resp: '' });
   else return;
   t.updated = Date.now(); save();
 }
