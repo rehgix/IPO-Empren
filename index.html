@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%23f7a21b%22/%3E%3Cpath d=%22M5 17l4.5-5.5 3.5 2.5 6-7.5%22 fill=%22none%22 stroke=%22%23111%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
-<script src="config.js?v=2"></script><script src="fbapi.js"></script>
+<link rel="preload" href="config.js?v=2" as="script"><link rel="preload" href="fbapi.js" as="script">
 <title>IPO Emprèn</title>
 <script>
 // Aparença: 'auto' (segons el sistema), 'light' o 'dark'. Es desa en aquest navegador i s'aplica abans de pintar.
@@ -160,7 +160,7 @@ textarea{font-size:13px;min-height:140px}
     <nav class="nav" id="tabs" role="tablist" aria-label="Seccions"></nav>
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
   </aside>
-  <div class="panel"><main class="content" id="view"></main></div>
+  <div class="panel"><main class="content" id="view"><div class="cloud-load"><span class="spin"></span> Carregant...</div></main></div>
 </div>
 
 <style>
@@ -1530,6 +1530,7 @@ body.navopen{overflow:hidden}
 @media (max-width:820px){.rv-l{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
 </style>
+<script src="config.js?v=2"></script><script src="fbapi.js"></script>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -4491,7 +4492,8 @@ async function route(retry = 0) {
   $('#view').innerHTML = '<div class="cloud-load"><span class="spin"></span> Obrint el grup...</div>';
   setTimeout(() => { if (seq === ROUTE_SEQ && retry < 1 && $('#view .cloud-load')) route(retry + 1); }, 12000); // si segueix carregant als 12 s, ho reintenta sol
   let g;
-  try { g = await FB.get('groups/' + gid); } catch (e) { g = null; }
+  let m0 = null; GID = gid; // el grup i el teu registre de membre es demanen alhora
+  try { [g, m0] = await Promise.all([FB.get('groups/' + gid), FB.get(gpath('members', USER.uid)).catch(() => null)]); } catch (e) { g = null; }
   if (!g) return cloudMsg('No s\'ha trobat el grup', 'Comprova l\'enllaç que t\'ha donat el professor. Si l\'entrada al grup està tancada, demana-li que l\'obri o que et convidi. També pot ser que el grup s\'hagi esborrat en acabar el curs.', '<div class="row" style="margin-top:14px"><a class="btn ghost" href="#">Anar a l\'inici</a></div>');
   GID = gid; GROUP = Object.assign({ id: gid }, g);
   const isProf = (g.profs || []).includes(USER.email);
@@ -4499,7 +4501,7 @@ async function route(retry = 0) {
   SNAP = { group: '', teams: {} }; FILES = {};
   G = groupToG(g);
   if (isProf) return guarded(openProf, seq, retry);
-  let m = null; try { m = await FB.get(gpath('members', USER.uid)); } catch (e) {}
+  const m = m0;
   let tid = m && (g.teamIds || []).includes(m.team) ? m.team : null;
   if (!tid) { // Si el professor l'ha afegit a mà, entra directament al seu equip
     const em = USER.email.toLowerCase(); let iv = null; try { iv = await FB.get(gpath('invites', em)); } catch (e) {}
@@ -4565,17 +4567,19 @@ async function pullTeam(id) {
 async function openStudent(tid) {
   document.body.classList.remove('cloud-msg', 'is-prof'); document.body.classList.add('is-student');
   ME.teamId = tid;
-  const d = await FB.get(gpath('teams', tid));
+  const [d, rv, gr] = await Promise.all([FB.get(gpath('teams', tid)), FB.get(gpath('teams', tid, 'prof', 'review')).catch(() => null), G.showGrades ? FB.get(gpath('teams', tid, 'prof', 'grades')).catch(() => null) : null]);
   if (!d) return cloudMsg('El teu equip ja no existeix', 'Demana al professor que et torni a assignar un equip.');
   FILES[tid] = {};
-  await Promise.all(fileIdsOf(d).map(async id => { const f = await FB.get(gpath('teams', tid, 'files', id)).catch(() => null); if (f) FILES[tid][id] = f.data; }));
   const t = teamFromDoc(Object.assign({ id: tid }, d));
-  const rv = await FB.get(gpath('teams', tid, 'prof', 'review')).catch(() => null); if (rv) t.review = P(rv.v) || {};
-  if (G.showGrades) { const gr = await FB.get(gpath('teams', tid, 'prof', 'grades')).catch(() => null); if (gr) { const v = P(gr.v) || {}; t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }
+  if (rv) t.review = P(rv.v) || {};
+  if (G.showGrades) { if (gr) { const v = P(gr.v) || {}; t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }
   G.teams = [t]; ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   const nv = lastGid === null ? navLoad() : null; if (nv) tab = nv.tab; // en recarregar, torna on eres
   snapTeam(t); role = 0; if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
   render(); sideUser();
+  // Les imatges pesen molt: es baixen després de mostrar la pàgina i es redibuixa quan arriben (sense interrompre qui està escrivint)
+  const ids = fileIdsOf(d), gid0 = GID; if (ids.length) Promise.all(ids.map(async id => { const f = await FB.get(gpath('teams', tid, 'files', id)).catch(() => null); if (f) FILES[tid][id] = f.data; })).then(function again() {
+    if (GID !== gid0 || !G) return; const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return void setTimeout(again, 2500); const y = window.scrollY; render(); window.scrollTo(0, y); });
   UNSUB.push(FB.listenDoc(gpath(), applyGroup, () => {}));
   UNSUB.push(FB.listenDoc(gpath('teams', tid), x => x ? applyTeamDoc(Object.assign({ id: tid }, x)) : route(), () => route()));
   UNSUB.push(FB.listenDoc(gpath('teams', tid, 'prof', 'review'), x => applyProf(tid, 'review', x), () => {}));
