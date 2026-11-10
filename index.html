@@ -236,7 +236,8 @@ ul.fb.good li::marker{color:var(--ws-ok,#26884f)} ul.fb.bad li::marker{color:var
 .grpbar .linkbtn{margin-left:auto}
 @media (max-width:620px){.grpbar{font-size:13px}.grpbar .linkbtn{margin-left:0}}
 .member.tsrow{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto}
-@media (max-width:620px){.member.tsrow{grid-template-columns:1fr}}
+.member.trow{grid-template-columns:minmax(0,1fr) auto auto;align-items:center}
+@media (max-width:620px){.member.tsrow,.member.trow{grid-template-columns:1fr}}
 .interview{display:grid;gap:8px;padding:14px;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
 .canvas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line)}
 .canvas .cbox{background:var(--bg);padding:16px}
@@ -1498,6 +1499,7 @@ html.dark .iname .d{color:#D6DAEA}
 .side-back.on{opacity:1;visibility:visible;transition:opacity .35s var(--ease)}
 .navbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));left:max(14px,env(safe-area-inset-left,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--side-2);border-radius:14px;background:var(--side);color:var(--side-fg);box-shadow:var(--sh-md);cursor:pointer;transition:transform .15s var(--ease),background var(--t-fast)}
 .navbtn:hover{background:var(--side-2)}
+@media (max-width:620px){.navbtn{transition:transform .25s var(--ease),opacity .2s var(--ease),background var(--t-fast)}.navbtn.away:not(:focus-visible){transform:translateY(-90px);opacity:0;pointer-events:none}}
 .navbtn:active{transform:scale(.93)}
 .navbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
 .navbtn i{grid-area:1/1;display:block;width:20px;height:2px;border-radius:2px;background:currentColor;transition:transform .38s var(--ease),opacity .2s var(--ease)}
@@ -1781,7 +1783,7 @@ const filled = x => typeof x === 'string' ? x.trim().length >= 3 : x != null && 
 const num = PE.num;
 
 function save() { if (CLOUD) return cloudSave(); try { localStorage.setItem(KEY, JSON.stringify({ G, role })); return true; } catch (e) { return false; } }
-function load() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.G && d.G.v === 1) { G = d.G; role = d.role ?? 'prof'; ensureEval(); ensureIds(); G.teams.forEach(t => { if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; }); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k)); return true; } } catch (e) {} return false; }
+function load() { try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.G && d.G.v === 1) { G = d.G; role = d.role ?? 'prof'; ensureEval(); ensureIds(); G.teams.forEach(t => { if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; }); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k)); if (purgeTrash()) save(); return true; } } catch (e) {} return false; }
 
 /* ---------- Model de dades ---------- */
 function emptyData(sector) {
@@ -1854,6 +1856,11 @@ function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'pr
 function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); }; }
 function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s => { o[s.k] = { state: openKeys.includes(s.k) ? 'open' : 'closed', from: '' }; }); return o; }
 // Els grups nous comencen amb tots els apartats tancats: el professor els obre a «Obertura dels apartats»
+// Paperera: els equips esborrats es poden recuperar durant uns dies abans d'eliminar-se del tot
+const TRASH_DAYS = 7, trashIds = () => new Set(((G && G.trash) || []).map(x => x.id));
+function trashTeam(i) { const t = G.teams.splice(i, 1)[0]; if (!t) return; const pn = projName(t);
+  (G.trash = G.trash || []).push(Object.assign({ id: t.id, name: t.name + (pn !== t.name ? ' · ' + pn : ''), at: Date.now() }, CLOUD ? {} : { t })); }
+function purgeTrash() { const lim = Date.now() - TRASH_DAYS * 864e5, n = (G.trash || []).length; G.trash = (G.trash || []).filter(x => isObj(x) && x.id && x.at > lim); return G.trash.length !== n; }
 function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess([]), name, sector: sector || 'electricitat', teams: teams.map(n => ({ id: newId(), name: n, members: [], data: emptyData(sector), review: {}, delivered: null, evals: { levels: {}, comment: '' } })) }; }
 
 /* ---------- Seccions ---------- */
@@ -2073,6 +2080,10 @@ function pageBody(v, k, intro, body, opts = {}) {
   }
 }
 /* ================= PÀGINES DE L'EQUIP ================= */
+// Opcions de sector agrupades per família professional (i «Altres sectors» al final)
+const secGroups = cur => { const fam = {}, alt = []; Object.entries(PE.SECTORS).forEach(([k, s]) => { if (s.group === 'biada') (fam[s.family] = fam[s.family] || []).push([k, s]); else alt.push([k, s]); });
+  const o = ([k, s]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${esc(s.label)}</option>`;
+  return Object.entries(fam).map(([f, l]) => `<optgroup label="${esc(f)}">${l.map(o).join('')}</optgroup>`).join('') + `<optgroup label="Altres sectors">${alt.map(o).join('')}</optgroup>`; };
 const sectorLabel = k => PE.SECTORS[k] ? PE.SECTORS[k].label : '';
 const projName = t => t.data.marca.nom || t.data.idea.nom || t.name;
 function bindList(v, list, tpl, max) {
@@ -2136,9 +2147,8 @@ function vEquip(v) {
 /* ---------- La idea ---------- */
 function vIdea(v) {
   const t = T();
-  const secOpts = [['', 'Tria el sector del teu cicle'], ...Object.entries(PE.SECTORS).filter(([, s]) => s.group === 'biada').map(([k, s]) => [k, `${s.family} · ${s.label}`]), ...Object.entries(PE.SECTORS).filter(([, s]) => s.group !== 'biada').map(([k, s]) => [k, s.label])];
   page(v, 'idea', 'Tot projecte emprenedor es basa en una idea de negoci: l\'activitat a què us dedicareu, l\'element que us diferencia de la competència i l\'expectativa d\'obtenir un benefici. La idea ha de ser del vostre sector.',
-    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Sector (cicle formatiu)</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1">${secOpts.map(([k, l]) => `<option value="${k}" ${t.data.idea.sector === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select></div>`
+    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Sector (cicle formatiu)</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1"><option value="" ${!t.data.idea.sector ? 'selected' : ''}>Tria el sector del teu cicle</option>${secGroups(t.data.idea.sector)}</select></div>`
       + txt('idea.nom', 'Nom provisional del projecte') + ta('idea.activitat', 'Activitat', 'El producte o servei que oferireu al mercat.') + ta('idea.diferenciador', 'Element diferenciador', 'El valor afegit que aporteu al client i que us distingeix de la competència.') + ta('idea.benefici', 'Expectativa de benefici', 'Com i per què l\'activitat generarà un benefici econòmic, social o cultural.')))
     + secIdeaCard('act')
     + card('Golden Circle', pad(`<div class="golden"><svg class="gc-svg" viewBox="0 0 240 240" role="img" aria-label="Golden Circle: Why al centre, How al mig i What a fora"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="22" class="tw">WHAT</text><text x="120" y="35" class="ts tw">Què</text><text x="120" y="60" class="th">HOW</text><text x="120" y="73" class="ts th">Com</text><text x="120" y="118" class="ty">WHY</text><text x="120" y="133" class="ts ty">Per a què</text></svg><div class="gc-fields">
@@ -4231,6 +4241,7 @@ function teamFromDoc(d) {
 }
 const groupFields = () => {
   const cfg = {}; ['sector', 'acts', 'rubs', 'aiCfg', 'access', 'allowPaste'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
+  if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
 };
@@ -4293,10 +4304,10 @@ async function stuPush() {
   Object.assign(s.data, sent.data); if (sent.members) s.members = sent.members; if (sent.delivered) s.delivered = sent.delivered; s.files = refs;
 }
 async function profPush() {
-  const ops = [], exp = GROUP.expiresAt, ids = new Set(G.teams.map(t => t.id)), after = [];
+  const ops = [], exp = GROUP.expiresAt, ids = new Set(G.teams.map(t => t.id)), tr = trashIds(), after = [];
   const gf = groupFields(), gs = J(gf);
   if (gs !== SNAP.group) ops.push({ op: 'update', path: gpath(), data: gf });
-  Object.keys(SNAP.teams).forEach(id => { if (ids.has(id)) return;
+  Object.keys(SNAP.teams).forEach(id => { if (ids.has(id) || tr.has(id)) return;
     const s = SNAP.teams[id];
     ops.push({ op: 'del', path: gpath('teams', id) }); ['review', 'grades', 'ai'].forEach(p => ops.push({ op: 'del', path: gpath('teams', id, 'prof', p) }));
     (s.files || []).forEach(f => ops.push({ op: 'del', path: gpath('teams', id, 'files', f) }));
@@ -4339,7 +4350,7 @@ async function needFiles(t, ids) {
 }
 function applyTeamDoc(d) {
   let t = G.teams.find(x => x.id === d.id);
-  if (!t) { if (!ME.isProf) return; t = teamFromDoc(d); G.teams.push(t); snapTeam(t); softRender(); fileIdsOf(d).length && needFiles(t, fileIdsOf(d)); return; }
+  if (!t) { if (!ME.isProf || trashIds().has(d.id) || SNAP.teams[d.id]) return; t = teamFromDoc(d); G.teams.push(t); snapTeam(t); softRender(); fileIdsOf(d).length && needFiles(t, fileIdsOf(d)); return; }
   const s = SNAP.teams[t.id]; let ch = false;
   if (!s) return;
   Object.keys(d.data || {}).forEach(k => { const sv = d.data[k]; if (sv === s.data[k]) return;
@@ -4373,8 +4384,9 @@ function applyGroup(g) {
     const remote = J({ name: g.name, profs: g.profs, showGrades: !!g.showGrades, cfg: g.cfg, teamList: g.teamList, teamIds: g.teamIds, w: g.w, join: g.join !== false });
     if (remote === SNAP.group) return;
     Object.assign(G, groupToG(g), { teams: G.teams });
-    const order = g.teamIds || []; G.teams.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
-    SNAP.group = J(groupFields()); softRender(); return;
+    const order = g.teamIds || [], tr = trashIds(); G.teams = G.teams.filter(t => !tr.has(t.id)); G.teams.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
+    SNAP.group = J(groupFields()); softRender();
+    order.filter(id => !G.teams.some(t => t.id === id)).forEach(id => { delete SNAP.teams[id]; pullTeam(id).catch(() => {}); }); return;
   }
   const was = J({ a: G.access, s: G.showGrades, n: G.name });
   Object.assign(G, groupToG(g), { teams: G.teams });
@@ -4483,7 +4495,9 @@ function logIn(m) {
 }
 async function openProf() {
   document.body.classList.remove('cloud-msg', 'is-student'); document.body.classList.add('is-prof');
-  const docs = await FB.list(gpath('teams'));
+  const all = await FB.list(gpath('teams')), tr = trashIds(), docs = all.filter(d => !tr.has(d.id));
+  all.filter(d => tr.has(d.id)).forEach(d => { SNAP.teams[d.id] = { files: fileIdsOf(d) }; });
+  if (G.trash) G.trash = G.trash.filter(x => SNAP.teams[x.id]); // ja no existeix al núvol
   const order = (GROUP.teamIds || []);
   docs.sort((a, b) => order.indexOf(a.id) - order.indexOf(b.id));
   await Promise.all(docs.map(async d => {
@@ -4496,6 +4510,7 @@ async function openProf() {
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
   if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w, join: GROUP.join !== false })) { SNAP.group = ''; cloudSave(); }
   ROSTER = await FB.list(gpath('members')).catch(() => []); INVITES = await FB.list(gpath('invites')).catch(() => []);
+  if (purgeTrash()) cloudSave(); // els equips que fa més d'una setmana que són a la paperera s'eliminen del tot
   const PT = ['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'], nv = lastGid === null ? navLoad() : null; // en recarregar, torna on eres
   if (nv) { role = Number.isInteger(nv.role) && nv.role >= 0 && nv.role < G.teams.length ? nv.role : 'prof'; tab = nv.tab; if (Number.isInteger(nv.team) && nv.team >= 0 && nv.team < G.teams.length) profTeam = nv.team; if (role === 'prof' && !PT.includes(tab)) tab = 'seguiment'; }
   else { role = 'prof'; if (lastGid !== GID || !tab || !PT.includes(tab)) tab = 'seguiment'; }
@@ -4506,6 +4521,18 @@ async function openProf() {
   UNSUB.push(FB.listenCol(gpath('members'), list => { ROSTER = list; stuBtn(); if (tab === 'alumnes') softRender(); }, () => {}));
   UNSUB.push(FB.listenCol(gpath('invites'), list => { INVITES = list; if (tab === 'alumnes') softRender(); }, () => {}));
   G.teams.forEach(t => UNSUB.push(FB.listenCol(gpath('teams', t.id, 'prof'), list => list.forEach(p => applyProf(t.id, p.id, p)), () => {})));
+}
+// Carrega del núvol un equip que no és a la llista (recuperat de la paperera)
+async function pullTeam(id) {
+  if (G.teams.some(t => t.id === id)) return true;
+  const d = await FB.get(gpath('teams', id)); if (!d) return false; d.id = id;
+  FILES[id] = {}; await Promise.all(fileIdsOf(d).map(async f => { const x = await FB.get(gpath('teams', id, 'files', f)).catch(() => null); if (x) FILES[id][f] = x.data; }));
+  const t = teamFromDoc(d), ps = await FB.list(gpath('teams', id, 'prof')).catch(() => []);
+  ps.forEach(p => { const v = P(p.v) || {}; if (p.id === 'review') t.review = v; else if (p.id === 'ai') t.ai = v; else if (p.id === 'grades') { t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } });
+  if (G.teams.some(x => x.id === id)) return true;
+  G.teams.push(t); ensureEval(); snapTeam(t);
+  UNSUB.push(FB.listenCol(gpath('teams', id, 'prof'), list => list.forEach(p => applyProf(id, p.id, p)), () => {}));
+  softRender(); return true;
 }
 async function openStudent(tid) {
   document.body.classList.remove('cloud-msg', 'is-prof'); document.body.classList.add('is-student');
@@ -4711,7 +4738,7 @@ async function homeView(msg) {
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
-      <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${sectors.map(([k, s]) => `<option value="${k}">${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('')}</select></div>
+      <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button></div>`))}`;
@@ -4843,7 +4870,7 @@ function vAlumnes(v) {
       ${CLOUD ? `<p class="small muted" style="margin-top:10px">Les dades d'aquest grup s'esborraran automàticament el <b>${fmtDay(GROUP.expiresAt)}</b>.</p>` : ''}`))}
     ${card('Alumnes del grup', pad(`${CLOUD ? '<p class="small muted">Cada alumne tria el seu equip el primer cop que entra, o bé l\'afegeixes tu a sota i entra directament al seu equip. Aquí el pots canviar d\'equip o eliminar-lo del grup.</p>' : ''}
       ${G.teams.map(t => `<div class="rost"><b>${esc(t.name)} <span class="small muted" style="font-weight:400">· ${byTeam(t.id).length}</span></b>${byTeam(t.id).length ? byTeam(t.id).map(CLOUD ? rostRow : locRow).join('') : '<p class="small muted">Encara no hi ha ningú.</p>'}</div>`).join('')}
-      ${orphan.length ? `<div class="rost"><b>Sense equip vàlid</b>${orphan.map(rostRow).join('')}</div>` : ''}
+      ${orphan.length ? `<div class="rost"><b>Sense equip</b><p class="small muted">El seu equip és a la paperera o ja no existeix. Canvia'ls d'equip o recupera l'equip a «Configuració».</p>${orphan.map(rostRow).join('')}</div>` : ''}
       ${CLOUD && all.length ? '<div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="mailsCp" title="Per enviar un correu a tot el grup">Copiar els correus de tots</button></div>' : ''}`), CLOUD ? `${ROSTER.length} connectats${pend.length ? ' · ' + pend.length + ' pendents' : ''}` : `${all.length} noms`)}
     ${CLOUD ? card('Afegir un alumne', pad(`<p class="small muted">Escriu-ne les dades i tria l'equip. S'obrirà el Gmail amb la invitació ja escrita (amb l'enllaç i l'equip): només cal prémer «Envia».</p>
       <div class="invform"><div class="pfield"><label for="ivNom">Nom</label><input type="text" id="ivNom" autocomplete="off"></div>
@@ -5176,13 +5203,14 @@ function vGuia(v) {
 const themeSw = () => `<div class="themesw" role="group" aria-label="Aparença">${[['auto', 'Automàtic', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'], ['light', 'Clar', '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'], ['dark', 'Fosc', '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>']]
   .map(([k, l, p]) => `<button type="button" data-theme-set="${k}" aria-pressed="${themePref() === k}">${ico(p)}${l}</button>`).join('')}</div>`;
 // Opcions de sector (tipus d'empresa) per als desplegables del professor
-const secOptsAll = (cur, blank) => (blank ? `<option value="" ${!cur ? 'selected' : ''}>Sense triar</option>` : '') + Object.entries(PE.SECTORS).map(([k, s]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${esc(s.family ? s.family + ' · ' + s.label : s.label)}</option>`).join('');
+const secOptsAll = (cur, blank) => (blank ? `<option value="" ${!cur ? 'selected' : ''}>Sense triar</option>` : '') + secGroups(cur);
 function vConfig(v) {
   v.innerHTML = `${flashHtml()}${head('Configuració', esc(G.name))}
     ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador: cada persona pot triar el seu.</p>${themeSw()}`))}
     ${card('Grup classe', pad(`<div class="pfield"><label for="gName">Nom del grup</label><input type="text" id="gName" value="${esc(G.name)}"></div>
       <div class="pfield"><label for="gSector">Tipus d'empresa (sector) del grup</label><div class="help">Si el canvies, també canvia als equips que tenien el sector anterior. Els equips que n'han triat un altre el conserven. Sota pots canviar el de cada equip.</div><select class="field-sel" id="gSector">${secOptsAll(G.sector)}</select></div>
-      <div class="pfield"><label>Equips i tipus d'empresa de cadascun</label>${G.teams.map((t, i) => `<div class="member tsrow"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><select class="field-sel" data-tsec="${i}" aria-label="Sector de ${esc(t.name)}">${secOptsAll(t.data.idea.sector, true)}</select><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>`))}
+      <div class="pfield"><label>Equips i tipus d'empresa de cadascun</label>${G.teams.map((t, i) => `<div class="member tsrow"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><select class="field-sel" data-tsec="${i}" aria-label="Sector de ${esc(t.name)}">${secOptsAll(t.data.idea.sector, true)}</select><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>
+      ${(G.trash || []).length ? `<div class="pfield"><label>Paperera d'equips</label><div class="help">Els equips esborrats es guarden ${TRASH_DAYS} dies amb tot el seu projecte. Després s'eliminen del tot.</div>${G.trash.map((x, i) => `<div class="member trow"><span><b>${esc(x.name)}</b><span class="small muted"> · s'eliminarà el ${fmtDay(x.at + TRASH_DAYS * 864e5)}</span></span><button type="button" class="btn ghost small" data-trec="${i}">Recuperar</button><button type="button" class="btn ghost small" data-tkill="${i}">Eliminar del tot</button></div>`).join('')}<div id="killBox"></div></div>` : ''}`))}
     ${cloudConfigHtml()}
     ${actsConfigHtml()}
     ${CLOUD ? '' : card('Començar un grup nou', pad(`<p class="muted small">Esborra tots els projectes ${CLOUD ? 'del grup' : 'd\'aquest navegador'} i crea un grup buit. Si els vols conservar, fes primer una còpia de seguretat.</p>
@@ -5198,7 +5226,13 @@ function vConfig(v) {
   $('#gSector').onchange = e => { const old = G.sector, n = G.teams.filter(t => !t.data.idea.sector || t.data.idea.sector === old); G.sector = e.target.value; n.forEach(t => { t.data.idea.sector = G.sector; }); save(); const y = window.scrollY; render(); window.scrollTo(0, y); toast(n.length ? `Sector canviat al grup i a ${n.length === 1 ? '1 equip' : n.length + ' equips'}.` : 'Sector del grup canviat.'); };
   v.querySelectorAll('[data-tsec]').forEach(s => s.onchange = () => { const t = G.teams[+s.dataset.tsec]; t.data.idea.sector = s.value; t.updated = Date.now(); save(); toast(`Sector de ${t.name} canviat.`); });
   v.querySelectorAll('[data-tn]').forEach(i => i.oninput = () => { G.teams[+i.dataset.tn].name = i.value; save(); renderSide(); });
-  v.querySelectorAll('[data-tdel]').forEach(b => b.onclick = () => { const i = +b.dataset.tdel; $('#delBox').innerHTML = `<div class="notice">Vols esborrar «${esc(G.teams[i].name)}»${projName(G.teams[i]) !== G.teams[i].name ? ' (' + esc(projName(G.teams[i])) + ')' : ''} i tot el seu projecte? ${CLOUD ? 'Els alumnes d\'aquest equip perdran l\'accés i no es podrà desfer. ' : ''}<button class="btn small" id="delYes">Esborrar</button> <button class="btn ghost small" id="delNo">Cancel·lar</button></div>`; $('#delYes').onclick = () => { G.teams.splice(i, 1); profTeam = 0; save(); render(); }; $('#delNo').onclick = () => { $('#delBox').innerHTML = ''; }; });
+  v.querySelectorAll('[data-tdel]').forEach(b => b.onclick = () => { const i = +b.dataset.tdel; $('#delBox').innerHTML = `<div class="notice">Vols enviar «${esc(G.teams[i].name)}»${projName(G.teams[i]) !== G.teams[i].name ? ' (' + esc(projName(G.teams[i])) + ')' : ''} a la paperera? El podràs recuperar durant ${TRASH_DAYS} dies. ${CLOUD ? 'Mentrestant, els seus alumnes no hi podran entrar. ' : ''}<button class="btn small" id="delYes">Enviar a la paperera</button> <button class="btn ghost small" id="delNo">Cancel·lar</button></div>`; $('#delYes').onclick = () => { trashTeam(i); profTeam = 0; save(); render(); toast('Equip enviat a la paperera.'); }; $('#delNo').onclick = () => { $('#delBox').innerHTML = ''; }; });
+  v.querySelectorAll('[data-trec]').forEach(b => b.onclick = async () => { const x = G.trash[+b.dataset.trec]; if (!x) return; b.disabled = true;
+    if (CLOUD) { let ok = false; try { ok = await pullTeam(x.id); } catch (e) {} if (!ok) { b.disabled = false; toast('No s\'ha pogut recuperar. Torna-ho a provar.'); return; } } else if (x.t) G.teams.push(x.t);
+    G.trash = G.trash.filter(y => y !== x); save(); render(); toast('Equip recuperat.'); });
+  v.querySelectorAll('[data-tkill]').forEach(b => b.onclick = () => { const x = G.trash[+b.dataset.tkill]; if (!x) return;
+    $('#killBox').innerHTML = `<div class="notice">Segur que vols eliminar «${esc(x.name)}» del tot? No es podrà desfer. <button class="btn small" id="killYes">Eliminar del tot</button> <button class="btn ghost small" id="killNo">Cancel·lar</button></div>`;
+    $('#killYes').onclick = () => { G.trash = G.trash.filter(y => y !== x); save(); render(); toast('Equip eliminat.'); }; $('#killNo').onclick = () => { $('#killBox').innerHTML = ''; }; });
   $('#tAdd').onclick = () => { let n = G.teams.length + 1; while (G.teams.some(t => t.name === 'Equip ' + n)) n++; G.teams.push({ id: newId(), name: 'Equip ' + n, members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); render(); };
   if (!CLOUD) $('#ngCreate').onclick = () => { const names = $('#ngTeams').value.split('\n').map(x => x.trim()).filter(Boolean); if (!names.length) { $('#ngBox').innerHTML = '<div class="notice">Escriu com a mínim un equip.</div>'; return; }
     $('#ngBox').innerHTML = `<div class="notice">Segur? S'esborraran tots els projectes actuals. <button class="btn small" id="ngYes">Sí, crear el grup</button> <button class="btn ghost small" id="ngNo">Cancel·lar</button></div>`;
@@ -5222,6 +5256,8 @@ document.querySelector('.side').id = 'sideNav';
 document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navbtn" id="navBtn" aria-controls="sideNav" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><i></i><i></i><i></i></button><div class="side-back" aria-hidden="true"></div>');
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);
+// En mòbil, el botó del menú s'amaga en baixar i torna en pujar
+{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); ly = y; }, { passive: true }); }
 // El logo porta al tauler: «Els meus grups» (professorat) o l'inici de l'equip (alumnat)
 const brand = document.querySelector('.brand'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Anar al tauler';
 const goHome = () => { setNav(false);
