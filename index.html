@@ -1968,9 +1968,15 @@ function renderSide() {
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
   stuBtn();
 }
-$('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); });
+$('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); navPush(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) go(b.dataset.tab); });
-function go(k) { tab = k; setNav(false); render(); window.scrollTo(0, 0); }
+// Historial del navegador: cada canvi de pàgina dins del grup es desa, i «Enrere» torna a la pàgina anterior (no a la llista de grups)
+const navState = () => ({ nav: 1, gid: typeof GID === 'undefined' ? '' : GID || '', tab, role, team: profTeam });
+function navPush() { try { if (!history.state || !history.state.nav) { const c = navState(); history.replaceState(c, ''); } history.pushState(navState(), ''); } catch (e) {} }
+window.addEventListener('popstate', e => { const s = e.state; if (!s || !s.nav || !G || s.gid !== (GID || '')) return;
+  if (s.role !== 'prof' && !G.teams[s.role]) return; if (CLOUD && !(ME && ME.isProf) && s.role !== role) return;
+  tab = s.tab; role = s.role; profTeam = s.team || 0; setNav(false); render(); window.scrollTo(0, 0); });
+function go(k) { const prev = tab; tab = k; setNav(false); if (k !== prev) { const st = history.state; if (!st || !st.nav) { try { const c = navState(); c.tab = prev; history.replaceState(c, ''); } catch (e) {} } navPush(); } render(); window.scrollTo(0, 0); }
 // Obre o tanca el menú lateral (calaix)
 function setNav(open) {
   const s = document.querySelector('.side'), b = $('#navBtn'), bk = document.querySelector('.side-back'); if (!s) return;
