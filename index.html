@@ -1878,7 +1878,7 @@ const ESB_MIN = 3, ESB_MAX = 6; // esbossos del logo: mínim abans del logo fina
 const SECS = [
   ['proj', 'El projecte', 'proj', [
     ['inici', 'Inici', '', '', null],
-    ['equip', 'Equip i rols', 'Treball en equip', 'Tasca Classroom', t => { const ok = t.members.filter(m => filled(m.name) && m.accio && m.social && m.mental && filled(m.resp)).length; return [ok, Math.max(2, t.members.length)]; }]]],
+    ['equip', 'Equip i rols', 'Treball en equip', 'Tasca Classroom', t => { let d = 0; t.members.forEach((m, i) => { if (filled(m.name)) d++; ROL_KEYS.forEach(k => { if (m[k] && !rolDup(t, i, k)) d++; }); if (filled(m.resp)) d++; }); return [d, 5 * Math.max(2, t.members.length)]; }]]],
   ['ident', 'Identitat corporativa', 'ident', [
     ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['idea', 'La idea', 'idea', [
@@ -2015,7 +2015,9 @@ function onField(e) {
   else if (el.dataset.arr) { const arr = getP(t.data, el.dataset.arr), val = el.dataset.num ? Number(el.value) : el.value, k = arr.indexOf(val);
     if (el.checked && k < 0) { if (el.dataset.max && arr.length >= Number(el.dataset.max)) { el.checked = false; return; } arr.push(val); }
     if (!el.checked && k >= 0) arr.splice(k, 1); trackEdit(t, el.dataset.arr, null, arr); changed = true; }
-  else if (el.dataset.member) { const m = t.members[el.dataset.idx], old = m[el.dataset.member]; m[el.dataset.member] = el.value; trackEdit(t, `members.${el.dataset.idx}.${el.dataset.member}`, old, el.value); changed = true; }
+  else if (el.dataset.member) { const m = t.members[el.dataset.idx], old = m[el.dataset.member];
+    if (ROL_KEYS.includes(el.dataset.member) && el.value && t.members.some((x, j) => j !== +el.dataset.idx && rolN(x[el.dataset.member]) === el.value)) { el.value = old || ''; toast('Aquest rol ja el té una altra persona de l\'equip.'); return; }
+    m[el.dataset.member] = el.value; trackEdit(t, `members.${el.dataset.idx}.${el.dataset.member}`, old, el.value); changed = true; }
   if (!changed) return;
   t.updated = Date.now(); save();
   if (el.dataset.rerender && e.type === 'change') { const y = window.scrollY; render(); window.scrollTo(0, y); return; }
@@ -2151,9 +2153,10 @@ function vEquip(v) {
   const t = T();
   const rows = t.members.map((m, i) => `<div class="interview"><div class="row" style="justify-content:space-between"><b>Persona ${i + 1}</b><button type="button" class="btn ghost small" data-del-member="${i}">Treure</button></div>
     <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.name)}">
-    <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}"><option value="">${r.label}</option>${r.opts.map(([o]) => `<option ${rolN(m[k]) === o ? 'selected' : ''}>${o}</option>`).join('')}</select>`).join('')}</div>
+    <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}" data-rerender="1"><option value="">${r.label}</option>${r.opts.map(([o]) => `<option value="${o}" ${rolN(m[k]) === o ? 'selected' : ''} ${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? 'disabled' : ''}>${o}${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? ' (ja triat)' : ''}</option>`).join('')}</select>`).join('')}</div>
     <textarea rows="2" placeholder="Responsabilitats concretes d'aquesta persona en el projecte" aria-label="Responsabilitats" data-member="resp" data-idx="${i}">${esc(m.resp)}</textarea></div>`).join('');
-  page(v, 'equip', 'Creeu un equip d\'un màxim de tres persones. Cada persona tria un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats.',
+  const dups = t.members.flatMap((m, i) => ROL_KEYS.filter(k => rolDup(t, i, k)).map(k => `${esc(m.name || 'Persona ' + (i + 1))}: ${esc(rolN(m[k]))}`));
+  page(v, 'equip', 'Creeu un equip d\'un màxim de tres persones. Cada persona tria un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats. <b>Dins de l\'equip no es poden repetir els rols</b>: cada rol només el pot tenir una persona.' + (dups.length ? `<div class="notice" style="margin-top:10px"><b>Hi ha rols repetits:</b> ${dups.join(' · ')}. Canvieu-los perquè cada persona tingui rols diferents.</div>` : ''),
     card('Membres de l\'equip', pad((rows || '<p class="muted">Encara no heu afegit cap persona.</p>') + (t.members.length < 3 ? '<button type="button" class="btn ghost small" id="addMember">+ Afegir una persona</button>' : '')), `${t.members.length} de 3`)
     + card('Els rols d\'equip', pad(`<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">${Object.values(PE.ROLES).map(r => `<div><b>${r.title}</b><ul class="plain">${r.opts.map(([o, d]) => `<li><b>${o}</b>: ${esc(d)}</li>`).join('')}</ul></div>`).join('')}</div>`)));
   const a = $('#addMember'); if (a) a.onclick = () => { t.members.push({ name: '', accio: '', social: '', mental: '', resp: '' }); save(); render(); };
@@ -3625,6 +3628,7 @@ const RUBS_DEFAULT = [
     ['ess', 'Principis de l\'ESS i bé comú', 'Aplica bé els principis i valora el projecte amb la matriu del bé comú.', 'Aplicació correcta, poc argumentada.', 'Aplicació parcial.', 'Menció superficial.'],
     ['rsc', 'RSC i lideratge ètic', 'Pla de RSC concret i reflexió sobre el lideratge ètic.', 'Pla de RSC correcte, reflexió breu.', 'Pla incomplet.', 'Pla molt pobre.']])
 ];
+const ROL_KEYS = ['accio', 'social', 'mental'], rolDup = (t, i, k) => !!t.members[i][k] && t.members.some((x, j) => j !== i && rolN(x[k]) === rolN(t.members[i][k]) && (j < i || false));
 const ROL_OLD = { 'Investigador': 'Investigador de Recursos', 'Creador/Redactor': 'Creador' }, rolN = v => ROL_OLD[v] || v;
 const rubOf = a => a && a.rub ? (G.rubs || []).find(r => r.id === a.rub) || null : null;
 const rubRec = a => (G.rubs || []).find(r => r.id === 'r_' + a.c) || null;
