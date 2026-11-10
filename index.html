@@ -1575,6 +1575,54 @@ const PE = (() => {
       label: 'Fabricació per encàrrec de cosmètics i complements', short: 'Fabricació farmacèutica i cosmètica', rate: 42, role: 'tècnic/a de producció',
       types: ['Lot de crema solar', 'Complement alimentari en càpsules', 'Gel hidroalcohòlic', 'Xampú de marca blanca', 'Lot pilot d\'un producte nou', 'Envasament i etiquetatge d\'un lot'],
       clients: ['Cosmètica Mediterrània', 'Farmàcia Central', 'Herbolari Natura', 'Cadena de Perfumeries Aroma', 'Startup Verda', 'Hotel Platja Blava (amenities)', 'Gimnàs Força (marca pròpia)', 'Parafarmàcia Online', 'Clínica Dermatològica', 'Supermercats Bonpreu de Mar', 'Spa del Maresme', 'Laboratoris Farmacèutics Litoral'] },
+    carrosseria: { group: 'biada', family: 'Transport i manteniment de vehicles', cicles: 'CFGM Carrosseria',
+      label: 'Taller de carrosseria i pintura', short: 'Carrosseria i pintura', rate: 42, role: 'carrosser/a',
+      types: ['Reparació de cop per accident', 'Pintura d\'una peça o del cotxe sencer', 'Desabonyegat sense pintura (calamarsa)', 'Canvi de vidres i lluna', 'Peritatge per a asseguradora', 'Retolació i pintura de furgonetes'],
+      clients: ['Família Garcia', 'Asseguradora Mútua del Maresme', 'Taxis del Maresme', 'Lloguer de Cotxes Costa', 'Autoescola Volant', 'Repartiments Ràpids SL', 'Concessionari Motor Mataró', 'Família Serra', 'Fruites Pons (furgonetes)', 'Ajuntament de Mataró (flota)', 'Club de Cotxes Clàssics', 'Constructora Riera'] },
+    vehicleselectric: { group: 'biada', family: 'Transport i manteniment de vehicles', cicles: 'CFGS Automoció',
+      label: 'Taller especialitzat en vehicles elèctrics i híbrids', short: 'Vehicles elèctrics', rate: 52, role: 'tècnic/a en vehicles elèctrics',
+      types: ['Diagnosi del sistema d\'alta tensió', 'Revisió i reparació de bateries', 'Manteniment d\'un híbrid', 'Actualització de programari del vehicle', 'Instal·lació d\'un punt de recàrrega', 'Revisió de la flota elèctrica'],
+      clients: ['Taxis del Maresme', 'Repartiments Ràpids SL', 'Ajuntament de Mataró (flota)', 'Família Puig', 'Lloguer de Cotxes Costa', 'Autoescola Volant', 'Patinets i Motos Elèctriques Onada', 'Policia Local (flota)', 'Hotel Platja Blava (vehicles)', 'Família Martí', 'Carsharing del Maresme', 'Supermercats Bonpreu de Mar (repartiment)'] },
+    impressio3d: { group: 'biada', family: 'Fabricació mecànica', cicles: 'CFGS Programació de la producció en fabricació mecànica (CAD/CAM i 3D)',
+      label: 'Estudi de disseny, prototips i impressió 3D', short: 'Impressió 3D', rate: 45, role: 'dissenyador/a 3D',
+      types: ['Prototip d\'un producte nou', 'Peça de recanvi descatalogada', 'Escaneig 3D d\'una peça', 'Utillatge per a una línia de muntatge', 'Maqueta per a una presentació', 'Sèrie curta de peces de plàstic'],
+      clients: ['Startup de Drons', 'Components Auto Iberia', 'Gèneres de Punt Mataró SA', 'Equips Mèdics del Maresme', 'Plàstics Maresme', 'Estudi d\'Arquitectura Vila', 'Museu de Mataró', 'Integradora Robòtica Costa', 'Taller Nàutic El Balís', 'Universitat (laboratori)', 'Clínica Dental Somriure', 'Botiga de Joguines Bufaplomes'] },
+    mantpredictiu: { group: 'biada', family: 'Instal·lació i manteniment', cicles: 'CFGS Mecatrònica industrial · CFGM Manteniment electromecànic',
+      label: 'Empresa de manteniment predictiu amb sensors i dades', short: 'Manteniment predictiu', rate: 50, role: 'tècnic/a de manteniment predictiu',
+      types: ['Instal·lació de sensors de vibració', 'Termografia d\'un quadre elèctric', 'Anàlisi d\'olis d\'una màquina', 'Pla de manteniment predictiu', 'Panell de control de dades en línia', 'Informe mensual de l\'estat de les màquines'],
+      clients: ['Gèneres de Punt Mataró SA', 'Embotits del Montseny', 'Plàstics Maresme', 'Envasos Blau', 'Fundició Riera', 'Begudes Fresques SA', 'Depuradora del Maresme', 'Paperera de la Costa', 'Química Fina del Maresme', 'Hospital de Mataró', 'Logística del Vallès', 'Centre Comercial Mataró Parc'] },
+    solar: { group: 'biada', family: 'Electricitat i electrònica', cicles: 'CFGM Instal·lacions elèctriques i automàtiques',
+      label: 'Empresa d\'autoconsum solar i recàrrega de vehicles', short: 'Autoconsum solar', rate: 40, role: 'instal·lador/a solar',
+      types: ['Plaques solars en una casa', 'Autoconsum compartit d\'una comunitat', 'Plaques solars en una nau', 'Punt de recàrrega en un garatge', 'Bateria d\'emmagatzematge', 'Revisió i neteja de plaques'],
+      clients: ['Família Puig', 'Comunitat de propietaris Rambla 12', 'Nau industrial Polígon Pla d\'en Boet', 'Supermercats Bonpreu de Mar', 'Hotel Platja Blava', 'Escola Mare de Déu', 'Família Serra', 'Taxis del Maresme', 'Gimnàs Força', 'Celler del Maresme', 'Pàrquing Centre Mataró', 'Cooperativa Agrària'] },
+    domotica: { group: 'biada', family: 'Electricitat i electrònica', cicles: 'CFGS Automatització i robòtica industrial',
+      label: 'Empresa de domòtica i edificis intel·ligents', short: 'Domòtica', rate: 48, role: 'tècnic/a en domòtica',
+      types: ['Domòtica d\'un habitatge', 'Control de llums i persianes', 'Alarma i càmeres connectades', 'Control de la calefacció i l\'aire', 'Botiga connectada', 'Gestió energètica d\'un edifici'],
+      clients: ['Família Martí', 'Família López', 'Botiga de Roba Lluna', 'Clínica Dental Somriure', 'Hotel Platja Blava', 'Promotora Llar Nova', 'Residència Gent Gran Maresme', 'Restaurant El Port', 'Despatx d\'Advocats Vila', 'Comunitat Carrer de la Riera', 'Gimnàs Força', 'Immobiliària Llar'] },
+    mantedificis: { group: 'biada', family: 'Edificació i obra civil', cicles: 'CFGB Manteniment i rehabilitació d\'edificis (FP bàsica) · CFGM Obres d\'interior, decoració i rehabilitació',
+      label: 'Servei de manteniment i petites reparacions', short: 'Manteniment d\'edificis', rate: 35, role: 'operari/ària de manteniment',
+      types: ['Reparació d\'una gotera', 'Pintura d\'una escala de veïns', 'Canvi de rajoles trencades', 'Reparació de portes i panys', 'Neteja de baixants i terrats', 'Petites reparacions a domicili'],
+      clients: ['Comunitat de propietaris Rambla 12', 'Comunitat Carrer de la Riera', 'Administració de Finques Costa', 'Família Roca', 'Família Garcia', 'Immobiliària Llar', 'Escola de Dansa', 'Perruqueria Tisores', 'Centre Cívic', 'Residència Gent Gran Maresme', 'Família Vidal', 'Parròquia de Santa Maria'] },
+    rehabenergetica: { group: 'biada', family: 'Edificació i obra civil', cicles: 'CFGS Projectes d\'edificació (rehabilitació i restauració)',
+      label: 'Empresa de rehabilitació energètica d\'edificis', short: 'Rehabilitació energètica', rate: 45, role: 'tècnic/a de rehabilitació',
+      types: ['Certificat d\'eficiència energètica', 'Aïllament de façana per fora', 'Aïllament de coberta', 'Canvi de finestres', 'Estudi energètic d\'un edifici', 'Pla de rehabilitació d\'una comunitat'],
+      clients: ['Comunitat de propietaris Rambla 12', 'Comunitat Carrer de la Riera', 'Cooperativa d\'Habitatge', 'Ajuntament de Mataró', 'Família Puig', 'Immobiliària Llar', 'Promotora Llar Nova', 'Escola Mare de Déu', 'Hotel Platja Blava', 'Administració de Finques Costa', 'Família Ferrer', 'Residència Gent Gran Maresme'] },
+    secretaria: { group: 'biada', family: 'Administració i gestió', cicles: 'CFGM Gestió administrativa',
+      label: 'Secretaria virtual i serveis administratius externs', short: 'Secretaria virtual', rate: 30, role: 'assistent/a virtual',
+      types: ['Gestió de l\'agenda i les cites', 'Facturació mensual i cobraments', 'Atenció telefònica i de correu', 'Digitalització i arxiu de documents', 'Gestió de comandes i proveïdors', 'Organització d\'una reunió o esdeveniment'],
+      clients: ['Clínica Fisioteràpia Moviment', 'Despatx d\'Advocats Vila', 'Taller Mecànic Roca', 'Perruqueria Tisores', 'Immobiliària Llar', 'Acadèmia Saber', 'Electricista Puig (autònom)', 'Associació de Comerciants', 'Escola de Dansa', 'Clínica Veterinària', 'Fruites Pons', 'Arquitecta Serra (autònoma)'] },
+    ajuts: { group: 'biada', family: 'Administració i gestió', cicles: 'CFGS Administració i finances',
+      label: 'Consultoria de finançament i ajudes per a pimes', short: 'Consultoria d\'ajudes', rate: 45, role: 'consultor/a financer/a',
+      types: ['Recerca de subvencions per a una pime', 'Sol·licitud d\'una subvenció', 'Justificació d\'una ajuda rebuda', 'Pla financer per demanar un préstec', 'Tramitació d\'un microcrèdit', 'Previsió de tresoreria anual'],
+      clients: ['Cervesa Artesana Onada', 'Associació de Veïns del Centre', 'Startup Verda', 'Cooperativa Agrària', 'Botiga de Roba Lluna', 'Fundació per la Salut', 'Restaurant El Port', 'Escola de Música Allegro', 'Taller Nàutic El Balís', 'Club de Rem', 'Plàstics Maresme', 'Pastisseria Dolç'] },
+    labambiental: { group: 'biada', family: 'Química', cicles: 'CFGM Operacions de laboratori · CFGS Laboratori d\'anàlisi i control de qualitat',
+      label: 'Laboratori d\'anàlisi ambiental', short: 'Laboratori ambiental', rate: 42, role: 'tècnic/a de laboratori ambiental',
+      types: ['Anàlisi de l\'aigua d\'una piscina', 'Anàlisi de l\'aigua d\'un pou', 'Estudi de la qualitat de l\'aire interior', 'Anàlisi d\'un sòl per a un hort', 'Control de legionel·la', 'Mesura de soroll i radó en un habitatge'],
+      clients: ['Comunitat de propietaris Rambla 12', 'Ajuntament de Mataró', 'Hotel Platja Blava (piscines)', 'Família Vidal (pou)', 'Escola Mare de Déu', 'Gimnàs Força', 'Horts Urbans del Maresme', 'Càmping Costa Brava Sud', 'Masia Can Riera (pou)', 'Centre Cívic', 'Comunitat Carrer de la Riera', 'Spa del Maresme'] },
+    biotec: { group: 'biada', family: 'Química', cicles: 'CFGS Fabricació de productes farmacèutics, biotecnològics i afins',
+      label: 'Empresa biotecnològica de productes ecològics', short: 'Biotecnologia verda', rate: 40, role: 'tècnic/a de producció biotecnològica',
+      types: ['Lot de bioestimulant per a horts', 'Netejador ecològic amb enzims', 'Adob líquid fermentat', 'Lot pilot d\'un producte nou', 'Producte de marca blanca per a una botiga', 'Envasament i etiquetatge d\'un lot'],
+      clients: ['Cooperativa Agrària', 'Garden Center Maresme', 'Herbolari Natura', 'Horts Urbans del Maresme', 'Supermercats Bonpreu de Mar', 'Startup Verda', 'Hotel Platja Blava (neteja)', 'Vivers Can Pons', 'Ajuntament de Mataró (parcs i jardins)', 'Botiga a Granel Pes Just', 'Jardineria Serra', 'Escola Mare de Déu (hort escolar)'] },
     // ---- Altres sectors ----
     videojocs: { group: 'altres', label: 'Estudi de videojocs per encàrrec', short: 'Videojocs', rate: 45, role: 'desenvolupador/a',
       types: ['Joc educatiu', 'Advergame', 'Joc per a mòbil', 'Experiència de realitat virtual', 'Minijoc per a xarxes', 'Joc per a una exposició'],
@@ -2357,6 +2405,78 @@ const FINSEC = {
     cobra: "Es fabrica per encàrrec de marques: cal comprar matèries primeres i envasos en quantitats mínimes abans de produir, i el client paga en lliurar o a 30-60 dies. Demanar un avançament ajuda la tresoreria.",
     pista: "Investigueu els permisos sanitaris i l'assegurança obligatòria per fabricar cosmètics, que s'han de pagar abans de vendre. Penseu si el micromecenatge pot finançar una primera línia de producte pròpia."
   },
+  carrosseria: {
+    inv: [["Cabina de pintura i assecat", 25000, 12], ["Bancada i equip d'estirar xassís", 9000, 10], ["Equip de soldadura i desabonyegat", 4000, 6], ["Compressor, pistoles i eines", 3500, 6], ["Adequació del local i llicència d'activitat", 8000, 10]],
+    desp: [["Pintures, vernissos i masilles", 900, "mensual"], ["Recollida de residus de pintura i dissolvents", 200, "mensual"], ["Filtres de la cabina de pintura", 600, "trimestral"], ["Assegurança RC i de vehicles en dipòsit", 1300, "anual"]],
+    cobra: "Molta feina arriba de les asseguradores, que paguen a 30-60 dies després del peritatge. Els particulars paguen en recollir el cotxe. Cal comprar pintura i peces abans de cobrar, i després de pedregades o a la tornada de vacances hi ha pics de feina.",
+    pista: "Investigueu quant costa una cabina de pintura nova i una de segona mà, i si és millor comprar-la amb préstec o amb leasing. Esbrineu també com funcionen els acords amb asseguradores i quant triguen a pagar."
+  },
+  vehicleselectric: {
+    inv: [["Equip de diagnosi d'alta tensió i programari", 8000, 4], ["Elevador i taula per desmuntar bateries", 9000, 10], ["Eines aïllades i EPI d'alta tensió", 3000, 5], ["Punts de recàrrega al taller (2)", 4000, 8], ["Formació i certificació d'alta tensió", 2500, 0]],
+    desp: [["Llicències de programari dels fabricants", 150, "mensual"], ["Assegurança RC i de vehicles en dipòsit", 1500, "anual"], ["Gestió de bateries i residus perillosos", 300, "trimestral"], ["Electricitat del taller i de les recàrregues", 400, "mensual"]],
+    cobra: "Els particulars paguen en recollir el vehicle, però les flotes d'empreses i ajuntaments paguen a 30-60 dies. Les peces de bateria són molt cares i cal pagar-les al proveïdor abans de cobrar, i encara hi ha pocs cotxes elèctrics vells que necessitin reparacions.",
+    pista: "Investigueu quants vehicles elèctrics hi ha ara i quants n'hi haurà d'aquí a uns anys, per saber si hi haurà prou feina. Compareu comprar o llogar els equips de diagnosi, que es queden antics ràpid, i mireu les ajudes generals a la mobilitat sostenible."
+  },
+  impressio3d: {
+    inv: [["Impressores 3D professionals (3)", 12000, 4], ["Escàner 3D", 5000, 4], ["Ordinadors potents per a CAD", 4500, 4], ["Llicències de programari CAD/CAM", 3000, 3], ["Equip d'acabat i postprocessat", 2000, 5]],
+    desp: [["Filaments, resines i pols", 600, "mensual"], ["Subscripció de programari de disseny", 200, "mensual"], ["Recanvis i manteniment de les impressores", 400, "trimestral"], ["Assegurança RC professional", 700, "anual"]],
+    cobra: "Es cobra per encàrrec: una part en acceptar el pressupost i la resta en lliurar el prototip. Les empreses industrials paguen a 30-60 dies. Els prototips sovint necessiten canvis i això allarga el cobrament.",
+    pista: "Investigueu quant de temps fan servir una impressora 3D abans que quedi antiquada, i si és millor comprar-la o llogar-la. Mireu també les ajudes generals a la innovació i el disseny de producte."
+  },
+  mantpredictiu: {
+    inv: [["Sensors de vibració i temperatura sense fil", 10000, 5], ["Càmera termogràfica", 5000, 5], ["Analitzador de vibracions portàtil", 6000, 5], ["Programari i plataforma de dades", 4000, 4], ["Furgoneta i eines de muntatge", 14000, 6]],
+    desp: [["Servidor al núvol i connexió dels sensors", 250, "mensual"], ["Calibratge d'equips de mesura", 800, "anual"], ["Assegurança RC per treballar en fàbriques", 1300, "anual"], ["Formació en anàlisi de dades i certificacions", 900, "anual"]],
+    cobra: "Es cobra una quota mensual per vigilar les màquines, més la instal·lació inicial dels sensors. Les indústries paguen a 60-90 dies, i cal comprar els sensors abans de cobrar. Les quotes donen ingressos estables un cop teniu clients.",
+    pista: "Investigueu si podeu llogar els sensors als clients en lloc de vendre'ls, i què passa amb la tresoreria. Mireu també les ajudes generals a la digitalització de la indústria, que poden animar les fàbriques a contractar-vos."
+  },
+  solar: {
+    inv: [["Furgoneta de segona mà amb baca", 14000, 6], ["Eines, bateries i taladres", 2500, 4], ["Línia de vida, arnesos i escales", 2000, 5], ["Aparells de mesura i càmera tèrmica", 2500, 5], ["Estoc inicial de perfils i cable solar", 3000, 0]],
+    desp: [["Assegurança RC d'instal·lador", 1000, "anual"], ["Combustible i peatges", 350, "mensual"], ["Programari de càlcul solar", 60, "mensual"], ["Renovació d'EPI per treballar en alçada", 300, "trimestral"]],
+    cobra: "Cal comprar plaques, inversors i bateries abans de cobrar, i són cars. Als particulars es demana una paga i senyal, i a les empreses es cobra en acabar. A la primavera i l'estiu hi ha més feina que a l'hivern.",
+    pista: "Investigueu si podeu demanar un avançament gran al client per comprar el material. Compareu comprar la furgoneta amb préstec o amb leasing, i mireu les ajudes generals a l'autoconsum, que poden fer que més gent us contracti."
+  },
+  domotica: {
+    inv: [["Portàtils i programari de programació", 3500, 4], ["Maleta d'eines i aparells de mesura", 2000, 5], ["Sala d'exposició amb una casa connectada", 5000, 6], ["Furgoneta petita de segona mà", 11000, 6], ["Estoc inicial de sensors i mòduls", 2500, 0]],
+    desp: [["Llicències i servidors al núvol", 120, "mensual"], ["Assegurança RC professional", 900, "anual"], ["Formació i certificacions de marques", 800, "anual"], ["Combustible i aparcament", 250, "mensual"]],
+    cobra: "Es cobra per projecte: una part en acceptar el pressupost i la resta en acabar. Després es poden cobrar quotes mensuals de manteniment i suport. Els promotors d'obra nova solen pagar a 60 dies.",
+    pista: "Investigueu si podeu oferir quotes mensuals de manteniment per tenir ingressos fixos. Compareu comprar o llogar la sala d'exposició, i mireu les ajudes generals a la digitalització i a l'eficiència energètica."
+  },
+  mantedificis: {
+    inv: [["Furgoneta petita de segona mà", 9000, 6], ["Eines elèctriques i de mà", 1800, 4], ["Escales, bastida petita i EPI", 1200, 5], ["Mòbil i programa d'avisos i factures", 600, 3], ["Estoc de material bàsic", 800, 0]],
+    desp: [["Assegurança RC per obres", 700, "anual"], ["Combustible i aparcament", 300, "mensual"], ["Consumibles: silicona, pintura, cargols", 200, "mensual"], ["Gestió de runa i residus", 80, "mensual"]],
+    cobra: "Les comunitats de veïns poden pagar una quota fixa cada mes per un nombre d'hores de manteniment. Els particulars paguen en acabar la feina. Les comunitats aproven pagaments a les juntes i de vegades triguen.",
+    pista: "La inversió és petita: investigueu si n'hi ha prou amb estalvis, la capitalització de l'atur o un microcrèdit. Penseu com fer contractes amb quotes mensuals amb comunitats i administradors de finques."
+  },
+  rehabenergetica: {
+    inv: [["Ordinadors i programari de càlcul energètic", 5000, 4], ["Càmera tèrmica i equip de mesura", 5000, 5], ["Equip de prova d'estanquitat (blower door)", 4000, 6], ["Furgoneta per anar a les obres", 13000, 6], ["Bastides i eines d'aïllament", 4000, 8]],
+    desp: [["Assegurança RC professional i d'obra", 1800, "anual"], ["Quota del col·legi professional", 300, "trimestral"], ["Subscripció de programari de càlcul", 150, "mensual"], ["Lloguer de bastides per a façanes", 800, "mensual"]],
+    cobra: "Les obres duren mesos i es cobren per fases. Les comunitats de veïns sovint esperen les ajudes públiques per pagar, i això pot endarrerir molt el cobrament. Cal pagar materials i industrials abans.",
+    pista: "Investigueu com funcionen les ajudes generals a la rehabilitació energètica i quant triguen a arribar, perquè afecten quan cobrareu. Valoreu una pòlissa de crèdit per als mesos d'espera i el leasing per als equips cars."
+  },
+  secretaria: {
+    inv: [["Ordinadors portàtils i pantalles", 2000, 4], ["Auriculars i centraleta telefònica virtual", 600, 4], ["Escàner de documents ràpid", 500, 5], ["Mobiliari d'oficina bàsic", 1200, 10], ["Despeses de constitució i alta", 500, 0]],
+    desp: [["Programari d'agenda, facturació i núvol", 70, "mensual"], ["Línies de telèfon i internet", 90, "mensual"], ["Assegurança de responsabilitat civil", 350, "anual"], ["Certificats digitals i signatura", 60, "anual"]],
+    cobra: "Es cobra per paquets d'hores o per quota mensual, i els clients paguen per domiciliació a principi de mes. Els ingressos són estables, però si un client gran marxa es nota molt, i a l'agost hi ha menys feina.",
+    pista: "La inversió és molt petita: investigueu si n'hi ha prou amb estalvis propis, la capitalització de l'atur o la tarifa plana d'autònoms. Mireu també les ajudes generals per a la digitalització de petits negocis."
+  },
+  ajuts: {
+    inv: [["Ordinadors i pantalles", 2500, 4], ["Programari de gestió financera", 1200, 3], ["Mobiliari i sala de reunions", 2500, 10], ["Web pròpia i imatge de marca", 900, 3], ["Despeses de constitució i alta", 600, 0]],
+    desp: [["Base de dades de convocatòries d'ajudes", 60, "mensual"], ["Assegurança de responsabilitat civil professional", 600, "anual"], ["Formació i actualització normativa", 400, "trimestral"], ["Certificats digitals i signatura", 60, "anual"]],
+    cobra: "Es cobra una part fixa en preparar la sol·licitud i una part d'èxit quan el client rep l'ajuda, que pot arribar molts mesos després. Les convocatòries s'obren en dates concretes, així que hi ha mesos amb molta feina i mesos fluixos.",
+    pista: "Investigueu quant de temps podeu aguantar si el cobrament d'èxit arriba tard i si una pòlissa de crèdit us pot ajudar. Penseu com repartir entre cobrament fix i cobrament d'èxit perquè la tresoreria no depengui de la sort."
+  },
+  labambiental: {
+    inv: [["Fotòmetre i kits d'anàlisi d'aigües", 6000, 6], ["Mesuradors d'aire interior i de soroll", 4500, 5], ["Estufa, autoclau i material de microbiologia", 5000, 8], ["Furgoneta petita per recollir mostres", 11000, 6], ["Neveres portàtils i material de mostreig", 1000, 0]],
+    desp: [["Reactius, medis de cultiu i patrons", 400, "mensual"], ["Calibratge i verificació d'equips", 1500, "anual"], ["Gestió de residus químics i biològics", 150, "mensual"], ["Combustible i desplaçaments", 200, "mensual"]],
+    cobra: "Els particulars paguen en lliurar l'informe, però els ajuntaments i les comunitats paguen a 30-60 dies o més. Hi ha molta feina a la primavera i a l'estiu per les piscines, i menys a l'hivern.",
+    pista: "Investigueu com fer un pla de tresoreria amb una temporada alta clara i si podeu oferir contractes anuals de controls periòdics pagats per quotes. Valoreu el leasing per als aparells cars i les ajudes generals a la innovació."
+  },
+  biotec: {
+    inv: [["Fermentador o bioreactor petit", 12000, 8], ["Envasadora i etiquetadora", 5000, 8], ["Adequació del local i zona neta", 9000, 10], ["Material de laboratori i microbiologia", 4000, 6], ["Estoc inicial de matèries primeres i envasos", 2500, 0]],
+    desp: [["Matèries primeres, cultius i envasos", 900, "mensual"], ["Anàlisis de control de cada lot", 250, "mensual"], ["Registre i permisos de productes", 1200, "anual"], ["Assegurança RC de producte", 1300, "anual"]],
+    cobra: "Cal comprar matèries primeres i fer la fermentació setmanes abans de vendre. Les botigues i cooperatives paguen a 30-60 dies, i els productes per a horts es venen sobretot a la primavera.",
+    pista: "Investigueu quins permisos i registres calen abans de vendre i quant triguen, perquè endarrereixen els ingressos. Valoreu el micromecenatge per llançar el primer producte i les ajudes generals a l'economia circular i la innovació."
+  },
   videojocs: {
     inv: [["Ordinadors potents amb targeta gràfica", 7000, 4], ["Kits de desenvolupament i consoles", 2500, 4], ["Tauletes gràfiques i perifèrics", 1500, 4], ["Llicències d'art 3D i so", 2000, 3], ["Mobiliari i equip de gravació", 1500, 6]],
     desp: [["Subscripcions de programari d'art i 3D", 150, "mensual"], ["Servidors i control de versions", 80, "mensual"], ["Botigues d'actius (assets) i música", 300, "trimestral"], ["Assistència a fires del sector", 1500, "anual"]],
@@ -2580,6 +2700,198 @@ const PISTES = {
       L: "Què ha de dir obligatòriament l'etiqueta d'un cosmètic? Busqueu les paraules clau etiquetatge de cosmètics i bones pràctiques de fabricació."
     }
   },
+  carrosseria: {
+    micro: {
+      comp: "Busqueu a Google Maps quants tallers de carrosseria i pintura hi ha a Mataró i rodalia. Quins serveis anuncien i quines ressenyes tenen? Què us faria diferents?",
+      cli: "Qui porta el cotxe a la carrosseria: particulars, empreses amb furgonetes, asseguradores? Pregunteu a 3 conductors com van triar el taller l'últim cop que van tenir un cop.",
+      prov: "On es compren les pintures, peces de carrosseria i vidres? Busqueu dos o tres proveïdors de la zona i esbrineu com treballen amb els tallers.",
+      int: "Esbrineu com funcionen els tallers concertats amb asseguradores. Què cal fer per entrar-hi i quines condicions posen?"
+    },
+    pestel: {
+      P: "Quins permisos necessita un taller amb cabina de pintura? Mireu a la web de l'Ajuntament de Mataró què cal per obrir una activitat d'aquest tipus.",
+      E: "Busqueu quants cotxes hi ha matriculats a Mataró i quina edat mitjana tenen (Idescat o DGT). Què significa per a la feina d'una carrosseria?",
+      S: "La gent repara el cotxe després d'un cop petit o el deixa així? Feu una petita enquesta i penseu què els faria venir al taller.",
+      T: "Quines tecnologies noves fan servir les carrosseries (pintura a l'aigua, desabonyegat sense pintura, càmeres i sensors als para-xocs)? Pregunteu a un professional què ha hagut d'aprendre.",
+      Ec: "Què es fa amb les restes de pintura, els dissolvents i els filtres? Busqueu com es gestionen aquests residus a Catalunya i quant costa.",
+      L: "Quina normativa regula els tallers de reparació de vehicles i les emissions de les cabines de pintura? Busqueu-ho a la web de la Generalitat (paraula clau: tallers de vehicles)."
+    }
+  },
+  vehicleselectric: {
+    micro: {
+      comp: "Busqueu a Google Maps quins tallers de la zona anuncien que reparen vehicles elèctrics i híbrids. Són tallers oficials de marca o independents? Què oferiríeu de diferent?",
+      cli: "Qui té cotxes, motos o furgonetes elèctriques a Mataró: particulars, flotes d'empreses, l'Ajuntament? Pregunteu a 3 propietaris on porten el vehicle i què els preocupa.",
+      prov: "On es compren les peces de bateria i els equips de diagnosi d'alta tensió? Busqueu-ne dos o tres proveïdors i compareu-ne preu i suport tècnic.",
+      int: "Esbrineu si els fabricants de cotxes deixen reparar els seus elèctrics a tallers independents. Què cal per accedir a la seva informació tècnica?"
+    },
+    pestel: {
+      P: "Busqueu a les webs de la Generalitat i de l'Ajuntament de Mataró quines mesures hi ha per afavorir el vehicle elèctric (zones de baixes emissions, ajuts generals). Us poden portar clients?",
+      E: "Com ha evolucionat el preu de la llum i dels combustibles? Busqueu-ho i penseu com afecta les ganes de la gent de passar-se al cotxe elèctric.",
+      S: "Feu una petita enquesta: els vostres familiars es comprarien un cotxe elèctric? Què els frena (preu, autonomia, on carregar)?",
+      T: "Què ha d'aprendre un mecànic per treballar amb alta tensió? Busqueu quina formació i certificació s'exigeix i quant dura.",
+      Ec: "Què passa amb les bateries velles dels cotxes elèctrics? Busqueu si es reciclen o es reutilitzen i qui ho fa a Catalunya.",
+      L: "Quines normes de seguretat s'han de complir per manipular sistemes d'alta tensió? Busqueu també què cal per instal·lar punts de recàrrega al taller."
+    }
+  },
+  impressio3d: {
+    micro: {
+      comp: "Busqueu empreses i estudis d'impressió 3D al Maresme i a Barcelona. Quins serveis anuncien a la web i quins materials fan servir? En què us especialitzaríeu?",
+      cli: "Quines empreses necessiten prototips o peces a mida? Mireu els polígons industrials de Mataró a Google Maps i classifiqueu les empreses que us podrien encarregar feina.",
+      prov: "On es compren les impressores 3D professionals i els materials (filaments, resines)? Compareu dues o tres marques: preu, velocitat i servei tècnic.",
+      int: "Esbrineu si els estudis d'enginyeria, arquitectura o disseny industrial us podrien passar encàrrecs. Com hi contactaríeu?"
+    },
+    pestel: {
+      P: "Busqueu a la web de la Generalitat si hi ha programes generals per impulsar la innovació i la indústria 4.0. Com podrien ajudar els vostres clients?",
+      E: "Quants diners estalvia una empresa fent un prototip en 3D en lloc de fer un motlle? Pregunteu-ho a una empresa o busqueu-ne un exemple real.",
+      S: "Què en sap la gent de la impressió 3D? Feu una petita enquesta i penseu si caldria explicar bé el servei als clients.",
+      T: "Quines tecnologies d'impressió 3D existeixen (filament, resina, pols, metall)? Busqueu per a quines peces serveix cadascuna.",
+      Ec: "Què es fa amb les peces fallades i les restes de plàstic? Busqueu si hi ha materials reciclats o biodegradables per imprimir.",
+      L: "Qui és el propietari d'un disseny que imprimiu per a un client? Busqueu què són la propietat industrial i les patents, i com protegir els dissenys amb un contracte."
+    }
+  },
+  mantpredictiu: {
+    micro: {
+      comp: "Busqueu empreses de manteniment predictiu i monitoratge de màquines a Catalunya. Quins serveis i tecnologies anuncien? Són grans o petites?",
+      cli: "Quines fàbriques de la zona perden més diners quan una màquina s'atura? Mireu els polígons de Mataró i rodalia a Google Maps i classifiqueu-ne les empreses per sector.",
+      prov: "A qui compraríeu els sensors, les càmeres termogràfiques i la plataforma de dades? Compareu dues o tres marques: preu, precisió i suport tècnic.",
+      int: "Esbrineu si les empreses de manteniment tradicional o els integradors d'automatització podrien col·laborar amb vosaltres. Què hi guanyaria cadascú?"
+    },
+    pestel: {
+      P: "Busqueu a la web de la Generalitat si hi ha programes generals per digitalitzar la indústria. Com podríeu ajudar els clients a aprofitar-los?",
+      E: "Quant costa a una fàbrica una hora de màquina aturada? Entrevisteu un responsable de manteniment o busqueu-ne exemples per explicar l'estalvi als clients.",
+      S: "Què en pensen els tècnics de manteniment de les fàbriques que unes dades els diguin quan cal reparar? Pregunteu-ho a algú que hi treballi.",
+      T: "Busqueu què són l'internet de les coses (IoT) i el manteniment predictiu amb intel·ligència artificial. Quins exemples reals trobeu?",
+      Ec: "Com pot el manteniment predictiu estalviar energia, recanvis i residus? Busqueu un cas real d'una empresa que ho hagi aconseguit.",
+      L: "Qui és el propietari de les dades de les màquines que recolliu? Busqueu què diu la normativa de protecció de dades i ciberseguretat, i què caldria posar al contracte."
+    }
+  },
+  solar: {
+    micro: {
+      comp: "Busqueu a Google Maps empreses d'instal·lació de plaques solars a Mataró i rodalia. Quins serveis anuncien? Quines ressenyes tenen?",
+      cli: "Qui posa plaques solars: famílies amb casa, comunitats de veïns, naus, comerços? Escolliu el vostre client principal i expliqueu per què.",
+      prov: "On compraríeu plaques, inversors i bateries? Busqueu dos o tres distribuïdors i compareu preus, terminis de lliurament i garanties.",
+      int: "Esbrineu si les comercialitzadores d'electricitat, els concessionaris de cotxes elèctrics o els administradors de finques us podrien portar clients."
+    },
+    pestel: {
+      P: "Busqueu a les webs de la Generalitat i de l'Ajuntament de Mataró si hi ha ajuts o descomptes d'impostos per posar plaques. Us poden portar clients?",
+      E: "Com ha canviat el preu de la llum i el preu de les plaques solars? Busqueu-ho i penseu quants anys triga una família a recuperar la inversió.",
+      S: "Feu una petita enquesta: els vostres veïns pensen posar plaques o comprar un cotxe elèctric? Què els frena?",
+      T: "Quines millores tecnològiques hi ha en plaques, bateries i carregadors? Pregunteu a un professional quina formació nova ha hagut de fer.",
+      Ec: "Què es fa amb les plaques i bateries velles quan es canvien? Busqueu com es reciclen a Catalunya.",
+      L: "Quins tràmits calen per legalitzar una instal·lació d'autoconsum? Busqueu-ho a la web de la Generalitat (paraula clau: autoconsum)."
+    }
+  },
+  domotica: {
+    micro: {
+      comp: "Busqueu a Google Maps i a Instagram empreses de domòtica del Maresme. Quins sistemes ofereixen? Treballen per a cases o per a empreses?",
+      cli: "Qui vol una casa o una botiga connectada: famílies joves, gent gran, comerços, promotors? Escolliu el vostre client i esbrineu què li preocupa.",
+      prov: "Quines marques de sensors, mòduls i sistemes domòtics hi ha? Compareu-ne dues o tres: preu, facilitat d'ús i suport tècnic.",
+      int: "Esbrineu si electricistes, botigues d'electrònica o promotors d'habitatges us podrien recomanar. Què demanarien a canvi?"
+    },
+    pestel: {
+      P: "Busqueu a les webs oficials si hi ha ajuts per a la digitalització de comerços o per a l'eficiència energètica d'habitatges.",
+      E: "Quant costa instal·lar domòtica en un pis? Busqueu preus a internet i penseu si les famílies de Mataró s'ho poden permetre.",
+      S: "Com pot ajudar la domòtica a la gent gran que viu sola? Pregunteu a familiars o a una residència què els seria útil.",
+      T: "Què és l'internet de les coses i com es connecten els aparells de casa? Busqueu quins assistents de veu i aplicacions fa servir la gent.",
+      Ec: "Quanta energia es pot estalviar controlant llums, persianes i calefacció? Busqueu exemples i penseu com ho explicaríeu al client.",
+      L: "Quines dades personals recullen les càmeres i els sensors d'una casa? Busqueu què diu la llei de protecció de dades sobre això."
+    }
+  },
+  mantedificis: {
+    micro: {
+      comp: "Busqueu a Google Maps serveis de manteniment i reparacions a domicili a Mataró. Quins preus i horaris anuncien? Atenen urgències?",
+      cli: "Qui necessita petites reparacions: comunitats de veïns, gent gran, propietaris que lloguen pisos, comerços? Escolliu el vostre client principal.",
+      prov: "On compraríeu pintura, silicona, panys i rajoles? Visiteu una ferreteria o un magatzem de la zona i pregunteu quins descomptes fan als professionals.",
+      int: "Quin paper tenen els administradors de finques a l'hora d'escollir qui repara una comunitat? Entrevisteu-ne un i pregunteu com trien."
+    },
+    pestel: {
+      P: "Busqueu a la web de l'Ajuntament de Mataró si hi ha ajuts per reparar edificis o per adaptar habitatges a la gent gran.",
+      E: "Quants habitatges i edificis hi ha a Mataró? Busqueu-ho a Idescat i penseu quanta feina de manteniment hi pot haver.",
+      S: "Què valora la gent quan crida algú per fer una reparació: preu, rapidesa, confiança? Feu una petita enquesta al vostre entorn.",
+      T: "Quines aplicacions fan servir els professionals per rebre avisos, fer pressupostos i cobrar? Busqueu-ne dues i compareu-les.",
+      Ec: "Quins productes de pintura i neteja són menys contaminants? Busqueu on es porten els residus d'una reparació a Mataró.",
+      L: "Quins permisos calen per fer una reparació a la façana o al terrat? Busqueu a la web de l'Ajuntament què és una comunicació d'obres."
+    }
+  },
+  rehabenergetica: {
+    micro: {
+      comp: "Busqueu empreses de rehabilitació energètica i aïllaments al Maresme. Quins edificis han millorat i com ho expliquen a la seva web?",
+      cli: "Qui encarrega una rehabilitació energètica: comunitats de veïns, propietaris, l'Ajuntament? Esbrineu com es pren la decisió en una comunitat.",
+      prov: "Quins materials d'aïllament i finestres eficients existeixen? Busqueu proveïdors a Catalunya i compareu preus i qualitats.",
+      int: "Quin paper tenen els administradors de finques i els arquitectes en una rehabilitació? Pregunteu-ne a un com escullen l'empresa."
+    },
+    pestel: {
+      P: "Busqueu a les webs de la Generalitat i de l'Ajuntament de Mataró quins ajuts hi ha per rehabilitar edificis. Quins requisits demanen?",
+      E: "Quants edificis antics hi ha a Mataró? Busqueu a Idescat l'antiguitat dels habitatges i penseu quants podrien necessitar aïllament.",
+      S: "Els veïns saben quanta energia perden per les finestres i les parets? Feu una petita enquesta i pregunteu si pagarien per millorar-ho.",
+      T: "Què és una càmera tèrmica i per què serveix en un edifici? Busqueu també quins programes calculen la certificació energètica.",
+      Ec: "Quanta energia i CO2 es pot estalviar aïllant un edifici? Busqueu exemples i quins materials d'aïllament són més ecològics.",
+      L: "Qui pot fer un certificat d'eficiència energètica i quan és obligatori? Busqueu-ho a la web de l'Institut Català d'Energia."
+    }
+  },
+  secretaria: {
+    micro: {
+      comp: "Busqueu a Google Maps i a internet empreses de secretaria virtual o d'assistència administrativa a Mataró i rodalia. Quins serveis i preus anuncien?",
+      cli: "Qui pot necessitar una secretaria externa: autònoms, petits despatxos, clíniques? Pregunteu a 3 autònoms quines tasques administratives els fan perdre més temps.",
+      prov: "Quins programes d'agenda, facturació i telefonia virtual necessitaríeu? Busqueu-ne dos o tres i compareu-ne el preu mensual.",
+      int: "Esbrineu si les gestories, els coworkings o les associacions de comerciants podrien recomanar-vos. Com contactaríeu amb ells?"
+    },
+    pestel: {
+      P: "Quins tràmits amb l'Administració ja s'han de fer en línia? Mireu a les webs de la Generalitat i de l'Ajuntament de Mataró quins podríeu fer per als clients.",
+      E: "Esbrineu a Idescat quants autònoms i microempreses hi ha a Mataró. Han augmentat o disminuït els darrers anys?",
+      S: "Treballar en remot és cada cop més habitual? Feu una petita enquesta: confiaríeu la vostra agenda i els vostres documents a una persona que no és a l'oficina?",
+      T: "Quines tasques de secretaria es poden automatitzar amb programes o intel·ligència artificial? Busqueu-ne exemples i penseu quin valor afegiríeu vosaltres.",
+      Ec: "Com podríeu treballar sense paper? Esbrineu quines eines d'arxiu digital i signatura electrònica existeixen i si els clients les fan servir.",
+      L: "Què diu la llei de protecció de dades quan gestioneu dades d'altres empreses? Busqueu les paraules clau encarregat del tractament i contracte de confidencialitat."
+    }
+  },
+  ajuts: {
+    micro: {
+      comp: "Busqueu consultories que ajudin a demanar subvencions a la província de Barcelona. Com cobren: preu fix, percentatge de l'ajuda o totes dues coses?",
+      cli: "Qui necessita ajuda per demanar subvencions: pimes, entitats, emprenedors, associacions? Entrevisteu algú d'una entitat o empresa i pregunteu-li com ho fa ara.",
+      prov: "On es publiquen les convocatòries d'ajudes? Busqueu quines webs oficials i butlletins hauríeu de consultar cada setmana.",
+      int: "Esbrineu si els bancs, les gestories o els serveis de promoció econòmica de l'Ajuntament us podrien enviar clients. Què els oferiríeu a canvi?"
+    },
+    pestel: {
+      P: "Quines administracions donen ajudes a empreses: Ajuntament, Generalitat, Estat, Unió Europea? Busqueu a les seves webs on es publiquen les convocatòries.",
+      E: "Com està el finançament per a les pimes ara mateix? Busqueu notícies sobre els tipus d'interès i si als petits negocis els costa aconseguir préstecs.",
+      S: "Els petits empresaris saben que existeixen ajudes per a ells? Feu una enquesta curta a comerços del barri i apunteu què en saben i què els frena.",
+      T: "Quines eines digitals fan servir les administracions per presentar sol·licituds? Esbrineu què cal tenir (certificat digital, signatura) per fer-ho en línia.",
+      Ec: "Moltes ajudes premien la sostenibilitat? Busqueu convocatòries recents i apunteu quantes demanen projectes verds o d'estalvi d'energia.",
+      L: "Quines obligacions té una empresa quan rep una subvenció? Busqueu les paraules clau justificació de subvencions i reintegrament."
+    }
+  },
+  labambiental: {
+    micro: {
+      comp: "Busqueu a Google Maps laboratoris que analitzin aigües de piscines, pous o aire interior al Maresme. Treballen per a particulars o només per a empreses?",
+      cli: "Qui necessita analitzar aigua, sòl o aire: comunitats amb piscina, famílies amb pou, escoles, ajuntaments? Escolliu el vostre client principal i expliqueu per què.",
+      prov: "Quins kits, reactius i aparells de mesura necessitaríeu? Busqueu proveïdors de material de laboratori i compareu el preu de dos aparells.",
+      int: "Esbrineu si els administradors de finques, les empreses de manteniment de piscines o les botigues de jardineria us podrien portar clients."
+    },
+    pestel: {
+      P: "Quins controls de l'aigua de les piscines d'ús públic són obligatoris? Busqueu a la web de la Generalitat qui inspecciona i cada quant.",
+      E: "Quant costa una anàlisi d'aigua de pou o de piscina? Busqueu tarifes publicades i calculeu quantes en necessitaríeu al mes per cobrir despeses.",
+      S: "La gent es preocupa per la qualitat de l'aire de casa o de l'aigua que beu? Feu una petita enquesta i apunteu què els preocupa més.",
+      T: "Quins sensors o kits ràpids permeten fer anàlisis in situ? Busqueu-ne exemples i compareu-los amb una anàlisi feta al laboratori.",
+      Ec: "Quins problemes ambientals té el Maresme: sequera, aqüífers, contaminació de l'aire? Busqueu notícies recents i penseu quin servei podríeu oferir.",
+      L: "Quina normativa regula la qualitat de l'aigua de consum i de les piscines? Busqueu també què cal per emetre informes oficials (paraula clau: laboratori acreditat)."
+    }
+  },
+  biotec: {
+    micro: {
+      comp: "Busqueu empreses que fabriquin bioestimulants, adobs ecològics o netejadors amb enzims. On són i quins productes venen?",
+      cli: "Qui compraria aquests productes: pagesos, garden centers, botigues a granel, ajuntaments? Visiteu o truqueu una botiga i pregunteu què els demanen els clients.",
+      prov: "On compraríeu els cultius de microorganismes, les matèries primeres i els envasos? Busqueu proveïdors i esbrineu quines quantitats mínimes demanen.",
+      int: "Com arriben aquests productes al comprador: cooperatives, distribuïdors, botigues en línia? Esbrineu quin percentatge es queda cada intermediari."
+    },
+    pestel: {
+      P: "Quin organisme autoritza els adobs i els productes per a plantes? Busqueu quins registres cal fer abans de vendre un producte nou.",
+      E: "Quant costa fabricar un litre de bioestimulant o de netejador? Calculeu-ho aproximadament amb preus de proveïdors i compareu-ho amb el preu de venda.",
+      S: "La gent busca productes ecològics per a casa i l'hort? Mireu les xarxes i feu una enquesta curta per saber si pagarien més per un producte natural.",
+      T: "Què és un procés de fermentació i quins equips calen per fer-lo a petita escala? Busqueu exemples d'empreses petites i quins aparells fan servir.",
+      Ec: "Podríeu fer servir residus d'altres empreses (pela de fruita, restes de cervesa) com a matèria primera? Busqueu exemples d'economia circular.",
+      L: "Què ha de dir l'etiqueta d'un adob o d'un producte de neteja? Busqueu les paraules clau etiquetatge de fertilitzants i producte ecològic certificat."
+    }
+  },
   videojocs: {
     micro: {
       comp: "Busqueu estudis de videojocs de Catalunya que facin jocs per encàrrec (per a marques, museus, escoles). Què ofereixen i quins projectes ensenyen?",
@@ -2784,6 +3096,90 @@ const OFERTES = {
     b3: { prod: "Pòlissa de crèdit per a matèries primeres i envasos", tipus: "Pòlissa de crèdit", max: 25000, tin: 6.3, anys: 1, com: 0.8, req: "Fer-se soci amb 300 € de capital social i aportar les comandes de les marques clientes.", nota: "Permet comprar envasos i ingredients abans de cobrar l'encàrrec a 60 dies, però cal renovar-la cada any i el límit depèn de les comandes." },
     b4: { prod: "Crèdit exprés per a lots de prova", tipus: "Préstec en línia", max: 8000, tin: 10.8, anys: 1, com: 0.5, req: "Sol·licitud en línia amb DNI i extractes bancaris. Sense avalador.", nota: "Diners en 48 hores per fabricar mostres per a una marca nova, però el tipus és molt alt i s'ha de tornar tot en un any." },
     b5: { prod: "Leasing d'emulsionador i envasadora", tipus: "Leasing d'equips", max: 50000, tin: 7.6, anys: 6, com: 0.4, req: "Només per a reactors d'emulsió, envasadora i etiquetadora. Els equips són la garantia.", nota: "Quota fixa per a la maquinària principal, però no paga l'adequació de la sala ni els tràmits sanitaris, que calen abans de fabricar." }
+  },
+  carrosseria: {
+    b1: { prod: "Préstec per a cabina de pintura i adequació del local", tipus: "Préstec amb garantia", max: 60000, tin: 5.3, anys: 8, com: 1.4, req: "Aval personal dels socis, domiciliar el TPV del taller i contractar l'assegurança del local amb el banc.", nota: "Termini llarg i import alt per a la cabina i l'obra del local, però l'aval i la vinculació del TPV lliguen molt el taller al banc." },
+    b2: { prod: "Préstec per a carrosseria amb pintura ecològica", tipus: "Préstec d'inversió", max: 35000, tin: 5.9, anys: 7, com: 0.3, req: "Pla de negoci detallat amb pintures a l'aigua, filtres de la cabina i gestió correcta dels residus.", nota: "Tipus bo si el taller redueix residus i emissions, però exigeix demostrar-ho i no finança una cabina antiga de pintures amb dissolvent." },
+    b3: { prod: "Préstec d'arrencada amb carència de 6 mesos", tipus: "Préstec d'inversió", max: 40000, tin: 6.1, anys: 7, com: 0.9, req: "Fer-se soci amb 500 € de capital social i acreditar el contracte de lloguer del local.", nota: "La carència dona temps per tancar acords amb asseguradores, però els interessos sumen durant aquells mesos i l'import no arriba per a una cabina nova." },
+    b4: { prod: "Préstec en línia per a pintures i consumibles", tipus: "Préstec en línia", max: 10000, tin: 10.2, anys: 2, com: 0.5, req: "Alta en línia amb DNI, compte bancari i previsió de vendes. Sense aval.", nota: "Arriba en 48 hores per omplir l'estoc de pintura mentre s'espera el pagament de les asseguradores, però el tipus és molt alt i el termini curt." },
+    b5: { prod: "Leasing de cabina de pintura i bancada", tipus: "Leasing d'equips", max: 50000, tin: 7.1, anys: 6, com: 0.6, req: "Només per a cabina, bancada, soldadura i compressor. Els equips queden com a garantia fins a l'opció de compra.", nota: "Quota fixa per als equips més cars sense buidar la caixa, però no cobreix l'obra del local, la llicència ni l'estoc de pintura." }
+  },
+  vehicleselectric: {
+    b1: { prod: "Préstec per obrir un taller de vehicles elèctrics", tipus: "Préstec amb garantia", max: 50000, tin: 5.5, anys: 7, com: 1.3, req: "Aval personal dels socis, domiciliar els cobraments i contractar les assegurances del taller amb el banc.", nota: "Import suficient per a equips i local, però el banc dubta d'un mercat encara petit i la resposta pot trigar setmanes." },
+    b2: { prod: "Préstec per a mobilitat sostenible", tipus: "Préstec d'inversió", max: 45000, tin: 5.2, anys: 7, com: 0.2, req: "Pla de negoci detallat amb la gestió correcta de bateries i l'impacte en la reducció d'emissions.", nota: "El millor tipus per a un taller només d'elèctrics, però l'estudi és lent i demanen certificar com reciclareu les bateries." },
+    b3: { prod: "Préstec amb carència fins a la certificació", tipus: "Préstec d'inversió", max: 35000, tin: 6.3, anys: 6, com: 0.8, req: "Fer-se soci amb 500 € de capital social i presentar el pla de formació en alta tensió de l'equip.", nota: "La carència cobreix els mesos de formació abans de poder treballar, però el cost final puja i cal immobilitzar capital social." },
+    b4: { prod: "Crèdit exprés per a equips de diagnosi", tipus: "Préstec en línia", max: 15000, tin: 9.4, anys: 3, com: 0.0, req: "Sol·licitud en línia amb DNI i extractes bancaris. Sense avalador.", nota: "Permet comprar ràpid un equip de diagnosi per a una flota que ho demana, però el tipus és alt i no arriba per a l'elevador de bateries." },
+    b5: { prod: "Renting d'equips de diagnosi d'alta tensió", tipus: "Renting", max: 30000, tin: 7.6, anys: 4, com: 0.5, req: "Només per a equips de diagnosi, eines aïllades i punts de recàrrega. Inclou actualitzacions de programari.", nota: "Els equips s'actualitzen sense haver-los de tornar a comprar, cosa clau en una tecnologia que canvia ràpid, però mai seran vostres i no cobreix el local." }
+  },
+  impressio3d: {
+    b1: { prod: "Préstec per a estudi de disseny i prototips", tipus: "Préstec amb garantia", max: 35000, tin: 5.6, anys: 6, com: 1.2, req: "Aval dels socis, domiciliar els cobraments i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Tipus baix i import suficient per a tot l'equipament, però el banc demana aval perquè les impressores perden valor ràpid." },
+    b2: { prod: "Préstec per a producció local i materials reciclats", tipus: "Préstec d'inversió", max: 25000, tin: 6.0, anys: 5, com: 0.3, req: "Pla de negoci detallat amb ús de materials reciclats o biodegradables i fabricació de proximitat.", nota: "Bones condicions si feu recanvis que allarguen la vida dels productes, però l'import és curt i no finança feina per a sectors que exclouen, com l'armament." },
+    b3: { prod: "Préstec d'arrencada amb carència de 6 mesos", tipus: "Préstec d'inversió", max: 30000, tin: 6.5, anys: 6, com: 0.8, req: "Fer-se soci amb 300 € de capital social i presentar el pla de negoci amb possibles clients de la zona.", nota: "La carència dona temps per fer una cartera de clients, però els interessos continuen sumant i el tràmit és presencial." },
+    b4: { prod: "Crèdit exprés per a impressores i materials", tipus: "Préstec en línia", max: 15000, tin: 9.0, anys: 3, com: 0.0, req: "Sol·licitud en línia amb DNI i extractes bancaris. Sense avalador.", nota: "Diners en 48 hores per comprar una impressora per a un encàrrec urgent, però el tipus és alt i la quota pesa molt els primers mesos." },
+    b5: { prod: "Leasing d'impressores 3D i escàner", tipus: "Leasing d'equips", max: 25000, tin: 7.3, anys: 4, com: 0.6, req: "Només per a impressores 3D, escàner i ordinadors amb factura. Els equips queden com a garantia.", nota: "Quota fixa i opció de renovar els equips al final, però no cobreix les llicències de programari ni els materials." }
+  },
+  mantpredictiu: {
+    b1: { prod: "Préstec per a sensors i plataforma de dades", tipus: "Préstec amb garantia", max: 50000, tin: 5.4, anys: 7, com: 1.3, req: "Aval dels socis, domiciliar les quotes dels clients i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Import alt per comprar sensors i plataforma alhora, però el banc entén poc el negoci de dades i demana garanties fortes." },
+    b2: { prod: "Préstec per a eficiència i estalvi industrial", tipus: "Préstec d'inversió", max: 35000, tin: 5.8, anys: 6, com: 0.2, req: "Pla de negoci detallat que expliqui l'estalvi d'energia, recanvis i residus que obtindran els clients.", nota: "Valora molt l'estalvi d'energia i recursos, però l'estudi del pla és lent i no cobreix la furgoneta." },
+    b3: { prod: "Pòlissa de crèdit per a cobraments a 90 dies", tipus: "Pòlissa de crèdit", max: 25000, tin: 6.4, anys: 1, com: 0.9, req: "Fer-se soci amb 500 € de capital social i aportar els contractes de manteniment signats amb els clients.", nota: "Cobreix l'espera fins que les fàbriques paguen, i només es paga pel que es fa servir, però s'ha de renovar cada any i no serveix per comprar sensors." },
+    b4: { prod: "Préstec ràpid per a un primer projecte pilot", tipus: "Préstec en línia", max: 12000, tin: 9.7, anys: 3, com: 0.3, req: "Sol·licitud en línia amb DNI, extractes bancaris i pressupost dels sensors. Sense avalador.", nota: "Permet fer un projecte pilot en una fàbrica en pocs dies, però l'import és baix i el tipus encareix molt el cost total." },
+    b5: { prod: "Leasing de càmera termogràfica i analitzador", tipus: "Leasing d'equips", max: 40000, tin: 7.0, anys: 5, com: 0.5, req: "Només per a càmera termogràfica, analitzador de vibracions, sensors i furgoneta. Els equips són la garantia.", nota: "Equipa l'empresa amb quota fixa sense gastar caixa, però no cobreix el programari, el núvol ni els sous mentre s'espera cobrar." }
+  },
+  solar: {
+    b1: { prod: "Préstec per a furgoneta i primer estoc solar", tipus: "Préstec amb garantia", max: 40000, tin: 5.6, anys: 7, com: 1.3, req: "Aval personal dels socis, domiciliar la facturació i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Import alt per comprar furgoneta i plaques alhora, però la quota és igual cada mes i a l'hivern, amb menys instal·lacions, costa més pagar-la." },
+    b2: { prod: "Préstec per a energia renovable", tipus: "Préstec d'inversió", max: 35000, tin: 5.2, anys: 7, com: 0.0, req: "Pla de negoci detallat amb la previsió d'instal·lacions i l'estalvi de CO2 que aportaran als clients.", nota: "Tipus baix i sense comissió perquè l'autoconsum encaixa amb els seus valors, però cal aportar molta documentació i la resposta no és ràpida." },
+    b3: { prod: "Préstec d'arrencada amb carència de 6 mesos", tipus: "Préstec d'inversió", max: 30000, tin: 5.9, anys: 6, com: 0.7, req: "Fer-se soci amb 300 € de capital social i presentar els primers pressupostos acceptats.", nota: "La carència dona temps per fer les primeres instal·lacions de primavera, però els interessos continuen sumant i el cost total puja." },
+    b4: { prod: "Crèdit exprés per a plaques i inversors", tipus: "Préstec en línia", max: 15000, tin: 9.6, anys: 3, com: 0.5, req: "Sol·licitud en línia amb DNI, extractes bancaris i un pressupost acceptat. Sense avalador.", nota: "Diners en 48 hores per comprar el material d'una obra urgent, però el tipus és alt i no arriba per a la furgoneta ni per a obres grans de naus." },
+    b5: { prod: "Leasing de furgoneta i equip de treball en alçada", tipus: "Leasing d'equips", max: 35000, tin: 7.3, anys: 5, com: 0.8, req: "Només per a furgoneta, línies de vida, bastides i aparells de mesura. Els béns queden com a garantia.", nota: "Equipa l'empresa sense gastar caixa, però no paga les plaques ni les bateries, que són la despesa més gran abans de cobrar." }
+  },
+  domotica: {
+    b1: { prod: "Préstec per a sala d'exposició i equips", tipus: "Préstec amb garantia", max: 35000, tin: 5.5, anys: 6, com: 1.2, req: "Aval dels socis, domiciliar els cobraments i contractar l'assegurança de l'empresa amb el banc.", nota: "Bon tipus per muntar la sala d'exposició, però la vinculació obliga a portar-hi tots els cobraments i la resposta pot trigar setmanes." },
+    b2: { prod: "Préstec per a habitatges eficients i accessibles", tipus: "Préstec d'inversió", max: 25000, tin: 5.8, anys: 6, com: 0.3, req: "Pla de negoci detallat que expliqui l'estalvi d'energia i l'ajuda a la gent gran que viu sola.", nota: "Valora la domòtica per a l'estalvi i l'autonomia de la gent gran, però no finança projectes només de luxe o de càmeres de vigilància." },
+    b3: { prod: "Pòlissa de crèdit per a projectes amb promotors", tipus: "Pòlissa de crèdit", max: 20000, tin: 6.3, anys: 1, com: 0.7, req: "Fer-se soci amb 300 € de capital social i aportar els contractes amb els promotors.", nota: "Cobreix el material mentre els promotors paguen a 60 dies, però cal renovar-la cada any i no serveix per comprar equips." },
+    b4: { prod: "Préstec ràpid per a estoc de sensors", tipus: "Préstec en línia", max: 12000, tin: 9.0, anys: 3, com: 0.0, req: "Alta en línia amb DNI i extractes bancaris. Sense aval ni pla de negoci.", nota: "Molt àgil per tenir sensors i mòduls a punt, però el tipus és alt i l'import no dona per a la sala d'exposició." },
+    b5: { prod: "Renting de portàtils i equips de demostració", tipus: "Renting", max: 15000, tin: 7.8, anys: 4, com: 0.4, req: "Només per a ordinadors, tauletes i equips de demostració. Els equips són la garantia.", nota: "Renova els equips quan surten models nous sense gastar caixa, però en domòtica la tecnologia canvia ràpid i la quota no baixa." }
+  },
+  mantedificis: {
+    b1: { prod: "Préstec per començar un negoci de manteniment", tipus: "Préstec amb garantia", max: 20000, tin: 6.0, anys: 5, com: 1.0, req: "Aval personal dels socis, domiciliar els cobraments de les comunitats i contractar l'assegurança amb el banc.", nota: "Condicions clares i oficina a prop, però per a una inversió tan petita l'aval i la vinculació lliguen massa els socis al banc." },
+    b2: { prod: "Préstec per a serveis de barri i accessibilitat", tipus: "Préstec d'inversió", max: 15000, tin: 5.7, anys: 5, com: 0.0, req: "Pla de negoci detallat que expliqui el servei a la gent gran i a les comunitats del barri.", nota: "Sense comissió i valora l'atenció a la gent gran, però l'estudi del pla és exigent per a un import tan petit." },
+    b3: { prod: "Microcrèdit amb carència per a autònoms", tipus: "Préstec d'inversió", max: 12000, tin: 6.2, anys: 5, com: 0.5, req: "Fer-se soci amb 150 € de capital social i presentar un pla de negoci senzill.", nota: "Pensat per a negocis petits i amb 3 mesos de carència, però el límit és baix si cal comprar furgoneta i eines alhora." },
+    b4: { prod: "Crèdit ràpid per a eines i material", tipus: "Préstec en línia", max: 8000, tin: 10.2, anys: 2, com: 0.0, req: "Sol·licitud en línia amb DNI i extractes bancaris. Sense avalador.", nota: "Resposta en 48 hores, ideal per a una compra petita, però el tipus és el més alt i el termini curt fa la quota pesada al principi." },
+    b5: { prod: "Leasing de furgoneta petita", tipus: "Leasing d'equips", max: 15000, tin: 7.6, anys: 5, com: 0.6, req: "Només per a la furgoneta i el seu equipament interior. El vehicle queda com a garantia.", nota: "Permet tenir furgoneta sense gastar estalvis, però en aquest sector la furgoneta és gairebé l'única inversió i el leasing surt més car que comprar-la de segona mà." }
+  },
+  rehabenergetica: {
+    b1: { prod: "Préstec per a equips i primeres obres", tipus: "Préstec amb garantia", max: 50000, tin: 5.4, anys: 7, com: 1.4, req: "Aval dels socis o garantia sobre béns, domiciliar els cobraments i contractar l'assegurança d'obra amb el banc.", nota: "Import alt i tipus baix per a equips cars, però l'aval és fort i la quota s'ha de pagar encara que les comunitats esperin les ajudes." },
+    b2: { prod: "Préstec per a rehabilitació energètica", tipus: "Préstec d'inversió", max: 40000, tin: 5.0, anys: 8, com: 0.0, req: "Pla de negoci detallat amb l'estalvi d'energia i CO2 previst en els edificis rehabilitats.", nota: "El millor tipus perquè el sector encaixa del tot amb els seus valors, però demana molta documentació i la resposta pot trigar." },
+    b3: { prod: "Pòlissa de crèdit per esperar les ajudes", tipus: "Pòlissa de crèdit", max: 35000, tin: 6.0, anys: 1, com: 0.8, req: "Fer-se soci amb 500 € de capital social i aportar els contractes signats amb les comunitats.", nota: "Cobreix els mesos fins que les comunitats cobren les ajudes i paguen, però cal renovar-la cada any i el límit depèn dels contractes." },
+    b4: { prod: "Préstec en línia per a càmera tèrmica i programari", tipus: "Préstec en línia", max: 12000, tin: 8.8, anys: 3, com: 0.3, req: "Alta en línia amb DNI dels socis i extractes bancaris. Sense avalador.", nota: "Permet començar a fer certificats energètics en pocs dies, però l'import és petit per a obres d'aïllament i el tipus és més alt." },
+    b5: { prod: "Leasing de bastides i equips de mesura", tipus: "Leasing d'equips", max: 45000, tin: 7.1, anys: 6, com: 0.6, req: "Només per a bastides, càmera tèrmica, equip d'estanquitat i furgoneta. Els béns són la garantia.", nota: "Equipa l'empresa sense gastar caixa, però no paga els materials d'aïllament ni els sous, que són la major part del cost d'una obra." }
+  },
+  secretaria: {
+    b1: { prod: "Préstec per a autònoms de serveis", tipus: "Préstec amb garantia", max: 15000, tin: 5.6, anys: 5, com: 1.0, req: "Aval personal dels socis, domiciliar les quotes dels clients i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Tipus baix per a un negoci de quotes mensuals, però per a una inversió tan petita la comissió i la vinculació pesen massa." },
+    b2: { prod: "Préstec per a serveis de proximitat i conciliació", tipus: "Préstec d'inversió", max: 12000, tin: 6.1, anys: 5, com: 0.2, req: "Pla de negoci detallat i explicació de l'impacte social, com el teletreball o l'ocupació local.", nota: "Valora que el servei faciliti el teletreball, però l'estudi del pla és lent i no finança el lloguer d'una oficina." },
+    b3: { prod: "Préstec d'arrencada amb carència de 6 mesos", tipus: "Préstec d'inversió", max: 15000, tin: 5.9, anys: 5, com: 0.7, req: "Fer-se soci amb 300 € de capital social reemborsable i presentar el pla de negoci a l'oficina local.", nota: "La carència dona temps per trobar els primers clients, però cal immobilitzar capital social i els interessos sumen durant la carència." },
+    b4: { prod: "Crèdit exprés per a equips i programari", tipus: "Préstec en línia", max: 8000, tin: 9.4, anys: 3, com: 0.0, req: "Sol·licitud en línia amb el DNI dels socis i extractes bancaris. Sense avalador.", nota: "Diners en 48 hores per començar de seguida, però el tipus és alt i amb pocs clients la quota dels primers mesos pesa molt." },
+    b5: { prod: "Renting d'ordinadors i telefonia", tipus: "Renting", max: 6000, tin: 7.6, anys: 3, com: 0.5, req: "Només finança ordinadors, auriculars i centraleta. Els equips queden com a garantia.", nota: "Inclou manteniment i canvi d'equips sense gastar caixa, però en una secretaria virtual l'equip és barat i a la llarga es paga més que comprant." }
+  },
+  ajuts: {
+    b1: { prod: "Préstec per obrir despatx de consultoria", tipus: "Préstec amb garantia", max: 25000, tin: 5.3, anys: 6, com: 1.2, req: "Aval personal dels socis, domiciliar els cobraments i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Bon tipus i import suficient, però el banc també ofereix finançament a les pimes i pot veure la consultoria com a competència." },
+    b2: { prod: "Préstec per a serveis a l'economia social", tipus: "Préstec d'inversió", max: 18000, tin: 6.0, anys: 6, com: 0.3, req: "Pla de negoci detallat amb una part de clients que siguin entitats, cooperatives o projectes sostenibles.", nota: "Condicions bones si treballeu amb entitats socials, però si els clients són sobretot empreses convencionals pot costar que l'aprovin." },
+    b3: { prod: "Pòlissa de crèdit per a cobraments d'èxit", tipus: "Pòlissa de crèdit", max: 15000, tin: 6.3, anys: 1, com: 0.8, req: "Fer-se soci amb 300 € de capital social i presentar els contractes signats amb els clients.", nota: "Cobreix els mesos d'espera fins que el client rep l'ajuda i us paga, però cal renovar-la cada any i té comissió d'obertura." },
+    b4: { prod: "Préstec ràpid per a l'arrencada", tipus: "Préstec en línia", max: 10000, tin: 9.0, anys: 3, com: 0.0, req: "Alta en línia amb DNI i extractes bancaris. Sense aval.", nota: "Resposta en dos dies sense papers, però és car i amb 3 anys la quota és alta si els cobraments d'èxit arriben tard." },
+    b5: { prod: "Renting d'equips d'oficina", tipus: "Renting", max: 8000, tin: 7.5, anys: 4, com: 0.5, req: "Només per a ordinadors, impressora i pantalles. Els equips queden com a garantia.", nota: "Equips sempre al dia per una quota fixa, però no paga la web, la formació ni els mesos sense ingressos, que són el problema real del sector." }
+  },
+  labambiental: {
+    b1: { prod: "Préstec per a equips de mesura i furgoneta", tipus: "Préstec amb garantia", max: 35000, tin: 5.5, anys: 6, com: 1.3, req: "Aval dels socis o garantia sobre els equips, domiciliar els cobraments i assegurar el laboratori amb el banc.", nota: "Cobreix aparells i furgoneta alhora, però la quota és igual a l'hivern, quan hi ha poques anàlisis de piscines." },
+    b2: { prod: "Préstec per a projectes de salut ambiental", tipus: "Préstec d'inversió", max: 30000, tin: 5.6, anys: 7, com: 0.2, req: "Pla de negoci detallat que expliqui com el servei millora la salut de les persones i el medi ambient.", nota: "Condicions molt bones per a un laboratori ambiental, però demana un pla molt treballat i la resposta pot trigar un mes." },
+    b3: { prod: "Préstec amb carència per a la temporada baixa", tipus: "Préstec d'inversió", max: 30000, tin: 6.0, anys: 6, com: 0.6, req: "Fer-se soci amb 500 € de capital social i presentar el calendari previst de contractes i temporades.", nota: "Permet no pagar capital els primers mesos d'hivern, però durant la carència els interessos sumen i el cost total puja." },
+    b4: { prod: "Préstec en línia per a kits i reactius", tipus: "Préstec en línia", max: 10000, tin: 9.7, anys: 2, com: 0.3, req: "Alta en línia amb DNI i extractes bancaris. Sense avalador ni garanties.", nota: "Molt àgil per reposar reactius abans de l'estiu, però l'import és baix i el termini de 2 anys fa la quota molt alta." },
+    b5: { prod: "Leasing d'aparells de mesura d'aire i aigua", tipus: "Leasing d'equips", max: 25000, tin: 7.1, anys: 5, com: 0.6, req: "Només per a aparells de mesura nous identificats amb factura. Els equips queden com a garantia.", nota: "Quota fixa i opció de quedar-se els aparells, però no cobreix la furgoneta, els reactius ni els calibratges anuals." }
+  },
+  biotec: {
+    b1: { prod: "Préstec per a planta de producció petita", tipus: "Préstec amb garantia", max: 45000, tin: 5.4, anys: 7, com: 1.4, req: "Aval dels socis o garantia sobre els equips, domiciliar la facturació i contractar les assegurances amb el banc.", nota: "Import alt per equipar el local, però l'aval compromet el patrimoni dels socis si els permisos de producte s'endarrereixen." },
+    b2: { prod: "Préstec per a economia circular i agricultura ecològica", tipus: "Préstec d'inversió", max: 40000, tin: 5.2, anys: 8, com: 0.0, req: "Pla de negoci detallat que expliqui l'impacte ambiental dels productes i l'origen de les matèries primeres.", nota: "El millor tipus i sense comissió per a productes ecològics, però revisa molt l'origen de tot i descarta productes que no siguin realment sostenibles." },
+    b3: { prod: "Préstec amb carència fins al registre del producte", tipus: "Préstec d'inversió", max: 35000, tin: 6.2, anys: 7, com: 0.7, req: "Fer-se soci amb 500 € de capital social i presentar el pla de negoci i el calendari de registres dels productes.", nota: "La carència cobreix els mesos fins que es pot vendre, però el tràmit és presencial i els interessos de la carència encareixen el préstec." },
+    b4: { prod: "Crèdit exprés per a matèries primeres", tipus: "Préstec en línia", max: 12000, tin: 10.2, anys: 2, com: 0.5, req: "Sol·licitud en línia amb DNI i extractes bancaris. Sense avalador.", nota: "Permet comprar cultius i envasos abans de la primavera, però és el més car i no dona per a cap equip de producció." },
+    b5: { prod: "Leasing de fermentador i envasadora", tipus: "Leasing d'equips", max: 30000, tin: 7.4, anys: 6, com: 0.6, req: "Només per a equips de producció nous o revisats pel fabricant. Els equips queden com a garantia.", nota: "Equipa la planta amb quota fixa, però no paga l'adequació del local, els permisos ni l'estoc inicial de matèries primeres." }
   },
   videojocs: {
     b1: { prod: "Préstec per a equipament de l'estudi", tipus: "Préstec amb garantia", max: 25000, tin: 6.5, anys: 5, com: 1.5, req: "Aval personal dels socis, perquè el banc no accepta el programari com a garantia, i domiciliar els cobraments.", nota: "Tipus baix per a un sector de risc, però cal aval personal perquè el codi i els jocs no serveixen de garantia, i la resposta és lenta." },
