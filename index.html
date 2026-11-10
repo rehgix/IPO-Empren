@@ -1623,6 +1623,14 @@ const PE = (() => {
       label: 'Empresa biotecnològica de productes ecològics', short: 'Biotecnologia verda', rate: 40, role: 'tècnic/a de producció biotecnològica',
       types: ['Lot de bioestimulant per a horts', 'Netejador ecològic amb enzims', 'Adob líquid fermentat', 'Lot pilot d\'un producte nou', 'Producte de marca blanca per a una botiga', 'Envasament i etiquetatge d\'un lot'],
       clients: ['Cooperativa Agrària', 'Garden Center Maresme', 'Herbolari Natura', 'Horts Urbans del Maresme', 'Supermercats Bonpreu de Mar', 'Startup Verda', 'Hotel Platja Blava (neteja)', 'Vivers Can Pons', 'Ajuntament de Mataró (parcs i jardins)', 'Botiga a Granel Pes Just', 'Jardineria Serra', 'Escola Mare de Déu (hort escolar)'] },
+    motos: { group: 'biada', family: 'Transport i manteniment de vehicles', cicles: 'CFGM Electromecànica de motocicletes',
+      label: 'Taller de reparació de motocicletes i ciclomotors', short: 'Taller de motos', rate: 40, role: 'mecànic/a de motos',
+      types: ['Revisió i manteniment periòdic', 'Reparació de motor i embragatge', 'Canvi de pneumàtics i frens', 'Diagnosi electrònica i injecció', 'Preparació per a l\'ITV', 'Manteniment de patinets i motos elèctriques'],
+      clients: ['Repartiments Ràpids SL', 'Moto Club Maresme', 'Autoescola Volant', 'Família Garcia', 'Lloguer de Motos Costa', 'Policia Local (motos)', 'Pizzeria Il Forno (repartiment)', 'Família Serra', 'Missatgers Ràpids Mataró', 'Escola de Conducció Segura', 'Ambulàncies Litoral (motos)', 'Club de Motociclisme Riera'] },
+    ascensors: { group: 'biada', family: 'Instal·lació i manteniment', cicles: 'CFGM Manteniment electromecànic',
+      label: 'Empresa de manteniment d\'ascensors i portes automàtiques', short: 'Manteniment d\'ascensors', rate: 45, role: 'tècnic/a d\'ascensors',
+      types: ['Revisió periòdica d\'ascensors', 'Reparació d\'una avaria urgent', 'Manteniment de portes automàtiques', 'Modernització d\'un ascensor antic', 'Rescat d\'una persona atrapada (servei 24 h)', 'Instal·lació de plataformes elevadores i muntacàrregues'],
+      clients: ['Comunitat de propietaris Rambla 12', 'Hotel Platja Blava', 'Hospital de Mataró', 'Residència de Gent Gran Sol', 'Centre Comercial Mataró Parc', 'Escola Mare de Déu', 'Ajuntament de Mataró', 'Promotora Llar Nova', 'Comunitat Carrer de la Riera', 'Cooperativa d\'Habitatge', 'Supermercats Bonpreu de Mar', 'Edifici d\'Oficines Port'] },
     // ---- Altres sectors ----
     videojocs: { group: 'altres', label: 'Estudi de videojocs per encàrrec', short: 'Videojocs', rate: 45, role: 'desenvolupador/a',
       types: ['Joc educatiu', 'Advergame', 'Joc per a mòbil', 'Experiència de realitat virtual', 'Minijoc per a xarxes', 'Joc per a una exposició'],
@@ -2477,6 +2485,18 @@ const FINSEC = {
     cobra: "Cal comprar matèries primeres i fer la fermentació setmanes abans de vendre. Les botigues i cooperatives paguen a 30-60 dies, i els productes per a horts es venen sobretot a la primavera.",
     pista: "Investigueu quins permisos i registres calen abans de vendre i quant triguen, perquè endarrereixen els ingressos. Valoreu el micromecenatge per llançar el primer producte i les ajudes generals a l'economia circular i la innovació."
   },
+  motos: {
+    inv: [["Elevador de motos i banc de treball", 3000, 10], ["Màquina de diagnosi i programari", 3500, 4], ["Eines, compressor i desmuntadora de pneumàtics", 4000, 8], ["Equip d'equilibrat i alineació de rodes", 2000, 8], ["Adequació del local i permisos", 5000, 10]],
+    desp: [["Actualització del programari de diagnosi", 700, "anual"], ["Recollida d'olis, bateries i residus perillosos", 100, "mensual"], ["Assegurança RC i de vehicles en dipòsit", 900, "anual"], ["Lubricants, filtres i consumibles", 400, "mensual"]],
+    cobra: "Els particulars paguen en recollir la moto, però les empreses de repartiment poden trigar 30 dies. Hi ha molta feina a la primavera i a l'inici de l'estiu, i poca a l'hivern. Els recanvis s'han de pagar al proveïdor aviat.",
+    pista: "Investigueu si compensa comprar eines noves o de segona mà i si podeu pactar amb els proveïdors de recanvis pagar a 30 dies. Mireu també què costa i què exigeix la llicència d'activitat d'un taller, perquè pot endarrerir l'obertura."
+  },
+  ascensors: {
+    inv: [["Furgoneta equipada amb eines", 15000, 6], ["Eines elèctriques i mecàniques especialitzades", 3000, 6], ["Aparells de mesura i comprovació", 3000, 5], ["Equip de seguretat per a treballs en alçada", 1500, 4], ["Estoc de recanvis (botoneres, contactes, cables)", 2500, 0]],
+    desp: [["Assegurança de responsabilitat civil", 1500, "anual"], ["Servei de guàrdia i telèfon d'urgències", 150, "mensual"], ["Formació i certificació del personal", 500, "anual"], ["Combustible i manteniment de la furgoneta", 350, "mensual"]],
+    cobra: "Els contractes de manteniment per a comunitats donen una quota mensual fixa, però les reparacions grans es facturen a part. Algunes comunitats paguen tard o no paguen, i cal tenir diners per cobrir les urgències i les guàrdies.",
+    pista: "Investigueu quins requisits legals ha de complir una empresa de manteniment d'ascensors abans de poder treballar. Compareu comprar la furgoneta amb préstec, leasing o renting, i pregunteu-vos quant podríeu aguantar si una comunitat gran no paga."
+  },
   videojocs: {
     inv: [["Ordinadors potents amb targeta gràfica", 7000, 4], ["Kits de desenvolupament i consoles", 2500, 4], ["Tauletes gràfiques i perifèrics", 1500, 4], ["Llicències d'art 3D i so", 2000, 3], ["Mobiliari i equip de gravació", 1500, 6]],
     desp: [["Subscripcions de programari d'art i 3D", 150, "mensual"], ["Servidors i control de versions", 80, "mensual"], ["Botigues d'actius (assets) i música", 300, "trimestral"], ["Assistència a fires del sector", 1500, "anual"]],
@@ -2892,6 +2912,38 @@ const PISTES = {
       L: "Què ha de dir l'etiqueta d'un adob o d'un producte de neteja? Busqueu les paraules clau etiquetatge de fertilitzants i producte ecològic certificat."
     }
   },
+  motos: {
+    micro: {
+      comp: "Busqueu a Google Maps quants tallers de motos hi ha a Mataró i rodalia. Són oficials de marca o independents? Quins serveis anuncien i quines ressenyes tenen?",
+      cli: "Qui porta la moto al taller: particulars, repartidors, escoles de conducció? Pregunteu a dos motoristes del vostre entorn on la reparen i què valoren més.",
+      prov: "On compraríeu recanvis, pneumàtics i olis? Busqueu dos o tres distribuïdors i compareu preus i terminis d'entrega.",
+      int: "Com arriben els clients a un taller de motos: botigues de motos, clubs, ressenyes en línia? Esbrineu si algun intermediari us podria recomanar."
+    },
+    pestel: {
+      P: "Quines mesures té l'Ajuntament de Mataró sobre motos i mobilitat (zones de baixes emissions, aparcament)? Busqueu-ho a la seva web i penseu com us pot afectar.",
+      E: "Esbrineu quantes motos i ciclomotors es matriculen cada any a Catalunya (paraules clau: matriculacions de motos). Puja o baixa? Què vol dir per al vostre negoci?",
+      S: "Cada cop més gent es mou en moto o patinet per evitar el trànsit. Feu una petita enquesta a classe: qui en té i quant gasta en reparacions?",
+      T: "Quines diferències hi ha entre reparar una moto de gasolina i una d'elèctrica? Busqueu quins equips i quina formació caldrien per a cada una.",
+      Ec: "Què s'ha de fer amb els olis, les bateries i els pneumàtics usats d'un taller? Busqueu qui els recull i quant costa.",
+      L: "Quins requisits ha de complir un taller de reparació de vehicles? Busqueu a la web de la Generalitat les paraules clau: taller de reparació de vehicles, registre i llicència."
+    }
+  },
+  ascensors: {
+    micro: {
+      comp: "Busqueu a Google Maps empreses de manteniment d'ascensors a Mataró i rodalia. Són multinacionals o petites? Què anuncien (urgències 24 h, preus, modernització)?",
+      cli: "Qui contracta el manteniment d'un ascensor: comunitats, hotels, hospitals? Pregunteu a l'administrador d'una comunitat o a un veí com tria l'empresa i què valora més.",
+      prov: "On compraríeu recanvis i components d'ascensors? Busqueu fabricants i distribuïdors i esbrineu si venen a empreses petites.",
+      int: "Com arriben els clients a una empresa petita: administradors de finques, arquitectes, constructores? Esbrineu qui us podria recomanar."
+    },
+    pestel: {
+      P: "Quines revisions obligatòries ha de passar un ascensor i qui les controla? Busqueu a la web de la Generalitat les paraules clau: inspecció d'ascensors.",
+      E: "Esbrineu quants edificis amb ascensor hi ha a Mataró i quants són antics. Busqueu a Idescat o a l'Ajuntament i calculeu quants clients podríeu tenir.",
+      S: "Moltes persones grans necessiten ascensor per sortir de casa. Pregunteu a una persona gran del vostre entorn què passa quan l'ascensor s'espatlla.",
+      T: "Quines tecnologies faciliten el manteniment dels ascensors: sensors, avisos al mòbil, manteniment predictiu? Busqueu-ne exemples.",
+      Ec: "Quant consumeix un ascensor i com es pot reduir? Busqueu què és un ascensor eficient i què se'n fa dels components antics en modernitzar-lo.",
+      L: "Quina formació i quins certificats ha de tenir un tècnic d'ascensors i quines assegurances és obligatori tenir? Busqueu-ho a la web de la Generalitat."
+    }
+  },
   videojocs: {
     micro: {
       comp: "Busqueu estudis de videojocs de Catalunya que facin jocs per encàrrec (per a marques, museus, escoles). Què ofereixen i quins projectes ensenyen?",
@@ -3180,6 +3232,20 @@ const OFERTES = {
     b3: { prod: "Préstec amb carència fins al registre del producte", tipus: "Préstec d'inversió", max: 35000, tin: 6.2, anys: 7, com: 0.7, req: "Fer-se soci amb 500 € de capital social i presentar el pla de negoci i el calendari de registres dels productes.", nota: "La carència cobreix els mesos fins que es pot vendre, però el tràmit és presencial i els interessos de la carència encareixen el préstec." },
     b4: { prod: "Crèdit exprés per a matèries primeres", tipus: "Préstec en línia", max: 12000, tin: 10.2, anys: 2, com: 0.5, req: "Sol·licitud en línia amb DNI i extractes bancaris. Sense avalador.", nota: "Permet comprar cultius i envasos abans de la primavera, però és el més car i no dona per a cap equip de producció." },
     b5: { prod: "Leasing de fermentador i envasadora", tipus: "Leasing d'equips", max: 30000, tin: 7.4, anys: 6, com: 0.6, req: "Només per a equips de producció nous o revisats pel fabricant. Els equips queden com a garantia.", nota: "Equipa la planta amb quota fixa, però no paga l'adequació del local, els permisos ni l'estoc inicial de matèries primeres." }
+  },
+  motos: {
+    b1: { prod: "Préstec per obrir el taller", tipus: "Préstec amb garantia", max: 30000, tin: 5.6, anys: 6, com: 1.1, req: "Aval personal dels socis, domiciliar els cobraments del taller i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Bon tipus per equipar el local amb elevador i diagnosi, però la vinculació obliga a portar-hi tots els cobraments i la resposta pot trigar unes setmanes." },
+    b2: { prod: "Préstec per a mobilitat sostenible", tipus: "Préstec d'inversió", max: 20000, tin: 6.3, anys: 5, com: 0.0, req: "Pla de negoci detallat amb reparació de motos i patinets elèctrics i bona gestió dels residus (olis, bateries).", nota: "Sense comissió i valora la mobilitat elèctrica, però si el taller es dedica sobretot a motos de gasolina potser no encaixa i l'import pot quedar curt." },
+    b3: { prod: "Préstec d'arrencada amb carència de 6 mesos", tipus: "Préstec d'inversió", max: 25000, tin: 5.9, anys: 6, com: 0.7, req: "Fer-se soci amb 300 € de capital social reemborsable i presentar el pla de negoci a l'oficina local.", nota: "La carència deixa temps per captar clients abans de retornar capital, però durant aquells mesos els interessos sumen i, a l'hivern, la feina del taller baixa." },
+    b4: { prod: "Crèdit ràpid per a eines i recanvis", tipus: "Préstec en línia", max: 10000, tin: 9.4, anys: 3, com: 0.4, req: "Sol·licitud en línia amb DNI, extractes bancaris i el pressupost de l'equip. Sense avalador.", nota: "Diners en dos dies per comprar una màquina de diagnosi o un estoc de recanvis, però el tipus és alt i la quota arriba també als mesos d'hivern amb poca feina." },
+    b5: { prod: "Leasing de diagnosi i equip d'equilibrat", tipus: "Leasing d'equips", max: 20000, tin: 7.7, anys: 5, com: 0.6, req: "Només per a màquina de diagnosi, desmuntadora d'equilibrat i elevador. Els equips són la garantia.", nota: "Permet tenir equips moderns sense gastar caixa, però no cobreix el lloguer del local ni els recanvis, que són una part important de la despesa." }
+  },
+  ascensors: {
+    b1: { prod: "Préstec per a furgoneta i equips", tipus: "Préstec amb garantia", max: 35000, tin: 5.5, anys: 6, com: 1.1, req: "Aval personal dels socis, domiciliar els cobraments dels contractes i contractar l'assegurança de responsabilitat civil amb el banc.", nota: "Bon tipus i un sol préstec per a la furgoneta i les eines, però la quota és la mateixa tot l'any i algunes comunitats paguen tard." },
+    b2: { prod: "Préstec per a accessibilitat i modernització", tipus: "Préstec d'inversió", max: 25000, tin: 6.0, anys: 6, com: 0.0, req: "Pla de negoci detallat que mostri com el servei millora l'accessibilitat dels edificis i redueix el consum dels ascensors.", nota: "Sense comissió i valora l'accessibilitat, però el pla s'analitza a fons i encaixa menys si només es fan reparacions d'avaries." },
+    b3: { prod: "Pòlissa de crèdit per a cobraments de comunitats", tipus: "Pòlissa de crèdit", max: 20000, tin: 6.1, anys: 1, com: 0.6, req: "Fer-se soci amb 300 € de capital social i aportar els contractes de manteniment signats amb les comunitats.", nota: "Cobreix recanvis i sous quan una comunitat triga a pagar, però cal renovar-la cada any i el límit depèn dels contractes que tingueu." },
+    b4: { prod: "Crèdit ràpid per a recanvis urgents", tipus: "Préstec en línia", max: 12000, tin: 9.6, anys: 3, com: 0.0, req: "Alta en línia amb DNI i extractes bancaris. Sense avalador ni pla de negoci.", nota: "Resol en 48 hores la compra d'un recanvi o d'eines per a una urgència, però el tipus és alt i l'import és petit davant el cost d'una furgoneta." },
+    b5: { prod: "Renting de furgoneta i aparells de mesura", tipus: "Renting", max: 30000, tin: 8.3, anys: 4, com: 0.3, req: "Només per a furgoneta, aparells de mesura i equip de seguretat en alçada. Els equips són la garantia.", nota: "Quota fixa amb manteniment inclòs, però no paga recanvis ni sous i, si perdeu contractes, la quota s'ha de pagar igualment." }
   },
   videojocs: {
     b1: { prod: "Préstec per a equipament de l'estudi", tipus: "Préstec amb garantia", max: 25000, tin: 6.5, anys: 5, com: 1.5, req: "Aval personal dels socis, perquè el banc no accepta el programari com a garantia, i domiciliar els cobraments.", nota: "Tipus baix per a un sector de risc, però cal aval personal perquè el codi i els jocs no serveixen de garantia, i la resposta és lenta." },
@@ -5132,8 +5198,8 @@ function vConfig(v) {
   $('#gSector').onchange = e => { const old = G.sector, n = G.teams.filter(t => !t.data.idea.sector || t.data.idea.sector === old); G.sector = e.target.value; n.forEach(t => { t.data.idea.sector = G.sector; }); save(); const y = window.scrollY; render(); window.scrollTo(0, y); toast(n.length ? `Sector canviat al grup i a ${n.length === 1 ? '1 equip' : n.length + ' equips'}.` : 'Sector del grup canviat.'); };
   v.querySelectorAll('[data-tsec]').forEach(s => s.onchange = () => { const t = G.teams[+s.dataset.tsec]; t.data.idea.sector = s.value; t.updated = Date.now(); save(); toast(`Sector de ${t.name} canviat.`); });
   v.querySelectorAll('[data-tn]').forEach(i => i.oninput = () => { G.teams[+i.dataset.tn].name = i.value; save(); renderSide(); });
-  v.querySelectorAll('[data-tdel]').forEach(b => b.onclick = () => { const i = +b.dataset.tdel; $('#delBox').innerHTML = `<div class="notice">Vols esborrar «${esc(G.teams[i].name)}» i tot el seu projecte? <button class="btn small" id="delYes">Esborrar</button> <button class="btn ghost small" id="delNo">Cancel·lar</button></div>`; $('#delYes').onclick = () => { G.teams.splice(i, 1); profTeam = 0; save(); render(); }; $('#delNo').onclick = () => { $('#delBox').innerHTML = ''; }; });
-  $('#tAdd').onclick = () => { G.teams.push({ id: newId(), name: 'Equip ' + (G.teams.length + 1), members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); render(); };
+  v.querySelectorAll('[data-tdel]').forEach(b => b.onclick = () => { const i = +b.dataset.tdel; $('#delBox').innerHTML = `<div class="notice">Vols esborrar «${esc(G.teams[i].name)}» i tot el seu projecte? ${CLOUD ? 'Els alumnes d\'aquest equip perdran l\'accés i no es podrà desfer. ' : ''}<button class="btn small" id="delYes">Esborrar</button> <button class="btn ghost small" id="delNo">Cancel·lar</button></div>`; $('#delYes').onclick = () => { G.teams.splice(i, 1); profTeam = 0; save(); render(); }; $('#delNo').onclick = () => { $('#delBox').innerHTML = ''; }; });
+  $('#tAdd').onclick = () => { let n = G.teams.length + 1; while (G.teams.some(t => t.name === 'Equip ' + n)) n++; G.teams.push({ id: newId(), name: 'Equip ' + n, members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); render(); };
   if (!CLOUD) $('#ngCreate').onclick = () => { const names = $('#ngTeams').value.split('\n').map(x => x.trim()).filter(Boolean); if (!names.length) { $('#ngBox').innerHTML = '<div class="notice">Escriu com a mínim un equip.</div>'; return; }
     $('#ngBox').innerHTML = `<div class="notice">Segur? S'esborraran tots els projectes actuals. <button class="btn small" id="ngYes">Sí, crear el grup</button> <button class="btn ghost small" id="ngNo">Cancel·lar</button></div>`;
     $('#ngYes').onclick = () => { const acts = G.acts, rubs = G.rubs, profs = G.profs; G = newGroup($('#ngName').value.trim() || 'IPO II', names, G.sector); G.acts = acts; G.rubs = rubs; if (profs) G.profs = profs; ensureEval(); role = 'prof'; tab = null; save(); render(); }; $('#ngNo').onclick = () => { $('#ngBox').innerHTML = ''; }; };
