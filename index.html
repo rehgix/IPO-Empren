@@ -4626,7 +4626,7 @@ function bindReq() {
     const name = $('#rqName').value.trim().slice(0, 100), msg = $('#rqMsg').value.trim().slice(0, 500);
     if (!name) { $('#rqInfo').innerHTML = '<div class="notice">Escriu el teu nom i cognoms.</div>'; return; }
     b.disabled = true;
-    try { await FB.set('profreq/' + USER.email, { email: USER.email, name, msg, at: Date.now(), status: 'pending' }); homeView('Sol·licitud enviada. Rebràs un correu quan s\'aprovi.'); }
+    try { await FB.set('profreq/' + USER.email, { email: USER.email, name, msg, at: Date.now(), status: 'pending' }); HOMEC = null; homeView('Sol·licitud enviada. Rebràs un correu quan s\'aprovi.'); }
     catch (e) { b.disabled = false; $('#rqInfo').innerHTML = `<div class="notice">No s'ha pogut enviar. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; }
   };
 }
@@ -4685,18 +4685,29 @@ function adminView() {
 }
 
 /* ---------- Els meus grups ---------- */
-async function homeView(msg) {
-  bareView();
-  const v = $('#view');
-  v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>';
-  let gs = [];
-  let listErr = ''; try { gs = await FB.list('groups', ['profs', 'array-contains', USER.email]); } catch (e) { gs = []; listErr = (e && (e.code || e.message)) || 'error'; console.warn(e); }
-  let ok = isAdmin(), req = null, nReq = 0; // Pot crear grups? (administrador o professorat autoritzat)
-  if (ok) { try { nReq = (await FB.list('profreq', ['status', '==', 'pending'])).length; } catch (e) {} }
-  else { try { ok = !!(await FB.get('profs/' + USER.email)); } catch (e) {} if (!ok) try { req = await FB.get('profreq/' + USER.email); } catch (e) {} }
-  HOME = { email: USER.email, ok, nReq, groups: gs.length > 0 }; homeNav('grups');
+// Dades del tauler: grups del professor i si pot crear-ne. Les dues consultes es fan alhora
+async function homeFetch() {
+  let gs = [], listErr = '', ok = isAdmin(), req = null, nReq = 0;
+  const pG = FB.list('groups', ['profs', 'array-contains', USER.email]).then(l => { gs = l; }).catch(e => { listErr = (e && (e.code || e.message)) || 'error'; console.warn(e); });
+  const pP = ok ? FB.list('profreq', ['status', '==', 'pending']).then(l => { nReq = l.length; }).catch(() => {})
+    : FB.get('profs/' + USER.email).then(x => { ok = !!x; }).catch(() => {}).then(() => ok ? null : FB.get('profreq/' + USER.email).then(x => { req = x; }).catch(() => {}));
+  await Promise.all([pG, pP]);
   const now = Date.now(), dead = gs.filter(g => g.expiresAt && g.expiresAt < now);
   if (dead.length) { await Promise.all(dead.map(g => deleteGroupDeep(g.id).catch(() => {}))); gs = gs.filter(g => !dead.includes(g)); }
+  return { email: USER.email, gs, listErr, ok, req, nReq };
+}
+// HOMEC: l'últim tauler carregat. En tornar-hi es mostra a l'instant i s'actualitza per darrere
+let HOMEC = null, HOME_SEQ = 0;
+async function homeView(msg, d) {
+  bareView();
+  const v = $('#view'), hseq = ++HOME_SEQ, rseq = ROUTE_SEQ;
+  if (!d && HOMEC && HOMEC.email === USER.email) { d = HOMEC;
+    homeFetch().then(n => { if (n.listErr || !USER || n.email !== USER.email) return; n.st = d.st; n.tot = d.tot; const same = J([n.gs, n.ok, n.req, n.nReq]) === J([d.gs, d.ok, d.req, d.nReq]); HOMEC = n;
+      const busy = ($('#ngName') && $('#ngName').value) || v.querySelector('[data-gdelbox] .notice') || ($('#hqPick') && !$('#hqPick').hidden); // no es redibuixa si estàs fent alguna cosa
+      if (!same && hseq === HOME_SEQ && rseq === ROUTE_SEQ && !busy) homeView(msg, n); }).catch(() => {}); }
+  if (!d) { v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>'; d = await homeFetch(); if (hseq !== HOME_SEQ || rseq !== ROUTE_SEQ) return; if (!d.listErr) HOMEC = d; }
+  let gs = d.gs.slice(); const { listErr, ok, req, nReq } = d, ST = d.st = d.st || {};
+  HOME = { email: USER.email, ok, nReq, groups: gs.length > 0 }; homeNav('grups');
   gs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const sectors = Object.entries(PE.SECTORS);
   if (!ok && !gs.length) { // Alumne o professor encara sense permís
@@ -4714,8 +4725,8 @@ async function homeView(msg) {
   const stats = gs.length ? `<div class="hstats" data-g="prof">
     <div class="stat"><span class="muted small">Grups</span><span class="v">${gs.length}</span></div>
     <div class="stat"><span class="muted small">Equips</span><span class="v">${nTeams}</span></div>
-    <div class="stat"><span class="muted small">Alumnes</span><span class="v" data-hs="alum">…</span></div>
-    <div class="stat"><span class="muted small">Completat de mitjana</span><span class="v" data-hs="prog">…</span><div class="bar"><span data-hs="bar" style="width:0%"></span></div></div></div>` : '';
+    <div class="stat"><span class="muted small">Alumnes</span><span class="v" data-hs="alum">${d.tot ? d.tot.alum : '…'}</span></div>
+    <div class="stat"><span class="muted small">Completat de mitjana</span><span class="v" data-hs="prog">${d.tot ? d.tot.p + ' %' : '…'}</span><div class="bar"><span data-hs="bar" style="width:${d.tot ? d.tot.p : 0}%"></span></div></div></div>` : '';
   const quick = [
     ok ? hq('button', 'type="button" data-hq="nou"', '<path d="M12 5v14M5 12h14"/>', 'Crear un grup nou', 'Nom, sector i nombre d\'equips') : '',
     gs.length ? hq('a', `href="#g=${esc(gs[0].id)}"`, '<path d="M5 12h14M13 6l6 6-6 6"/>', 'Continuar amb l\'últim grup', esc(gs[0].name)) : '',
@@ -4733,8 +4744,8 @@ async function homeView(msg) {
     ${gs.length ? '<h3 class="hsec">Els teus grups</h3>' + `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
         <a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a>
         <span class="small muted">Curs ${esc(g.course || '')}</span>
-        <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">…</b> alumnes</span><span><b data-st="prog">…</b> completat</span></div>
-        <div class="gbar"><span data-st="bar" style="width:0%"></span></div>
+        <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
+        <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
@@ -4750,7 +4761,7 @@ async function homeView(msg) {
       let g = example ? exampleGroup() : newGroup(name, Array.from({ length: n }, (_, i) => 'Equip ' + (i + 1)), sector);
       if (example) { g.name = name; g.join = false; delete g.example; } // grup d'exemple: l'alumnat no pot entrar-hi
       G = g; ensureIds(); ensureEval();
-      const gid = await createGroupDoc();
+      const gid = await createGroupDoc(); HOMEC = null;
       location.hash = 'g=' + gid;
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
@@ -4769,20 +4780,21 @@ async function homeView(msg) {
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
-    box.querySelector('[data-yes]').onclick = async e => { e.target.disabled = true; try { await deleteGroupDeep(g.id); homeView('Grup esborrat.'); } catch (err) { toast('No s\'ha pogut esborrar.'); } }; });
+    box.querySelector('[data-yes]').onclick = async e => { e.target.disabled = true; try { await deleteGroupDeep(g.id); HOMEC = null; homeView('Grup esborrat.'); } catch (err) { toast('No s\'ha pogut esborrar.'); } }; });
   // Totals del resum (alumnes i progrés mitjà), que s'omplen a mesura que carreguen els grups
   const tot = { alum: 0, n: 0, sum: 0, fail: 0 }, hs = k => v.querySelector(`[data-hs="${k}"]`);
-  const paintTot = () => { if (!hs('alum')) return; const p = tot.n ? Math.round(tot.sum / tot.n * 100) : 0; hs('alum').textContent = tot.alum; hs('prog').textContent = p + ' %'; hs('bar').style.width = p + '%'; };
+  let left = gs.length; const paintTot = () => { if (--left > 0 && d.tot) return; const p = tot.n ? Math.round(tot.sum / tot.n * 100) : 0; if (!left) d.tot = { alum: tot.alum, p }; if (!hs('alum')) return; hs('alum').textContent = tot.alum; hs('prog').textContent = p + ' %'; hs('bar').style.width = p + '%'; };
   gs.forEach(async g => {
     const card = v.querySelector(`.gcard[data-gid="${g.id}"]`); if (!card) return;
     try {
       const [teams, mem] = await Promise.all([FB.list('groups/' + g.id + '/teams'), FB.list('groups/' + g.id + '/members')]);
-      const ts = teams.map(d => { const t = teamFromDoc(d), mk = P((d.data || {}).marca) || {}; if (String(mk.logo || '').startsWith('file:') && !t.data.marca.logo) t.data.marca.logo = 'file'; return t; }), pr = ts.length ? ts.reduce((a, t) => a + progress(t), 0) / ts.length : 0;
+      const ts = teams.filter(d => (g.teamIds || []).includes(d.id)).map(d => { const t = teamFromDoc(d), mk = P((d.data || {}).marca) || {}; if (String(mk.logo || '').startsWith('file:') && !t.data.marca.logo) t.data.marca.logo = 'file'; return t; }), pr = ts.length ? ts.reduce((a, t) => a + progress(t), 0) / ts.length : 0;
+      ST[g.id] = { alum: mem.length, p: Math.round(pr * 100) };
       card.querySelector('[data-st="alum"]').textContent = mem.length;
       card.querySelector('[data-st="prog"]').textContent = Math.round(pr * 100) + ' %';
       card.querySelector('[data-st="bar"]').style.width = Math.round(pr * 100) + '%';
       tot.alum += mem.length; tot.n += ts.length; tot.sum += pr * ts.length; paintTot();
-    } catch (e) { card.querySelector('[data-st="alum"]').textContent = '—'; card.querySelector('[data-st="prog"]').textContent = '—';
+    } catch (e) { left--; if (ST[g.id]) return; card.querySelector('[data-st="alum"]').textContent = '—'; card.querySelector('[data-st="prog"]').textContent = '—';
       if (++tot.fail === gs.length && hs('alum')) { hs('alum').textContent = '—'; hs('prog').textContent = '—'; } }
   });
 }
@@ -4922,7 +4934,7 @@ function bindCloudConfig(v) {
   const pt = $('#profsTa'); if (pt && groupOwner()) pt.oninput = () => { G.profs = pt.value.split(/[\s,;]+/).map(x => x.trim().toLowerCase()).filter(x => x.includes('@') && x !== ME.email); save(); };
   const gd = $('#gDel'); if (gd) gd.onclick = () => { $('#gDelBox').innerHTML = `<div class="notice">Segur que vols esborrar «${esc(G.name)}» i tota la feina dels equips? <button class="btn small" id="gDelYes">Sí, esborrar</button> <button class="btn ghost small" id="gDelNo">Cancel·lar</button></div>`;
     $('#gDelNo').onclick = () => { $('#gDelBox').innerHTML = ''; };
-    $('#gDelYes').onclick = async () => { $('#gDelYes').disabled = true; stopListen(); try { await deleteGroupDeep(GID); location.hash = ''; homeView('Grup esborrat.'); } catch (e) { toast('No s\'ha pogut esborrar.'); } }; };
+    $('#gDelYes').onclick = async () => { $('#gDelYes').disabled = true; stopListen(); try { await deleteGroupDeep(GID); HOMEC = null; location.hash = ''; homeView('Grup esborrat.'); } catch (e) { toast('No s\'ha pogut esborrar.'); } }; };
 }
 /* ================= Grup d'exemple: tres equips de sectors diferents amb frases curtes i genèriques ================= */
 const svgUrl = s => 'data:image/svg+xml;utf8,' + encodeURIComponent(s);
