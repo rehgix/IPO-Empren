@@ -1651,7 +1651,7 @@ const PE = (() => {
       clients: ['Centre Mèdic Salut', 'Supermercats Bonpreu de Mar', 'Gimnàs Força', 'Consorci de Turisme', 'Transports Ràpids', 'Restaurant Can Pere', 'Escola d\'Idiomes', 'Ajuntament de Vilanova', 'Club de Tennis', 'Farmàcia Central', 'Cinema Odeó', 'Fira d\'Artesania'] }
   };
   const ROLES = {
-    accio: { label: 'Rol d\'acció', title: 'Rols d\'acció', opts: [['Impulsor', 'Persona dinàmica i ambiciosa que empeny l\'equip cap endavant i supera els obstacles sota pressió.'], ['Implementador', 'Organitzador pràctic que converteix les idees i estratègies en plans de treball concrets i eficients.'], ['Finalitzador', 'Meticulós i perfeccionista que revisa els detalls, cerca errors i assegura que tot s\'entregui sense fallades.']] },
+    accio: { label: 'Rol d\'acció', title: 'Rols d\'acció', opts: [['Impulsor', 'Persona dinàmica i ambiciosa que empeny l\'equip cap endavant i supera els obstacles sota pressió.'], ['Implementador', 'Organitzador pràctic que converteix les idees i estratègies en plans de treball concrets i eficients.'], ['Finalitzador/Comunicador', 'Meticulós i perfeccionista que revisa els detalls, cerca errors i assegura que tot s\'entregui sense fallades.']] },
     social: { label: 'Rol social', title: 'Rols socials', opts: [['Coordinador', 'Líder orientat a les persones que clarifica els objectius, promou la presa de decisions i delega eficaçment.'], ['Investigador de Recursos', 'Persona extrovertida i sociable que explora oportunitats externes, busca noves idees i crea contactes.'], ['Cohesionador', 'Persona diplomàtica i empàtica que escolta, resol conflictes interns i manté un bon ambient de treball.']] },
     mental: { label: 'Rol mental', title: 'Rols mentals', opts: [['Creador', 'Font d\'innovació i creativitat que aporta solucions originals als problemes complexos.'], ['Avaluador', 'Analista objectiu i crític que avalua amb lògica els pros i els contres de les opcions per prendre bones decisions.'], ['Especialista', 'Expert dedicat que aporta un coneixement tècnic profund i rigorós en la seva àrea.']] }
   };
@@ -3613,7 +3613,7 @@ const RUBS_DEFAULT = [
     ['ess', 'Principis de l\'ESS i bé comú', 'Aplica bé els principis i valora el projecte amb la matriu del bé comú.', 'Aplicació correcta, poc argumentada.', 'Aplicació parcial.', 'Menció superficial.'],
     ['rsc', 'RSC i lideratge ètic', 'Pla de RSC concret i reflexió sobre el lideratge ètic.', 'Pla de RSC correcte, reflexió breu.', 'Pla incomplet.', 'Pla molt pobre.']])
 ];
-const ROL_OLD = { 'Finalitzador/Comunicador': 'Finalitzador', 'Investigador': 'Investigador de Recursos', 'Creador/Redactor': 'Creador' }, rolN = v => ROL_OLD[v] || v;
+const ROL_OLD = { 'Investigador': 'Investigador de Recursos', 'Creador/Redactor': 'Creador' }, rolN = v => ROL_OLD[v] || v;
 const rubOf = a => a && a.rub ? (G.rubs || []).find(r => r.id === a.rub) || null : null;
 const rubRec = a => (G.rubs || []).find(r => r.id === 'r_' + a.c) || null;
 const rubNeed = a => !a.rub && a.ev && a.ev.length; // cal triar-ne una per corregir
