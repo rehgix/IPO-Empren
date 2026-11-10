@@ -1274,8 +1274,12 @@ table.fin{box-shadow:none}
 .snums small{font-size:14px;color:var(--muted)}
 .snums .hot{background:var(--hot)}.snums .hot b{color:#0F1222}.snums .hot small{color:var(--hot-f)}
 .slist{display:grid;gap:12px}
-.stm{display:grid;grid-template-columns:minmax(170px,1fr) minmax(220px,1.7fr) 74px minmax(150px,.9fr) minmax(160px,1fr);gap:10px 24px;align-items:center;background:var(--tile);border:0;border-radius:28px;padding:18px 26px;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:box-shadow var(--t-fast)}
+.stm{display:grid;grid-template-columns:minmax(170px,1fr) minmax(220px,1.7fr) 86px minmax(150px,.9fr) minmax(160px,1fr);gap:10px 24px;align-items:center;background:var(--tile);border:0;border-radius:28px;padding:18px 26px;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:box-shadow var(--t-fast)}
 .stm:hover{box-shadow:var(--sh-float)}
+.stm .spc{white-space:nowrap}.srow{position:relative}.sedit{position:absolute;top:10px;right:14px;z-index:2;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:999px;padding:4px 12px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}.sedit:hover{box-shadow:var(--sh-float)}
+.sedpanel{background:var(--soft);border-radius:22px;margin:8px 0 0;padding:18px;display:grid;gap:12px}.sedpanel .pfield{margin:0}
+.btn.danger{color:#b3261e;border-color:#e6b4b0}
+@media (max-width:620px){.srow .stm{padding-top:54px}}
 .swho{display:flex;align-items:center;gap:14px;min-width:0}
 .swho > div{min-width:0}
 .ssq{flex:none;width:46px;height:46px;border-radius:15px;display:grid;place-items:center;font-weight:700;font-size:16px;color:#0F1222;overflow:hidden}
@@ -1861,6 +1865,7 @@ function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s 
 // Els grups nous comencen amb tots els apartats tancats: el professor els obre a «Obertura dels apartats»
 // Paperera: els equips esborrats es poden recuperar durant uns dies abans d'eliminar-se del tot
 const TRASH_DAYS = 7, trashIds = () => new Set(((G && G.trash) || []).map(x => x.id));
+function addTeam() { let n = G.teams.length + 1; while (G.teams.some(t => t.name === 'Equip ' + n)) n++; G.teams.push({ id: newId(), name: 'Equip ' + n, members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); return G.teams.length - 1; }
 function trashTeam(i) { const t = G.teams.splice(i, 1)[0]; if (!t) return; const pn = projName(t);
   (G.trash = G.trash || []).push(Object.assign({ id: t.id, name: t.name + (pn !== t.name ? ' · ' + pn : ''), at: Date.now() }, CLOUD ? {} : { t })); }
 function purgeTrash() { const lim = Date.now() - TRASH_DAYS * 864e5, n = (G.trash || []).length; G.trash = (G.trash || []).filter(x => isObj(x) && x.id && x.at > lim); return G.trash.length !== n; }
@@ -5130,17 +5135,36 @@ function vSeguiment(v) {
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<i class="x" title="${esc(gl)}: tancat"></i>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<i data-g="${gk}" style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>`; }).join('');
-    return `<button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b></span></span>
+    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b></span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
-      <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>`; }).join('');
+      <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
+    <div class="row"><button type="button" class="btn" id="sAdd">+ Afegir un equip</button></div>
     <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte; les ratllades encara estan tancades.</p>`;
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
+  const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  v.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { edTeam = edTeam === +b.dataset.ed ? -1 : +b.dataset.ed; rr(); });
+  $('#sAdd').onclick = () => { edTeam = addTeam(); render(); toast('Equip afegit. Ja el pots editar.'); const p = $('.sedpanel'); if (p) p.scrollIntoView({ block: 'center' }); };
+  const P = $('.sedpanel'); if (!P) return; const t = G.teams[edTeam], i = edTeam;
+  $('#edName').oninput = e => { t.name = e.target.value; t.updated = Date.now(); save(); renderSide(); };
+  $('#edName').onchange = () => rr();
+  $('#edSec').onchange = e => { t.data.idea.sector = e.target.value; t.updated = Date.now(); save(); toast('Sector canviat.'); };
+  $('#edView').onclick = () => { role = i; tab = null; save(); render(); };
+  $('#edRev').onclick = () => { profTeam = i; go('revisio'); };
+  if ($('#edReopen')) $('#edReopen').onclick = () => { t.delivered = null; t.updated = Date.now(); save(); rr(); toast('Dossier reobert: l\'equip el pot tornar a lliurar.'); };
+  $('#edDel').onclick = () => { $('#edBox').innerHTML = `<div class="notice">Vols enviar «${esc(projName(t))}» a la paperera? El podràs recuperar durant ${TRASH_DAYS} dies a Configuració. ${CLOUD ? 'Mentrestant, els seus alumnes no hi podran entrar. ' : ''}<button class="btn small" id="edYes">Enviar a la paperera</button> <button class="btn ghost small" id="edNo">Cancel·lar</button></div>`;
+    $('#edYes').onclick = () => { trashTeam(i); profTeam = 0; edTeam = -1; save(); render(); toast('Equip enviat a la paperera.'); }; $('#edNo').onclick = () => { $('#edBox').innerHTML = ''; }; };
 }
+let edTeam = -1; // equip que s'està editant al Seguiment
+function edPanel(t, i) { const n = t.members.length;
+  return `<div class="sedpanel"><div class="pfield"><label for="edName">Nom de l'equip</label><div class="help">Si l'equip ja té nom de projecte, es veu aquest; el nom de l'equip és el que ho identifica.</div><input type="text" id="edName" value="${esc(t.name)}"></div>
+    <div class="pfield"><label for="edSec">Tipus d'empresa (sector)</label><select class="field-sel" id="edSec">${secOptsAll(t.data.idea.sector, true)}</select></div>
+    <p class="small muted">${n ? n + (n === 1 ? ' persona' : ' persones') + ': ' + esc(t.members.map(m => m.name).filter(Boolean).join(', ')) : 'Encara no hi ha cap persona a l\'equip.'}${t.delivered ? ' · Dossier lliurat' : ''}</p>
+    <div class="row"><button type="button" class="btn ghost small" id="edRev">Revisar el projecte</button><button type="button" class="btn ghost small" id="edView">Veure com aquest equip</button>${t.delivered ? '<button type="button" class="btn ghost small" id="edReopen">Reobrir el dossier</button>' : ''}<button type="button" class="btn ghost small danger" id="edDel">Esborrar l'equip</button></div><div id="edBox"></div></div>`; }
 function vObertura(v) {
   if (!G.access) G.access = defaultAccess([]);
   const groups = SECS.filter(g => !['lliura'].includes(g[0]));
@@ -5268,7 +5292,7 @@ function vConfig(v) {
   v.querySelectorAll('[data-tkill]').forEach(b => b.onclick = () => { const x = G.trash[+b.dataset.tkill]; if (!x) return;
     $('#killBox').innerHTML = `<div class="notice">Segur que vols eliminar «${esc(x.name)}» del tot? No es podrà desfer. <button class="btn small" id="killYes">Eliminar del tot</button> <button class="btn ghost small" id="killNo">Cancel·lar</button></div>`;
     $('#killYes').onclick = () => { G.trash = G.trash.filter(y => y !== x); save(); render(); toast('Equip eliminat.'); }; $('#killNo').onclick = () => { $('#killBox').innerHTML = ''; }; });
-  $('#tAdd').onclick = () => { let n = G.teams.length + 1; while (G.teams.some(t => t.name === 'Equip ' + n)) n++; G.teams.push({ id: newId(), name: 'Equip ' + n, members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); render(); };
+  $('#tAdd').onclick = () => { addTeam(); render(); };
   if (!CLOUD) $('#ngCreate').onclick = () => { const names = $('#ngTeams').value.split('\n').map(x => x.trim()).filter(Boolean); if (!names.length) { $('#ngBox').innerHTML = '<div class="notice">Escriu com a mínim un equip.</div>'; return; }
     $('#ngBox').innerHTML = `<div class="notice">Segur? S'esborraran tots els projectes actuals. <button class="btn small" id="ngYes">Sí, crear el grup</button> <button class="btn ghost small" id="ngNo">Cancel·lar</button></div>`;
     $('#ngYes').onclick = () => { const acts = G.acts, rubs = G.rubs, profs = G.profs; G = newGroup($('#ngName').value.trim() || 'IPO II', names, G.sector); G.acts = acts; G.rubs = rubs; if (profs) G.profs = profs; ensureEval(); role = 'prof'; tab = null; save(); render(); }; $('#ngNo').onclick = () => { $('#ngBox').innerHTML = ''; }; };
