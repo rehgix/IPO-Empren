@@ -1521,6 +1521,9 @@ body.navopen{overflow:hidden}
   .panel{margin:0}
   .content{padding-top:76px}
 }
+.rv-c{border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}.rv-c h4{margin:0 0 8px;font-size:15px}
+.rv-l{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.rv-l div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4}.rv-l b{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+@media (max-width:820px){.rv-l{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
 </style>
 <script>
@@ -1825,8 +1828,8 @@ function emptyData(sector) {
 // Obertura dels apartats: 'closed' (tancat), 'open' (obert), 'readonly' (només lectura); 'from' obre automàticament en una data
 const todayISO = () => new Date().toLocaleDateString('sv-SE');
 function access(k) {
-  if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' ? 'open' : 'readonly';
-  if (!G || !G.access || k === 'inici' || k === 'dossier' || k === 'notes') return 'open';
+  if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' || k === 'criteris' ? 'open' : 'readonly';
+  if (!G || !G.access || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
   const a = G.access[k]; if (!a) return 'open';
   let s = a.state === 'closed' && a.from && todayISO() >= a.from ? 'open' : (a.state || 'open');
   if (s === 'open' && a.until && todayISO() > a.until) s = 'readonly';
@@ -1898,7 +1901,7 @@ const SECS = [
   ['mkt', 'Màrqueting i comunicació', 'mkt', [
     ['p7', 'Les 7 P', 'CA 4.10', 'Act10', t => [cnt(t.data.p7, PE.P7.map(x => x[0])), 7]],
     ['pitch', 'Comunicació del projecte', 'CA 4.10', 'Pt6 · Co3 · Au2', t => [cnt(t.data.pitch, PE.PITCH.map(x => x[0])) + (t.data.pitch.format && (t.data.pitch.format !== 'video' || filled(t.data.pitch.videoUrl)) ? 1 : 0), 9]]]],
-  ['lliura', 'Lliurament', 'lliura', [['dossier', 'Dossier del projecte', '', 'Pt4 · SITES', null]]]
+  ['lliura', 'Lliurament', 'lliura', [['dossier', 'Dossier del projecte', '', 'Pt4 · SITES', null], ['criteris', 'Com s\'avaluarà', '', '', null]]]
 ];
 const ALL = SECS.flatMap(g => g[3].map(s => ({ k: s[0], l: s[1], ca: s[2], act: s[3], p: s[4], g: g[0], gl: g[1] })));
 const sec = k => ALL.find(s => s.k === k);
@@ -1939,7 +1942,7 @@ function radios(path, opts, rerender) { const cur = getP(T().data, path); return
 /* ---------- Menú lateral ---------- */
 function menu() {
   if (role === 'prof') return [['Grup classe', 'prof', [['seguiment', 'Seguiment dels equips'], ['obertura', 'Obertura dels apartats'], ['revisio', 'Revisió dels projectes'], ['qualificacio', 'Qualificació per activitats'], ['informe', 'Informes dels equips']]], ['Recursos', 'rec', [['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques'], ['config', 'Configuració']]]];
-  return SECS.map(g => [g[1], g[2], g[3].map(s => [s[0], s[1]]).concat(g[0] === 'lliura' && G.showGrades ? [['notes', 'Les vostres notes']] : [])]);
+  return SECS.map(g => [g[1], g[2], g[3].filter(s => s[0] !== 'criteris' || !G.rubHide).map(s => [s[0], s[1]]).concat(g[0] === 'lliura' && G.showGrades ? [['notes', 'Les vostres notes']] : [])]);
 }
 function renderSide() {
   $('#gameName').textContent = G.name;
@@ -2127,7 +2130,8 @@ function vInici(v) {
       <div class="inx"><small>Següent apartat</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">Continuar</button></div></div>
     <div class="istats"><div><b style="color:var(--st-ok-f)">${wc.correcte}</b><small>correctes</small></div><div><b style="color:var(--st-sent-f)">${wc.sent}</b><small>enviats</small></div><div><b style="color:var(--st-mil-f)">${wc.millorar}</b><small>a millorar</small></div><div><b style="color:var(--st-edit-f)">${wc.edit}</b><small>en edició</small></div></div>
   </section>
-  <section class="bento">${tiles}</section>`;
+  <section class="bento">${tiles}</section>
+  ${G.rubHide ? '' : '<div class="row" style="margin-top:14px"><button type="button" class="btn ghost" data-go="criteris">Veure com s\'avaluarà el projecte (rúbriques)</button></div>'}`;
 }
 
 /* ---------- Equip ---------- */
@@ -3935,6 +3939,22 @@ function vNotes(v) {
   v.innerHTML = `${head(`${esc(projName(t))} · Informe del professor`, 'Les vostres notes', `<button class="btn" id="pdfMine">${ico('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>')}Descarregar en PDF</button>`)}<div class="reportview">${reportBody(t, true)}</div>`;
   $('#pdfMine').onclick = e => savePdf([t], e.currentTarget);
 }
+// Pàgina de l'alumnat: com s'avaluarà el projecte (activitats, pes i rúbrica de cada una)
+function vCriteris(v) {
+  ensureEval();
+  const head0 = head('Lliurament · Avaluació', 'Com s\'avaluarà el projecte');
+  if (G.rubHide) { v.innerHTML = `${head0}<div class="notice info">El professor encara no ha publicat les rúbriques. Les veureu aquí quan les tingui a punt.</div>`; return; }
+  const lv = [[4, 'Expert'], [3, 'Avançat'], [2, 'Aprenent'], [1, 'Novell']];
+  const card1 = a => { const r = rubOf(a), pg = (a.ev || []).map(e => e[0]).filter((k, i, l) => sec(k) && l.indexOf(k) === i);
+    const wts = r ? r.crit.map(c => Number(c.w) || 0) : [], showW = wts.some(w => w !== wts[0]), W = wts.reduce((x, y) => x + y, 0);
+    const body = r ? r.crit.map(c => `<div class="rv-c"><h4>${esc(c.t)}${showW && W ? ` <span class="pill grey">pes ${Math.round((Number(c.w) || 0) / W * 100)} %</span>` : ''}</h4><div class="rv-l">${lv.map(([n, nm], i) => `<div><b>${nm} · ${n}</b>${esc((c.d || [])[i] || '—')}</div>`).join('')}</div></div>`).join('') + '<p class="small muted">Si no es fa l\'activitat, la nota és 0 (Sense fer).</p>'
+      : a.crit ? `<p class="small"><b>Què es valora:</b> ${esc(a.crit)}</p>` : '<p class="small muted">Encara no hi ha criteris publicats per a aquesta activitat.</p>';
+    return `<details class="rubed rv-a" ${r ? '' : 'open'}><summary><b><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</b><span class="small muted">${f1(a.w)} % del ${esc(a.ra)}${a.ext ? ' · es qualifica fora de l\'eina' : ''}${r ? ' · rúbrica: ' + esc(r.n) : ''}</span></summary>
+      <div class="rubed-b">${pg.length ? `<div class="row" style="margin-bottom:6px"><span class="small muted">On es treballa:</span>${pg.map(k => `<button type="button" class="btn ghost small" data-go="${k}">${esc(sec(k).l)}</button>`).join('')}</div>` : ''}${body}</div></details>`; };
+  v.innerHTML = `${head0}
+    <p class="muted intro">Aquestes són les activitats que compten per a la nota de cada resultat d'aprenentatge (RA) i els criteris amb què es corregeixen. Llegiu-ho abans de començar i feu-ho servir per revisar la vostra feina abans de lliurar-la.</p>
+    ${['RA4', 'RA5'].map(ra => { const as = G.acts.filter(a => a.ra === ra && Number(a.w) > 0); return as.length ? `<h3 class="hsec">${ra} · ${esc(RA_TEXT[ra])}</h3>${as.map(card1).join('')}` : ''; }).join('')}`;
+}
 /* ---------- Rúbriques: triar-les per activitat, editar-les i crear-ne de noves ---------- */
 let rubOpen = null, rubImp = null;
 // Importar rúbriques des d'un full de càlcul (Excel, Google Sheets, LibreOffice o CSV)
@@ -4014,6 +4034,7 @@ function vRubriques(v) {
   const used = id => G.acts.filter(a => a.rub === id);
   v.innerHTML = `${head('Rúbriques', 'Rúbriques de correcció')}
     <p class="muted intro">Cada activitat es corregeix amb la rúbrica que hi triïs. A «Qualificació per activitats» marques el nivell de cada criteri i la nota es calcula sola. La IA també fa servir la rúbrica per proposar el nivell de cada criteri i un comentari.</p>
+    <label class="choice" style="margin:0 0 14px"><input type="checkbox" id="rubShow" ${G.rubHide ? '' : 'checked'}><span><b>Mostrar les rúbriques a l'alumnat</b><span class="small muted">Els equips les veuen a «Lliurament → Com s'avaluarà» i les poden consultar mentre treballen. Desactiva-ho mentre encara les prepares.</span></span></label>
     ${card('Rúbrica de cada activitat', pad(`<div class="rubass">${G.acts.map((a, i) => `<div class="rubassr"><span><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</span>${rubSel(a, `data-rubact="${i}"`)}</div>`).join('')}</div>
       <div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="rubRec">Posar la rúbrica recomanada on encara no n'hi ha</button></div>`))}
     <div class="row"><button type="button" class="btn" id="rubNew">+ Nova rúbrica</button><button type="button" class="btn ghost" id="rubImp">${ico('<path d="M4 4h16v16H4zM4 10h16M10 4v16"/>')}Importar des d'un full de càlcul</button><button type="button" class="btn ghost" id="rubReset">Restablir les rúbriques de la programació</button></div>
@@ -4025,6 +4046,7 @@ function vRubriques(v) {
       <p class="small muted">La nota és la mitjana dels nivells dels criteris, tenint en compte el pes de cadascun. Expert (4) val un 10.</p>
       <div class="row"><button type="button" class="btn ghost small" data-rcadd="${i}">+ Afegir un criteri</button><button type="button" class="btn ghost small" data-rbdup="${i}">Duplicar</button><button type="button" class="btn ghost small" data-rbxls="${i}">Baixar en Excel</button><button type="button" class="btn ghost small" data-rbdel="${i}">Esborrar la rúbrica</button></div></div></details>`; }).join('')}`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  $('#rubShow').onchange = e => { G.rubHide = !e.target.checked; save(); toast(e.target.checked ? 'Les rúbriques són visibles per a l\'alumnat.' : 'Les rúbriques s\'han amagat a l\'alumnat.'); };
   v.querySelectorAll('details.rubed').forEach(d => d.ontoggle = () => { if (d.open) rubOpen = d.dataset.rid; else if (rubOpen === d.dataset.rid) rubOpen = null; });
   v.querySelectorAll('[data-rubact]').forEach(s => s.onchange = () => { G.acts[+s.dataset.rubact].rub = s.value || undefined; save(); rr(); });
   $('#rubRec').onclick = () => { G.acts.forEach(a => { const r = rubRec(a); if (!a.rub && r) a.rub = r.id; }); save(); rr(); };
@@ -4240,7 +4262,7 @@ function teamFromDoc(d) {
   return normTeam(t);
 }
 const groupFields = () => {
-  const cfg = {}; ['sector', 'acts', 'rubs', 'aiCfg', 'access', 'allowPaste'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
+  const cfg = {}; ['sector', 'acts', 'rubs', 'aiCfg', 'access', 'allowPaste', 'rubHide'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
@@ -4388,9 +4410,9 @@ function applyGroup(g) {
     SNAP.group = J(groupFields()); softRender();
     order.filter(id => !G.teams.some(t => t.id === id)).forEach(id => { delete SNAP.teams[id]; pullTeam(id).catch(() => {}); }); return;
   }
-  const was = J({ a: G.access, s: G.showGrades, n: G.name });
+  const sig = () => J({ a: G.access, s: G.showGrades, n: G.name, h: G.rubHide, r: tab === 'criteris' || tab === 'inici' ? [G.rubs, G.acts] : 0 }), was = sig();
   Object.assign(G, groupToG(g), { teams: G.teams });
-  if (was !== J({ a: G.access, s: G.showGrades, n: G.name })) { softRender(); if (ME.teamId) listenGrades(); }
+  if (was !== sig()) { softRender(); if (ME.teamId) listenGrades(); }
 }
 function stopListen() { UNSUB.forEach(u => { try { u(); } catch (e) {} }); UNSUB = []; }
 let gradesUnsub = null;
@@ -5260,7 +5282,7 @@ function vConfig(v) {
 /* ================= Arrencada ================= */
 const VIEWS = { inici: vInici, equip: vEquip, idea: vIdea, empatia: vEmpatia, entrevistes: vEntrevistes, definir: vDefinir, prototip: vPrototip, micro: vMicro, pestel: vPestel, dafo: vDafo,
   lean: vLean, sost: vSost, ebc: vEbc, agents: vAgents, juridica: vJuridica, fiscal: vFiscal, inversio: vInversio, prestec: vPrestec, treso: vTreso, viab: vViab, marca: vMarca, p7: vP7, pitch: vPitch, dossier: vDossier,
-  seguiment: vSeguiment, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, rubriques: vRubriques, config: vConfig, alumnes: vAlumnes, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, grups: () => { location.hash = ''; } };
+  seguiment: vSeguiment, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, rubriques: vRubriques, config: vConfig, alumnes: vAlumnes, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, criteris: vCriteris, grups: () => { location.hash = ''; } };
 $('#tabs').insertAdjacentHTML('beforebegin', '<button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false"></button>');
 document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>' + themeSw());
 $('#menuToggle').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
