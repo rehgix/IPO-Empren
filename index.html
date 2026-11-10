@@ -238,6 +238,7 @@ ul.fb.good li::marker{color:var(--ws-ok,#26884f)} ul.fb.bad li::marker{color:var
 .member.tsrow{grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) auto}
 .member.trow{grid-template-columns:minmax(0,1fr) auto auto;align-items:center}
 @media (max-width:620px){.member.tsrow,.member.trow{grid-template-columns:1fr}}
+.interview.mine{border-color:var(--ink)}
 .interview{display:grid;gap:8px;padding:14px;border:1px solid var(--line);border-radius:14px;margin-bottom:12px}
 .canvas{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line)}
 .canvas .cbox{background:var(--bg);padding:16px}
@@ -1867,6 +1868,17 @@ function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s 
 // Paperera: els equips esborrats es poden recuperar durant uns dies abans d'eliminar-se del tot
 const TRASH_DAYS = 7, trashIds = () => new Set(((G && G.trash) || []).map(x => x.id));
 function addTeam() { let n = G.teams.length + 1; while (G.teams.some(t => t.name === 'Equip ' + n)) n++; G.teams.push({ id: newId(), name: 'Equip ' + n, members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); return G.teams.length - 1; }
+// Cada alumne que entra a l'equip té la seva fila a «Equip i rols», amb el seu nom (així no es trepitgen)
+const normNom = x => String(x || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
+function claimRow() {
+  if (!CLOUD || !ME || ME.isProf || !G || !USER) return; const t = G.teams[role]; if (!t) return;
+  if (t.members.some(m => m.uid === ME.uid)) { const sn = SNAP.teams[t.id]; if (sn && J(t.members) !== sn.members) save(); return; } // la fila ja hi és: es desa quan l'apartat s'obri
+  const nm = String(USER.name || '').trim(), same = nm && t.members.find(m => !m.uid && normNom(m.name) === normNom(nm));
+  if (same) same.uid = ME.uid;
+  else if (t.members.length < 3) t.members.push({ name: nm || String(ME.email || '').split('@')[0], uid: ME.uid, accio: '', social: '', mental: '', resp: '' });
+  else return;
+  t.updated = Date.now(); save();
+}
 function trashTeam(i) { const t = G.teams.splice(i, 1)[0]; if (!t) return; const pn = projName(t);
   (G.trash = G.trash || []).push(Object.assign({ id: t.id, name: t.name + (pn !== t.name ? ' · ' + pn : ''), at: Date.now() }, CLOUD ? {} : { t })); }
 function purgeTrash() { const lim = Date.now() - TRASH_DAYS * 864e5, n = (G.trash || []).length; G.trash = (G.trash || []).filter(x => isObj(x) && x.id && x.at > lim); return G.trash.length !== n; }
@@ -2151,12 +2163,13 @@ function vInici(v) {
 /* ---------- Equip ---------- */
 function vEquip(v) {
   const t = T();
-  const rows = t.members.map((m, i) => `<div class="interview"><div class="row" style="justify-content:space-between"><b>Persona ${i + 1}</b><button type="button" class="btn ghost small" data-del-member="${i}">Treure</button></div>
-    <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.name)}">
-    <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}" data-rerender="1"><option value="">${r.label}</option>${r.opts.map(([o]) => `<option value="${o}" ${rolN(m[k]) === o ? 'selected' : ''} ${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? 'disabled' : ''}>${o}${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? ' (ja triat)' : ''}</option>`).join('')}</select>`).join('')}</div>
-    <textarea rows="2" placeholder="Responsabilitats concretes d'aquesta persona en el projecte" aria-label="Responsabilitats" data-member="resp" data-idx="${i}">${esc(m.resp)}</textarea></div>`).join('');
+  const cs = CLOUD && ME && !ME.isProf, mine = m => cs && m.uid === ME.uid, other = m => cs && m.uid && m.uid !== ME.uid;
+  const rows = t.members.map((m, i) => `<div class="interview${mine(m) ? ' mine' : ''}"><div class="row" style="justify-content:space-between"><b>Persona ${i + 1}${mine(m) ? ' <span class="pill">Aquesta fila és la teva</span>' : ''}${other(m) ? ' <span class="pill grey">La completa ' + esc(m.name || 'una altra persona') + '</span>' : ''}</b>${other(m) ? '' : `<button type="button" class="btn ghost small" data-del-member="${i}">Treure</button>`}</div>
+    <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.name)}" ${other(m) ? 'disabled' : ''}>
+    <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}" data-rerender="1" ${other(m) ? 'disabled' : ''}><option value="">${r.label}</option>${r.opts.map(([o]) => `<option value="${o}" ${rolN(m[k]) === o ? 'selected' : ''} ${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? 'disabled' : ''}>${o}${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? ' (ja triat)' : ''}</option>`).join('')}</select>`).join('')}</div>
+    <textarea rows="2" placeholder="Responsabilitats concretes d'aquesta persona en el projecte" aria-label="Responsabilitats" data-member="resp" data-idx="${i}" ${other(m) ? 'disabled' : ''}>${esc(m.resp)}</textarea></div>`).join('');
   const dups = t.members.flatMap((m, i) => ROL_KEYS.filter(k => rolDup(t, i, k)).map(k => `${esc(m.name || 'Persona ' + (i + 1))}: ${esc(rolN(m[k]))}`));
-  page(v, 'equip', 'Creeu un equip d\'un màxim de tres persones. Cada persona tria un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats. <b>Dins de l\'equip no es poden repetir els rols</b>: cada rol només el pot tenir una persona.' + (dups.length ? `<div class="notice" style="margin-top:10px"><b>Hi ha rols repetits:</b> ${dups.join(' · ')}. Canvieu-los perquè cada persona tingui rols diferents.</div>` : ''),
+  page(v, 'equip', 'Creeu un equip d\'un màxim de tres persones. Cada persona tria un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats.' + (CLOUD && ME && !ME.isProf ? ' <b>Cadascú completa només la seva fila</b>: hi surt el vostre nom quan entreu a l\'equip.' : '') + ' <b>Dins de l\'equip no es poden repetir els rols</b>: cada rol només el pot tenir una persona.' + (dups.length ? `<div class="notice" style="margin-top:10px"><b>Hi ha rols repetits:</b> ${dups.join(' · ')}. Canvieu-los perquè cada persona tingui rols diferents.</div>` : ''),
     card('Membres de l\'equip', pad((rows || '<p class="muted">Encara no heu afegit cap persona.</p>') + (t.members.length < 3 ? '<button type="button" class="btn ghost small" id="addMember">+ Afegir una persona</button>' : '')), `${t.members.length} de 3`)
     + card('Els rols d\'equip', pad(`<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">${Object.values(PE.ROLES).map(r => `<div><b>${r.title}</b><ul class="plain">${r.opts.map(([o, d]) => `<li><b>${o}</b>: ${esc(d)}</li>`).join('')}</ul></div>`).join('')}</div>`)));
   const a = $('#addMember'); if (a) a.onclick = () => { t.members.push({ name: '', accio: '', social: '', mental: '', resp: '' }); save(); render(); };
@@ -4401,6 +4414,7 @@ function applyTeamDoc(d) {
   const dd = J(d.delivered || null); if (dd !== s.delivered && J(t.delivered || null) === s.delivered) { t.delivered = d.delivered || null; s.delivered = dd; ch = true; }
   if (d.name !== s.name && t.name === s.name) { t.name = d.name; s.name = d.name; ch = true; }
   t.updated = d.updated || t.updated;
+  if (!ME.isProf) claimRow();
   s.files = fileIdsOf(d);
   normTeam(t);
   if (ch) { softRender(); needFiles(t, s.files); }
@@ -4429,7 +4443,7 @@ function applyGroup(g) {
   }
   const sig = () => J({ a: G.access, s: G.showGrades, n: G.name, h: G.rubHide, r: tab === 'criteris' || tab === 'inici' ? [G.rubs, G.acts] : 0 }), was = sig();
   Object.assign(G, groupToG(g), { teams: G.teams });
-  if (was !== sig()) { softRender(); if (ME.teamId) listenGrades(); }
+  if (was !== sig()) { if (!ME.isProf) claimRow(); softRender(); if (ME.teamId) listenGrades(); }
 }
 function stopListen() { UNSUB.forEach(u => { try { u(); } catch (e) {} }); UNSUB = []; }
 let gradesUnsub = null;
@@ -4585,7 +4599,7 @@ async function openStudent(tid) {
   if (G.showGrades) { if (gr) { const v = P(gr.v) || {}; t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }
   G.teams = [t]; ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   const nv = lastGid === null ? navLoad() : null; if (nv) tab = nv.tab; // en recarregar, torna on eres
-  snapTeam(t); role = 0; if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
+  snapTeam(t); role = 0; claimRow(); if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
   render(); sideUser();
   // Les imatges pesen molt: es baixen després de mostrar la pàgina i es redibuixa quan arriben (sense interrompre qui està escrivint)
   const ids = fileIdsOf(d), gid0 = GID; if (ids.length) Promise.all(ids.map(async id => { const f = await FB.get(gpath('teams', tid, 'files', id)).catch(() => null); if (f) FILES[tid][id] = f.data; })).then(function again() {
