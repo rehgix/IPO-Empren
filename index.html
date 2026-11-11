@@ -780,6 +780,7 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .bklist{display:grid;gap:8px;margin-bottom:12px}.bkrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:wrap}
 .bkpick{margin-top:14px;display:grid;gap:8px}.bkpick p{margin:0}
 .bkpw{font:15px/1.5 var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);width:100%;max-width:340px}
+.bkpwbox{display:grid;gap:6px;padding:14px;border:1px solid var(--line);border-radius:16px;background:var(--soft)}.bkpwbox b{font-size:15px}.bkpwbox .bkpw{background:var(--bg);flex:1;min-width:0}
 .bkpw:focus{background:var(--bg);border-color:var(--ink);outline:none}
 .qrbox code{font-size:15px;word-break:break-all;background:#f4f4f5;padding:6px 10px;border-radius:8px}
 .cmsg{white-space:pre-wrap;font:14px/1.5 var(--font);padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--soft);margin:10px 0}
@@ -4710,6 +4711,7 @@ function bkErr(e) {
   if (/popup-blocked/.test(c)) return 'El navegador ha bloquejat la finestra de Google. Permet les finestres emergents per a aquesta web i torna-ho a provar.';
   if (/other-account/.test(c)) return 'Has triat un altre compte de Google. Torna-ho a provar amb el teu compte de l\'institut.';
   if (/no-token/.test(c)) return 'Cal tornar a donar permís a Google Drive. Torna-ho a provar.';
+  if (/no-pw/.test(c)) return 'Abans cal crear una contrasenya per a les còpies.';
   if (/fbapi/.test(c)) return 'La web s\'ha d\'actualitzar. Recarrega la pàgina i torna-ho a provar.';
   if (/drive 403/.test(c) && /has not been used|is disabled|accessNotConfigured|SERVICE_DISABLED/i.test(c)) return 'L\'administrador de l\'eina encara ha d\'activar el servei de Google Drive (Google Drive API) al projecte. Mentrestant, descarrega la còpia a l\'ordinador.';
   if (/drive 403/.test(c)) return 'Google Drive no ha deixat desar la còpia. Pot ser que l\'institut no permeti connectar eines externes al Drive. Mentrestant, descarrega la còpia a l\'ordinador. (' + c.slice(10, 160) + ')';
@@ -4791,6 +4793,7 @@ async function bkUpload(fid, data, file) {
 // Fa una còpia completa i esborra les més antigues (en deixa BK_KEEP)
 function bkRun(auto) {
   return BK_RUN || (BK_RUN = (async () => {
+    if (!(await bkPw())) throw new Error('no-pw');
     const fid = await bkFolder(), data = await bkCollect(); data.auto = !!auto;
     await bkUpload(fid, data, await bkPack(data));
     try { const l = await bkList(fid); await Promise.all(l.slice(BK_KEEP).map(f => drv('/' + f.id, { method: 'DELETE' }).catch(() => {}))); } catch (e) {}
@@ -4856,20 +4859,31 @@ function bkHome(v, prof) {
   if (!prof || !USER) return;
   const s = bkGet();
   if (s.seen === undefined && !BK_ASKED) { BK_ASKED = true;
-    bkDialog(`<div class="bkic">${ico('<path d="M7 18a5 5 0 0 1-.5-10 6 6 0 0 1 11.5 1.5A4.3 4.3 0 0 1 17 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>')}</div>
+    bkPw().then(pw => bkDialog(`<div class="bkic">${ico('<path d="M7 18a5 5 0 0 1-.5-10 6 6 0 0 1 11.5 1.5A4.3 4.3 0 0 1 17 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>')}</div>
       <b>Còpies de seguretat al teu Google Drive</b>
       <p>Pots guardar una còpia de tots els teus grups (equips, feina de l'alumnat, revisions i notes) al teu Google Drive. Si mai passés res, podries recuperar les dades des d'aquí.</p>
       <p>Si l'actives, es fa una còpia <b>cada setmana</b> quan entres a l'eina, i també en pots fer quan vulguis des de «Còpies de seguretat». L'eina només veu la seva carpeta de còpies, no la resta del teu Drive.</p>
+      ${pw ? '' : `<div class="bkpwbox"><label for="bkPwNew"><b>Abans d'activar-les, crea una contrasenya</b></label><p class="small muted">Les còpies es desen xifrades amb aquesta contrasenya i es demana per recuperar-les. La podràs consultar sempre a «Còpies de seguretat».</p>
+        <div class="row"><input type="password" class="bkpw" id="bkPwNew" placeholder="Contrasenya (6 caràcters o més)" autocomplete="new-password"><button type="button" class="btn ghost small" data-bkpwshow>Mostrar</button></div></div>`}
       <div class="bkmsg"></div><div class="row"><button type="button" class="btn" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkpc>Descarregar a l'ordinador</button><button type="button" class="btn ghost" data-bkclose>Ara no</button></div>`,
       (o, close) => {
+        const f = o.querySelector('#bkPwNew'), sh = o.querySelector('[data-bkpwshow]');
+        if (sh) sh.onclick = () => { const on = f.type === 'password'; f.type = on ? 'text' : 'password'; sh.textContent = on ? 'Amagar' : 'Mostrar'; };
+        // Sense contrasenya creada no es fa cap còpia: primer cal escriure-la
+        const pwOk = () => { if (!f) return true; const val = f.value.trim();
+          if (val.length < 6 || val.length > 100) { o.querySelector('.bkmsg').innerHTML = '<div class="notice">Escriu primer una contrasenya de 6 caràcters o més.</div>'; f.focus(); return false; }
+          bkPwSet(val); return true; };
         o.querySelector('[data-bkclose]').addEventListener('click', () => { bkSet({ seen: true, on: false }); toast('D\'acord. Ho pots activar quan vulguis a «Còpies de seguretat».'); });
-        o.querySelector('[data-bkpc]').onclick = e => bkPcBtn(e.target, o.querySelector('.bkmsg'));
-        o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); b.disabled = true;
+        o.querySelector('[data-bkpc]').onclick = e => { if (pwOk()) bkPcBtn(e.target, o.querySelector('.bkmsg')); };
+        o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); if (!pwOk()) return; b.disabled = true;
           try { await drvConnect(); bkSet({ seen: true, on: true }); b.innerHTML = '<span class="spin"></span> Fent la primera còpia...'; await bkRun(false); close(); toast('Fet! La primera còpia ja és al teu Google Drive.'); }
           catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Activar les còpies'; m.innerHTML = `<div class="notice">${esc(bkErr(err))}</div>`; } };
-      });
+      }));
     return;
   }
+  // Còpies activades però encara sense contrasenya: es demana abans de fer-ne cap més
+  if (s.on === true && !(BKPW && BKPW.u === USER.email)) { bkPw().then(() => { if (USER && $('#view') === v && !v.querySelector('.bknopw')) bkHome(v, prof); }); return; }
+  if (s.on === true && !BKPW.pw) { if (!v.querySelector('.bknopw')) v.insertAdjacentHTML('afterbegin', '<div class="notice info bknopw"><b>Crea una contrasenya per a les còpies de seguretat.</b> Fins que no en tinguis una, no es farà la còpia setmanal. <a href="#copies">Crear la contrasenya</a></div>'); return; }
   if (!bkDue()) return;
   if (drvTok()) { bkRun(true).then(() => toast('Còpia setmanal desada al teu Google Drive.')).catch(e => console.warn(e)); return; }
   v.insertAdjacentHTML('afterbegin', `<div class="notice info bknudge"><b>Toca fer la còpia setmanal dels teus grups al Google Drive.</b> Només cal un clic.
@@ -4896,7 +4910,7 @@ async function bkView() {
         <label class="choice" style="margin:12px 0"><input type="checkbox" id="bkAuto" ${s.on ? 'checked' : ''}><span><b>Fer una còpia automàtica cada setmana</b><span class="small muted" style="display:block">Es fa quan entres a l'eina i ja fa ${BK_DAYS} dies de l'última. Es guarden les ${BK_KEEP} còpies més recents.</span></span></label>
         <div id="bkMsg"></div>
         <div class="row"><button type="button" class="btn" id="bkNow">Fer una còpia ara</button><button type="button" class="btn ghost" id="bkPc">Descarregar una còpia a l'ordinador</button>${s.fid && conn ? `<a class="btn ghost" href="https://drive.google.com/drive/folders/${esc(s.fid)}" target="_blank" rel="noopener">Obrir la carpeta al Drive</a>` : ''}</div>`))}
-      ${card('Contrasenya de les còpies', pad(`<p class="small muted" style="margin-top:0">${pw ? 'Les còpies es desen <b>xifrades</b> amb aquesta contrasenya: sense ella, ningú que tingui l\'arxiu en pot llegir les dades. Es demana per recuperar una còpia.' : 'Ara les còpies <b>no estan xifrades</b>. Posa una contrasenya perquè ningú que tingui l\'arxiu en pugui llegir les dades. Es demanarà per recuperar una còpia.'}</p>
+      ${card('Contrasenya de les còpies', pad(`<p class="small muted" style="margin-top:0">${pw ? 'Les còpies es desen <b>xifrades</b> amb aquesta contrasenya: sense ella, ningú que tingui l\'arxiu en pot llegir les dades. Es demana per recuperar una còpia.' : '<b>Encara no tens contrasenya.</b> Crea\'n una per poder fer còpies: es desen xifrades perquè ningú que tingui l\'arxiu en pugui llegir les dades, i es demana per recuperar-les.'}</p>
         <div class="row"><input type="password" class="bkpw" id="bkPwF" value="${esc(pw)}" placeholder="Escriu una contrasenya" autocomplete="new-password" aria-label="Contrasenya de les còpies"><button type="button" class="btn ghost small" id="bkPwShow">Mostrar</button><button type="button" class="btn small" id="bkPwSave">Desar la contrasenya</button></div>
         <div id="bkPwMsg"></div>
         <p class="small muted" style="margin-bottom:0">La pots consultar sempre aquí amb «Mostrar». Si la canvies, les còpies que ja estan fetes es continuen obrint amb la contrasenya que tenien quan es van fer: apunta-la abans de canviar-la.</p>`))}
@@ -4905,21 +4919,24 @@ async function bkView() {
         <div class="row"><button type="button" class="btn ghost" id="bkSee">Veure les còpies del Drive</button><label class="btn ghost" style="cursor:pointer">Recuperar des d'un arxiu de l'ordinador<input type="file" id="bkFile" accept=".json,application/json" hidden></label></div>
         <div id="bkPick"></div>`))}`;
     const msg = (html, ok) => { $('#bkMsg').innerHTML = html ? `<div class="notice${ok ? ' info' : ''}" style="margin-bottom:12px">${html}</div>` : ''; };
+    const needPw = () => { if (pw) return true; msg('Abans de fer o activar les còpies, crea una contrasenya a «Contrasenya de les còpies».'); $('#bkPwF').focus(); return false; };
     $('#bkPwShow').onclick = e => { const f = $('#bkPwF'), sh = f.type === 'password'; f.type = sh ? 'text' : 'password'; e.target.textContent = sh ? 'Amagar' : 'Mostrar'; };
     $('#bkPwSave').onclick = async e => { const val = $('#bkPwF').value.trim(), m = $('#bkPwMsg'), note = (t, ok) => { m.innerHTML = `<div class="notice${ok ? ' info' : ''}" style="margin-top:12px">${t}</div>`; };
       if (val === pw) return note('La contrasenya és la mateixa que ja tenies.', true);
-      if (val && val.length < 6) return note('La contrasenya ha de tenir 6 caràcters o més.');
+      if (!val) return note('Escriu una contrasenya. Les còpies sempre es desen xifrades.');
+      if (val.length < 6) return note('La contrasenya ha de tenir 6 caràcters o més.');
       if (val.length > 100) return note('La contrasenya és massa llarga.');
       e.target.disabled = true; const ok = await bkPwSet(val); draw();
-      $('#bkPwMsg').innerHTML = `<div class="notice info" style="margin-top:12px">${val ? 'Contrasenya desada. Les còpies que facis a partir d\'ara aniran xifrades.' : 'Contrasenya treta. Les còpies que facis a partir d\'ara no aniran xifrades.'}${ok ? '' : ' <b>De moment només s\'ha pogut desar en aquest navegador:</b> apunta-la en un lloc segur.'}</div>`; };
+      $('#bkPwMsg').innerHTML = `<div class="notice info" style="margin-top:12px">Contrasenya desada. Les còpies que facis a partir d\'ara aniran xifrades amb aquesta contrasenya.${ok ? '' : ' <b>De moment només s\'ha pogut desar en aquest navegador:</b> apunta-la en un lloc segur.'}</div>`; };
     $('#bkAuto').onchange = async e => { const on = e.target.checked;
       if (!on) { bkSet({ on: false, seen: true }); msg('Còpia automàtica desactivada.', true); return; }
+      if (!needPw()) { e.target.checked = false; return; }
       try { await drvNeed(); bkSet({ on: true, seen: true }); msg('Còpia automàtica activada.', true); if (bkDue()) { msg('<span class="spin"></span> Fent la primera còpia...', true); await bkRun(true); draw(); toast('Còpia desada al teu Google Drive.'); } }
       catch (err) { console.warn(err); e.target.checked = false; msg(esc(bkErr(err))); } };
-    $('#bkNow').onclick = async e => { const b = e.target; b.disabled = true;
+    $('#bkNow').onclick = async e => { const b = e.target; if (!needPw()) return; b.disabled = true;
       try { await drvNeed(); b.innerHTML = '<span class="spin"></span> Fent la còpia...'; await bkRun(false); draw(); toast('Còpia desada al teu Google Drive.'); }
       catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Fer una còpia ara'; msg(esc(bkErr(err))); } };
-    $('#bkPc').onclick = async e => { const b = e.target; b.disabled = true; b.innerHTML = '<span class="spin"></span> Preparant...';
+    $('#bkPc').onclick = async e => { const b = e.target; if (!needPw()) return; b.disabled = true; b.innerHTML = '<span class="spin"></span> Preparant...';
       try { bkDownload(await bkPack(await bkCollect())); } catch (err) { console.warn(err); msg(esc(bkErr(err))); } b.disabled = false; b.textContent = 'Descarregar una còpia a l\'ordinador'; };
     $('#bkSee').onclick = async e => { const b = e.target, box = $('#bkList'); b.disabled = true;
       try { await drvNeed(); box.innerHTML = '<div class="cloud-load"><span class="spin"></span> Buscant les còpies...</div>';
