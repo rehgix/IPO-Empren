@@ -2,6 +2,8 @@
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%23f7a21b%22/%3E%3Cpath d=%22M5 17l4.5-5.5 3.5 2.5 6-7.5%22 fill=%22none%22 stroke=%22%23111%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
 <link rel="preload" href="config.js?v=2" as="script"><link rel="preload" href="fbapi.js?v=2" as="script">
 <title>IPO Emprèn</title>
+<meta name="description" content="IPO Emprèn: eina per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut Miquel Biada.">
+<meta name="theme-color" content="#F1F3F8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0C10" media="(prefers-color-scheme: dark)">
 <script>
 // Aparença: 'auto' (segons el sistema), 'light' o 'dark'. Es desa en aquest navegador i s'aplica abans de pintar.
 const THEME_MQ = matchMedia('(prefers-color-scheme: dark)');
@@ -1538,6 +1540,17 @@ body.navopen{overflow:hidden}
 .rv-l{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.rv-l div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4}.rv-l b{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
 @media (max-width:820px){.rv-l{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
+/* ---------- Retocs de la revisió general ---------- */
+/* Xifres del capçal de Seguiment: s'encongeixen si no caben a la targeta (abans «100 %» sortia de la seva) */
+.snums div{container-type:inline-size}.snums b{font-size:clamp(24px,32cqi,46px)}
+/* El botó «Editar» de cada equip ja no trepitja el text de l'última columna */
+@media (min-width:621px){.srow .stm{padding-right:112px}}
+/* Etiqueta de la capçalera de cada apartat: el text flueix en una sola frase (al mòbil es partia en dues columnes) */
+#view[data-g] > .head .label{display:inline-block;line-height:1.45}
+/* Enllaços de text més fàcils de tocar amb el dit */
+@media (pointer:coarse){.linkbtn{padding-block:8px}}
+/* Camps de text llargs: en pantalles amples no ocupen tota l'amplada (línies massa llargues per llegir bé) */
+@media (min-width:1100px){.pfield > textarea,.pfield > input[type=text],.pfield > select.field-sel{max-width:920px}}
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -4334,6 +4347,9 @@ function syncStatus(st) {
   el.className = 'sp-' + st;
   el.textContent = { pending: 'Desant...', saved: '✓ Desat', error: 'Sense connexió: es tornarà a provar', idle: '' }[st] || '';
 }
+// Avís quan es perd la connexió (abans no es deia res)
+window.addEventListener('offline', () => { if (CLOUD) toast('Sense connexió a internet. No tanquis la pàgina fins que torni, per no perdre canvis.'); });
+window.addEventListener('online', () => { if (CLOUD) toast('Connexió recuperada.'); });
 window.addEventListener('beforeunload', e => { if (CLOUD && (syncT || syncBusy)) { e.preventDefault(); e.returnValue = ''; } });
 
 /* ---------- Desar ---------- */
