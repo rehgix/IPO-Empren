@@ -1362,6 +1362,35 @@ body.navopen{overflow:hidden}
 .rv-l{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.rv-l div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4}.rv-l b{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
 @media (max-width:820px){.rv-l{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
+/* ---------- Planificació, llegenda, tresoreria i filtres (retocs) ---------- */
+.accrow{grid-template-columns:minmax(0,1fr) auto auto}
+.accprog{display:inline-flex;align-items:center;gap:6px;font:600 13px var(--font);color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer;white-space:nowrap}
+.accprog svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.accprog:hover{color:var(--ink);border-color:var(--ink)}.accprog.on{color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-soft)}
+.accprog[aria-expanded="true"]{color:var(--ink);border-color:var(--ink)}
+/* la taula no ha de ser un contenidor de desplaçament perquè la primera columna quedi fixa */
+.tablebox table.fin.treso{overflow:clip}
+.accrow .seg button{white-space:nowrap}
+.accrow .seg .sh{display:none}
+@media (max-width:380px){.accrow .seg .lg{display:none}.accrow .seg .sh{display:inline}}
+@media (max-width:480px){.accrow{padding:12px 14px;gap:10px}.accrow .seg button{padding-inline:9px;font-size:13px}}
+.accrow .accdates{grid-column:1/-1;align-items:end;padding:12px 14px;background:var(--soft);border-radius:14px}
+.accrow .accdates p{flex-basis:100%;margin:0}
+@media (max-width:760px){.accrow{grid-template-columns:minmax(0,1fr) auto}.accrow > div:first-child{grid-column:1/-1}}
+@media (max-width:480px){.accprog span{display:none}.accprog{padding:9px 11px}.accprog.on::after{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}}
+.sleg{display:flex;flex-wrap:wrap;gap:6px 16px;margin:4px 4px 2px;font-size:13px;color:var(--muted)}
+.sleg span{display:inline-flex;align-items:center;gap:6px}
+.sleg i{display:block;width:18px;height:10px;border-radius:5px;background:var(--gc,var(--track))}.sleg i.x{background:none;border:2px dashed var(--dash)}
+.swipehint{display:none;margin:0;padding:10px 16px 0;font-size:13px;color:var(--muted)}
+@media (max-width:760px){
+  .swipehint{display:block}
+  table.fin.treso td:first-child,table.fin.treso th:first-child{min-width:130px;max-width:130px;white-space:normal}
+  .rfilters{display:flex;flex-wrap:nowrap;overflow-x:auto;max-width:100%;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  .rfilters::-webkit-scrollbar{display:none}
+  .rfilters button{flex-shrink:0;white-space:nowrap}
+}
+table.fin.treso td:first-child::after,table.fin.treso th:first-child::after{content:"";position:absolute;top:0;bottom:0;right:-12px;width:12px;pointer-events:none;background:linear-gradient(90deg,rgba(15,18,34,.14),transparent);opacity:0;transition:opacity .2s}
+.tablebox.scx table.fin.treso td:first-child::after,.tablebox.scx table.fin.treso th:first-child::after{opacity:1}
 /* ---------- Campaneta i finestra d'avisos de l'alumnat ---------- */
 .bellbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));right:max(14px,env(safe-area-inset-right,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);box-shadow:var(--sh-md);cursor:pointer}
 .bellbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -3304,7 +3333,7 @@ function vTreso(v) {
       <div class="row"><button type="button" class="btn ghost small" data-add="treso.rows" data-kind="in">+ Cobrament</button><button type="button" class="btn ghost small" data-add="treso.rows" data-kind="out">+ Pagament</button><button type="button" class="btn ghost small" data-add="treso.rows" data-kind="pct">+ Pagament variable (% de vendes)</button></div>
       <p class="small muted">Consells: la tarifa plana d'autònoms és de 80 € al mes durant el primer any; les vendes del principi solen ser baixes i creixen a poc a poc; recordeu les assegurances i la gestoria.</p>`))
     + finSecCard('desp')
-    + card('Pla de tresoreria del primer any', `<div id="tresoTbl">${tresoTable(t)}</div>`));
+    + card('Pla de tresoreria del primer any', `<p class="swipehint">Llisca la taula cap a l'esquerra per veure tots els mesos →</p><div id="tresoTbl">${tresoTable(t)}</div>`));
   liveFn = () => { const el = $('#tresoTbl'); if (el) el.innerHTML = tresoTable(t); };
   bindList(v, 'treso.rows', b => b.dataset.kind === 'pct' ? { label: 'Materials i compres', type: 'out', pct: '10' } : { label: b.dataset.label || '', type: b.dataset.kind, amount: '', freq: b.dataset.freq || 'mensual', month: '1' });
 }
@@ -4251,6 +4280,8 @@ function syncStatus(st) {
 // Avís quan es perd la connexió (abans no es deia res)
 window.addEventListener('offline', () => { if (CLOUD) toast('Sense connexió a internet. No tanquis la pàgina fins que torni, per no perdre canvis.'); });
 window.addEventListener('online', () => { if (CLOUD) toast('Connexió recuperada.'); });
+// Taules que es desplacen de costat: ombra a la columna fixa quan hi ha contingut amagat sota
+document.addEventListener('scroll', e => { const b = e.target; if (b && b.classList && b.classList.contains('tablebox')) b.classList.toggle('scx', b.scrollLeft > 2); }, true);
 window.addEventListener('beforeunload', e => { if (CLOUD && (syncT || syncBusy)) { e.preventDefault(); e.returnValue = ''; } });
 
 /* ---------- Desar ---------- */
@@ -5400,9 +5431,10 @@ function vSeguiment(v) {
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
+    ${rows ? `<div class="sleg" aria-label="Llegenda dels blocs">${groups.map(([gk, gl]) => `<span data-g="${gk}"><i></i>${esc(gl)}</span>`).join('')}<span><i class="x"></i>Tancat</span></div>` : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
     <div class="row"><button type="button" class="btn" id="sAdd">+ Afegir un equip</button></div>
-    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte; les ratllades encara estan tancades.</p>`;
+    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte (mira la llegenda de dalt) i s'omple a mesura que l'equip avança.</p>`;
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { edTeam = edTeam === +b.dataset.ed ? -1 : +b.dataset.ed; rr(); });
@@ -5423,20 +5455,24 @@ function edPanel(t, i) { const n = t.members.length;
     <div class="pfield"><label for="edSec">Tipus d'empresa (sector)</label><select class="field-sel" id="edSec">${secOptsAll(t.data.idea.sector, true)}</select></div>
     <p class="small muted">${n ? n + (n === 1 ? ' persona' : ' persones') + ': ' + esc(t.members.map(m => m.name).filter(Boolean).join(', ')) : 'Encara no hi ha cap persona a l\'equip.'}${t.delivered ? ' · Dossier lliurat' : ''}</p>
     <div class="row"><button type="button" class="btn ghost small" id="edRev">Revisar el projecte</button><button type="button" class="btn ghost small" id="edView">Veure com aquest equip</button>${t.delivered ? '<button type="button" class="btn ghost small" id="edReopen">Reobrir el dossier</button>' : ''}<button type="button" class="btn ghost small danger" id="edDel">Esborrar l'equip</button></div><div id="edBox"></div></div>`; }
+const ACC_OPEN = new Set(); // apartats amb les dates desplegades a «Planificació»
 function vObertura(v) {
   if (!G.access) G.access = defaultAccess([]);
   const groups = SECS.filter(g => !['lliura'].includes(g[0]));
   const st = k => G.access[k] || (G.access[k] = { state: 'closed', from: '' });
   const nOpen = PROG.filter(s => access(s.k) === 'open').length;
-  const seg = k => { const a = st(k); return `<div class="seg" role="group" aria-label="Estat">${[['closed', 'Tancat'], ['open', 'Obert'], ['readonly', 'Només lectura']].map(([v2, l]) => `<button type="button" class="${a.state === v2 ? 'on' : ''} s-${v2}" data-acc="${k}" data-v="${v2}">${l}</button>`).join('')}</div>`; };
+  const seg = k => { const a = st(k); return `<div class="seg" role="group" aria-label="Estat">${[['closed', 'Tancat'], ['open', 'Obert'], ['readonly', '<span class="lg">Només lectura</span><span class="sh">Lectura</span>']].map(([v2, l]) => `<button type="button" class="${a.state === v2 ? 'on' : ''} s-${v2}" data-acc="${k}" data-v="${v2}">${l}</button>`).join('')}</div>`; };
   v.innerHTML = `${head('Planificació del projecte', `${nOpen} <span class="muted" style="font-weight:500">de ${PROG.length} apartats oberts</span>`, '<button class="btn ghost" id="accAllOpen">Obrir-ho tot</button><button class="btn ghost" id="accAllClose">Tancar-ho tot</button>')}
     <p class="muted intro">Obre els apartats a mesura que els treballeu a classe. Els tancats no es poden veure ni omplir. Amb «Només lectura», l'alumnat veu la feina feta però ja no la pot canviar (per exemple, després de la data de lliurament). També pots programar que un apartat s'obri sol en una data i fins quan es pot editar: passada aquesta data, queda en «Només lectura».</p>
     ${groups.map(([gk, gl, , items]) => card(gl, items.filter(([k]) => sec(k).p).map(([k]) => { const s = sec(k), a = st(k), eff = access(k);
       return `<div class="accrow"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}${a.state === 'closed' && a.from ? ` · ${eff === 'open' ? 'obert automàticament des del' : 's\'obrirà el'} ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES')}` : ''}${a.until && a.state !== 'readonly' ? ` · ${eff === 'readonly' ? 'tancat per a l\'edició des del' : 'es podrà editar fins al'} ${new Date(a.until + 'T00:00').toLocaleDateString('ca-ES')}` : ''}</div></div>
-        ${seg(k)}<div class="accdates"><label class="accdate">S'obre el<input type="date" data-accdate="${k}" value="${esc(a.from || '')}" ${a.state !== 'closed' ? 'disabled' : ''}></label><label class="accdate">Editable fins al<input type="date" data-accuntil="${k}" value="${esc(a.until || '')}" ${a.state === 'readonly' ? 'disabled' : ''}></label></div></div>`; }).join(''),
+        ${seg(k)}<button type="button" class="accprog ${a.from || a.until ? 'on' : ''}" data-accprog="${k}" aria-expanded="${ACC_OPEN.has(k)}" title="Programar dates" aria-label="Programar dates de ${esc(s.l)}">${ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>')}<span>${a.from || a.until ? 'Programat' : 'Programar'}</span></button>
+        ${ACC_OPEN.has(k) ? `<div class="accdates"><label class="accdate">S'obre el<input type="date" data-accdate="${k}" value="${esc(a.from || '')}" ${a.state !== 'closed' ? 'disabled' : ''}></label><label class="accdate">Editable fins al<input type="date" data-accuntil="${k}" value="${esc(a.until || '')}" ${a.state === 'readonly' ? 'disabled' : ''}></label>${a.from || a.until ? `<button type="button" class="linkbtn small" data-accclr="${k}">Treure les dates</button>` : ''}<p class="small muted">${a.state !== 'closed' ? 'La data d\'obertura només s\'aplica als apartats tancats. ' : ''}${a.state === 'readonly' ? 'En «Només lectura» no cal data límit.' : ''}</p></div>` : ''}</div>`; }).join(''),
       `<button type="button" class="linkbtn" data-accgrp="${gk}" data-v="open">Obrir el bloc</button> · <button type="button" class="linkbtn" data-accgrp="${gk}" data-v="closed">Tancar-lo</button>`)).join('')}`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { st(b.dataset.acc).state = b.dataset.v; save(); rr(); });
+  v.querySelectorAll('[data-accprog]').forEach(b => b.onclick = () => { const k = b.dataset.accprog; ACC_OPEN.has(k) ? ACC_OPEN.delete(k) : ACC_OPEN.add(k); rr(); });
+  v.querySelectorAll('[data-accclr]').forEach(b => b.onclick = () => { const a = st(b.dataset.accclr); a.from = ''; delete a.until; save(); rr(); });
   v.querySelectorAll('[data-accdate]').forEach(i => i.onchange = () => { st(i.dataset.accdate).from = i.value; save(); rr(); });
   v.querySelectorAll('[data-accuntil]').forEach(i => i.onchange = () => { st(i.dataset.accuntil).until = i.value; save(); rr(); });
   v.querySelectorAll('[data-accgrp]').forEach(b => b.onclick = () => { SECS.find(g => g[0] === b.dataset.accgrp)[3].forEach(([k]) => { if (sec(k).p) st(k).state = b.dataset.v; }); save(); rr(); });
@@ -5453,8 +5489,8 @@ function revLog(t, k) {
   if (l.length > 20) l.splice(0, l.length - 20);
 }
 // L'equip ha de millorar l'apartat i encara no l'ha tornat a enviar (encara que ja hi estigui fent canvis)
-const milPending = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'millorar' && workState(t, s) !== 'sent' && !(se && se.at > (r.at || 0)); };
-const okDone = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'correcte' && !(se && se.at > (r.at || 0)); };
+const milPending = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'millorar' && workState(t, s) !== 'sent' && !(se && r.at && se.at > r.at); };
+const okDone = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'correcte' && !(se && r.at && se.at > r.at); };
 let revFilter = 'tots';
 const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'Reviseu l\'ortografia.', 'Connecteu-ho amb el vostre sector.'];
 function vRevisio(v) {
