@@ -4709,7 +4709,8 @@ function bkErr(e) {
   if (/other-account/.test(c)) return 'Has triat un altre compte de Google. Torna-ho a provar amb el teu compte de l\'institut.';
   if (/no-token/.test(c)) return 'Cal tornar a donar permís a Google Drive. Torna-ho a provar.';
   if (/fbapi/.test(c)) return 'La web s\'ha d\'actualitzar. Recarrega la pàgina i torna-ho a provar.';
-  if (/drive 403/.test(c)) return 'Google Drive no ha deixat desar la còpia. Pot ser que l\'institut no permeti connectar eines externes al Drive. Mentrestant, descarrega la còpia a l\'ordinador.';
+  if (/drive 403/.test(c) && /has not been used|is disabled|accessNotConfigured|SERVICE_DISABLED/i.test(c)) return 'L\'administrador de l\'eina encara ha d\'activar el servei de Google Drive (Google Drive API) al projecte. Mentrestant, descarrega la còpia a l\'ordinador.';
+  if (/drive 403/.test(c)) return 'Google Drive no ha deixat desar la còpia. Pot ser que l\'institut no permeti connectar eines externes al Drive. Mentrestant, descarrega la còpia a l\'ordinador. (' + c.slice(10, 160) + ')';
   return 'No s\'ha pogut completar. Comprova la connexió i torna-ho a provar. (' + c.slice(0, 120) + ')';
 }
 // Petició a l'API de Google Drive amb el permís
@@ -4769,6 +4770,13 @@ function bkDownload(data) {
   const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
   a.download = bkName(data.at); document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
 }
+// Botó «Descarregar a l'ordinador»: la mateixa còpia, però en un arxiu a l'ordinador (no cal Google Drive)
+async function bkPcBtn(b, box) {
+  const t = b.textContent; b.disabled = true; b.innerHTML = '<span class="spin"></span> Preparant...';
+  try { bkDownload(await bkCollect()); toast('Còpia descarregada. Guarda l\'arxiu en un lloc segur.'); }
+  catch (e) { console.warn(e); if (box) box.innerHTML = `<div class="notice">No s'ha pogut preparar la còpia. Torna-ho a provar.</div>`; else toast('No s\'ha pogut preparar la còpia.'); }
+  b.disabled = false; b.textContent = t;
+}
 // Desa en blocs que no passin del límit de mida de Firebase (les imatges poden pesar molt)
 async function bkBatch(ops) {
   let part = [], size = 0;
@@ -4820,9 +4828,10 @@ function bkHome(v, prof) {
       <b>Còpies de seguretat al teu Google Drive</b>
       <p>Pots guardar una còpia de tots els teus grups (equips, feina de l'alumnat, revisions i notes) al teu Google Drive. Si mai passés res, podries recuperar les dades des d'aquí.</p>
       <p>Si l'actives, es fa una còpia <b>cada setmana</b> quan entres a l'eina, i també en pots fer quan vulguis des de «Còpies de seguretat». L'eina només veu la seva carpeta de còpies, no la resta del teu Drive.</p>
-      <div class="bkmsg"></div><div class="row"><button type="button" class="btn" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkclose>Ara no</button></div>`,
+      <div class="bkmsg"></div><div class="row"><button type="button" class="btn" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkpc>Descarregar a l'ordinador</button><button type="button" class="btn ghost" data-bkclose>Ara no</button></div>`,
       (o, close) => {
         o.querySelector('[data-bkclose]').addEventListener('click', () => { bkSet({ seen: true, on: false }); toast('D\'acord. Ho pots activar quan vulguis a «Còpies de seguretat».'); });
+        o.querySelector('[data-bkpc]').onclick = e => bkPcBtn(e.target, o.querySelector('.bkmsg'));
         o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); b.disabled = true;
           try { await drvConnect(); bkSet({ seen: true, on: true }); b.innerHTML = '<span class="spin"></span> Fent la primera còpia...'; await bkRun(false); close(); toast('Fet! La primera còpia ja és al teu Google Drive.'); }
           catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Activar les còpies'; m.innerHTML = `<div class="notice">${esc(bkErr(err))}</div>`; } };
@@ -4832,8 +4841,9 @@ function bkHome(v, prof) {
   if (!bkDue()) return;
   if (drvTok()) { bkRun(true).then(() => toast('Còpia setmanal desada al teu Google Drive.')).catch(e => console.warn(e)); return; }
   v.insertAdjacentHTML('afterbegin', `<div class="notice info bknudge"><b>Toca fer la còpia setmanal dels teus grups al Google Drive.</b> Només cal un clic.
-    <div class="row" style="margin-top:10px"><button type="button" class="btn small" data-bkdo>Fer-la ara</button><button type="button" class="btn ghost small" data-bklater>Més tard</button></div></div>`);
+    <div class="row" style="margin-top:10px"><button type="button" class="btn small" data-bkdo>Fer-la ara</button><button type="button" class="btn ghost small" data-bkpc>Descarregar a l'ordinador</button><button type="button" class="btn ghost small" data-bklater>Més tard</button></div></div>`);
   const n = v.querySelector('.bknudge');
+  n.querySelector('[data-bkpc]').onclick = e => bkPcBtn(e.target);
   n.querySelector('[data-bklater]').onclick = () => { bkSet({ snooze: Date.now() + 864e5 }); n.remove(); };
   n.querySelector('[data-bkdo]').onclick = async e => { const b = e.target; b.disabled = true;
     try { await drvConnect(); b.innerHTML = '<span class="spin"></span> Fent la còpia...'; await bkRun(true); n.remove(); toast('Còpia setmanal desada al teu Google Drive.'); }
