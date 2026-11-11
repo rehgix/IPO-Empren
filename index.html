@@ -5366,8 +5366,10 @@ const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'R
 function vRevisio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
   const ws = s => workState(t, s);
-  const cnt = w => PROG.filter(s => ws(s) === w).length;
-  const show = s => revFilter === 'tots' || ws(s) === revFilter;
+  // Un apartat en edició amb una revisió («a millorar» o «correcte») també compta dins del filtre d'aquesta revisió
+  const is = (s, f) => { const w = ws(s), st = (t.review[s.k] || {}).status; return w === f || (w === 'edit' && (f === 'millorar' || f === 'correcte') && st === f); };
+  const cnt = w => PROG.filter(s => is(s, w)).length;
+  const show = s => revFilter === 'tots' || is(s, revFilter);
   const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
   const groups = SECS.filter(g => g[0] !== 'lliura');
   const dot = s => ws(s);
