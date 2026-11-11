@@ -705,6 +705,7 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .hsteps .n{display:grid;place-items:center;width:34px;height:34px;border-radius:50%;font-weight:600}
 .hsteps li.ok .n{color:#fff}
 .hsteps b{display:block}
+.hsteps p b{display:inline}
 .hsteps p{margin:2px 0 0;color:var(--muted);font-size:14px;line-height:1.5}
 @media (max-width:620px){.hhero .hill{display:none}}
 
@@ -1395,6 +1396,10 @@ body.navopen{overflow:hidden}
 }
 table.fin.treso td:first-child::after,table.fin.treso th:first-child::after{content:"";position:absolute;top:0;bottom:0;right:-12px;width:12px;pointer-events:none;background:linear-gradient(90deg,rgba(15,18,34,.14),transparent);opacity:0;transition:opacity .2s}
 .tablebox.scx table.fin.treso td:first-child::after,.tablebox.scx table.fin.treso th:first-child::after{opacity:1}
+.segbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));left:calc(max(14px,env(safe-area-inset-left,0px)) + 56px);z-index:80;height:46px;display:inline-flex;align-items:center;gap:6px;padding:0 16px 0 10px;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);font:600 15px var(--font);box-shadow:var(--sh-md);cursor:pointer}
+.segbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.segbtn:hover{background:var(--soft)}.segbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.segbtn[hidden],body:has(.side.open) .segbtn{display:none}
+@media (max-width:620px){.segbtn{transition:transform .25s var(--ease),opacity .2s var(--ease)}.segbtn.away:not(:focus-visible){transform:translateY(-90px);opacity:0;pointer-events:none}}
 /* ---------- Campaneta i finestra d'avisos de l'alumnat ---------- */
 .bellbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));right:max(14px,env(safe-area-inset-right,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);box-shadow:var(--sh-md);cursor:pointer}
 .bellbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -1969,7 +1974,14 @@ function render() {
   updateTeamBanner();
   if (CLOUD) cloudAfterRender(v);
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-  navSave(); bellUpdate();
+  navSave(); bellUpdate(); segBtnUpdate();
+}
+// Botó «Seguiment» a dalt de tot, al costat del menú: torna a la vista de tots els equips des de qualsevol pàgina del professor
+function segBtnUpdate() {
+  let b = $('#segBtn'); const show = G && role === 'prof' && tab !== 'seguiment';
+  if (!show) { if (b) b.hidden = true; return; }
+  if (!b) { document.body.insertAdjacentHTML('beforeend', `<button type="button" class="segbtn" id="segBtn" title="Tornar al seguiment dels equips">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Seguiment</span></button>`); b = $('#segBtn'); b.onclick = () => { tab = 'seguiment'; render(); scrollTo(0, 0); }; }
+  b.hidden = false;
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
@@ -4115,6 +4127,7 @@ function bindActsConfig(v) {
 /* ================= Versió web amb Firebase ================= */
 // Inici de sessió amb el compte de Google de l'institut i dades a Firestore.
 // Estructura: groups/{grup} · members/{alumne} · teams/{equip} · teams/{equip}/files · teams/{equip}/prof/{review|grades|ai}
+let GOTAB = null; // pàgina del grup on cal anar en obrir-lo
 let lastGid = null, FB = null, USER = null, ME = null, GID = null, GROUP = null, ROSTER = [], INVITES = [], UNSUB = [], FILES = {};
 let SNAP = { group: '', teams: {} }, syncT = null, syncBusy = false, syncAgain = false, pendRender = false, rT = null;
 // Identificadors difícils d'endevinar (atzar criptogràfic del navegador)
@@ -4549,6 +4562,7 @@ async function openProf() {
   const PT = ['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'], nv = lastGid === null ? navLoad() : null; // en recarregar, torna on eres
   if (nv) { role = Number.isInteger(nv.role) && nv.role >= 0 && nv.role < G.teams.length ? nv.role : 'prof'; tab = nv.tab; if (Number.isInteger(nv.team) && nv.team >= 0 && nv.team < G.teams.length) profTeam = nv.team; if (role === 'prof' && !PT.includes(tab)) tab = 'seguiment'; }
   else { role = 'prof'; if (lastGid !== GID || !tab || !PT.includes(tab)) tab = 'seguiment'; }
+  if (GOTAB && GOTAB.gid === GID && PT.includes(GOTAB.tab)) { role = 'prof'; tab = GOTAB.tab; } GOTAB = null; // des dels «Primers passos» del tauler
   lastGid = GID;
   render(); sideUser();
   UNSUB.push(FB.listenDoc(gpath(), applyGroup, () => {}));
@@ -5072,11 +5086,19 @@ async function homeView(msg, d) {
     gs.length ? hq('button', 'type="button" data-hqcopy', '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>', 'Enllaç per a l\'alumnat', gs.length > 1 ? 'Tria per a quin grup' : 'Copia\'l per al Classroom') : '',
     isAdmin() ? hq('a', 'href="#admin"', '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>', 'Panell d\'administrador', nReq ? nReq + (nReq === 1 ? ' sol·licitud pendent' : ' sol·licituds pendents') : 'Aprova el professorat', nReq ? `<span class="pill">${nReq}</span>` : '') : ''].filter(Boolean);
   const quickHtml = quick.length ? `<div class="hquick" data-g="prof">${quick.join('')}</div>` + (gs.length > 1 ? '<div class="hqpick" id="hqPick" data-g="prof" hidden></div>' : '') : '';
-  const steps = [['Crea un grup', 'Posa-li nom, tria el sector i el nombre d\'equips. Si només vols provar l\'eina, crea\'n un d\'exemple.'],
-    ['Dona l\'enllaç a l\'alumnat', 'Copia l\'enllaç del grup i comparteix-lo (per exemple al Classroom). Entren amb el compte de l\'institut i cadascú veu només el seu equip.'],
-    ['Obre els apartats', 'El grup comença amb tot tancat. A «Obertura dels apartats» decideixes què treballa l\'alumnat i quan.'],
-    ['Revisa i qualifica', 'Segueix el progrés dels equips, revisa el que lliuren, posa les notes de RA4 i RA5 i descarrega els informes en PDF.']];
-  const guide = `<div data-g="prof">${card('Primers passos', pad(`<ol class="hsteps">${steps.map(([t, d], i) => `<li${i === 0 && gs.length ? ' class="ok"' : ''}><span class="n">${i === 0 && gs.length ? '✓' : i + 1}</span><div><b>${t}</b><p>${d}</p></div></li>`).join('')}</ol>`))}</div>`;
+  // Primers passos: estat real de l'últim grup (alumnes que hi han entrat, apartats oberts i feina per revisar)
+  const g0 = gs[0], acc0 = g0 ? Object.values((P(g0.cfg) || {}).access || {}).filter(a => a && (a.state !== 'closed' || a.from)).length : 0;
+  const guideHtml = () => {
+    const st = g0 && ST[g0.id], nAl = st ? st.alum : null, nRev = st && st.rev != null ? st.rev : null, nSent = st ? st.sent : 0;
+    const steps = [
+      { ok: !!g0, t: 'Crea un grup', d: g0 ? `Ja tens ${gs.length === 1 ? 'un grup' : gs.length + ' grups'}. L'últim és «${esc(g0.name)}».` : 'Posa-li nom, tria el sector i el nombre d\'equips. Si només vols provar l\'eina, crea\'n un d\'exemple.', a: g0 ? '' : '<button type="button" class="btn small" data-hq="nou">Crear un grup</button>' },
+      { ok: nAl > 0, t: 'Dona l\'enllaç a l\'alumnat', d: !g0 ? 'Copia l\'enllaç del grup i comparteix-lo (per exemple al Classroom). Entren amb el compte de l\'institut.' : nAl == null ? 'Comprovant quants alumnes hi han entrat…' : nAl ? `Hi han entrat <b>${nAl} ${nAl === 1 ? 'alumne' : 'alumnes'}</b>. Si en falta algun, torna-li a passar l'enllaç.` : 'Encara no hi ha entrat cap alumne. Copia l\'enllaç i comparteix-lo al Classroom.', a: g0 ? `<button type="button" class="btn ${nAl ? 'ghost ' : ''}small" data-gcopy="${esc(g0.id)}">Copiar l'enllaç</button>` : '' },
+      { ok: acc0 > 0, t: 'Obre els apartats', d: !g0 ? 'El grup comença amb tot tancat. Tu decideixes què treballa l\'alumnat i quan.' : acc0 ? `Tens <b>${acc0} ${acc0 === 1 ? 'apartat obert o programat' : 'apartats oberts o programats'}</b>.` : 'Ara mateix tot està tancat: l\'alumnat no pot treballar fins que obris algun apartat.', a: g0 ? `<button type="button" class="btn ${acc0 ? 'ghost ' : ''}small" data-gotab="obertura">Planificació</button>` : '' },
+      { ok: nRev === 0 && nSent > 0, t: 'Revisa i qualifica', d: !g0 ? 'Segueix el progrés dels equips, revisa el que lliuren i posa les notes de RA4 i RA5.' : nRev == null ? 'Comprovant què han enviat els equips…' : nRev ? `Tens <b>${nRev} ${nRev === 1 ? 'apartat enviat' : 'apartats enviats'} per revisar</b>.` : nSent ? 'Ho tens tot revisat. Quan els equips enviïn més feina, sortirà aquí.' : 'Encara cap equip ha enviat res per revisar.', a: g0 && nRev ? '<button type="button" class="btn small" data-gotab="revisio">Anar a Revisió</button>' : '' }];
+    const done = steps.filter(x => x.ok).length;
+    return card(`Primers passos · ${done} de 4`, pad(`<ol class="hsteps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}"><span class="n">${x.ok ? '✓' : i + 1}</span><div><b>${x.t}</b><p>${x.d}</p>${x.a ? `<div class="row" style="margin-top:8px">${x.a}</div>` : ''}</div></li>`).join('')}</ol>`));
+  };
+  const guide = `<div data-g="prof" id="hGuide">${guideHtml()}</div>`;
   v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
     ${hero}${stats}${quickHtml}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
@@ -5121,6 +5143,13 @@ async function homeView(msg, d) {
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
     box.querySelector('[data-yes]').onclick = async e => { e.target.disabled = true; try { await deleteGroupDeep(g.id); HOMEC = null; homeView('Grup esborrat.'); } catch (err) { toast('No s\'ha pogut esborrar.'); } }; });
+  // Guia: es torna a dibuixar quan arriben les dades, i porta a la pàgina del grup que toca
+  const bindGuide = () => { const box = v.querySelector('#hGuide'); if (!box) return;
+    box.querySelectorAll('[data-gotab]').forEach(b => b.onclick = () => { GOTAB = { gid: g0.id, tab: b.dataset.gotab }; location.hash = '#g=' + g0.id; });
+    box.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = () => v.querySelector(`.gcard [data-gcopy="${g0.id}"]`)?.click());
+    box.querySelectorAll('[data-hq="nou"]').forEach(b => b.onclick = () => v.querySelector('.hquick [data-hq="nou"]')?.click() || $('#ngName')?.focus()); };
+  const paintGuide = () => { const box = v.querySelector('#hGuide'); if (box) { box.innerHTML = guideHtml(); bindGuide(); } };
+  bindGuide();
   // Totals del resum (alumnes i progrés mitjà), que s'omplen a mesura que carreguen els grups
   const tot = { alum: 0, n: 0, sum: 0, fail: 0 }, hs = k => v.querySelector(`[data-hs="${k}"]`);
   let left = gs.length; const paintTot = () => { if (--left > 0 && d.tot) return; const p = tot.n ? Math.round(tot.sum / tot.n * 100) : 0; if (!left) d.tot = { alum: tot.alum, p }; if (!hs('alum')) return; hs('alum').textContent = tot.alum; hs('prog').textContent = p + ' %'; hs('bar').style.width = p + '%'; };
@@ -5130,6 +5159,13 @@ async function homeView(msg, d) {
       const [teams, mem] = await Promise.all([FB.list('groups/' + g.id + '/teams'), FB.list('groups/' + g.id + '/members')]);
       const ts = teams.filter(d => (g.teamIds || []).includes(d.id)).map(d => { const t = teamFromDoc(d), mk = P((d.data || {}).marca) || {}; if (String(mk.logo || '').startsWith('file:') && !t.data.marca.logo) t.data.marca.logo = 'file'; return t; }), pr = ts.length ? ts.reduce((a, t) => a + progress(t), 0) / ts.length : 0;
       ST[g.id] = { alum: mem.length, p: Math.round(pr * 100) };
+      if (g === g0) { // feina enviada i pendent de revisar a l'últim grup
+        const rvs = await Promise.all(ts.map(t => FB.get('groups/' + g.id + '/teams/' + t.id + '/prof/review').catch(() => null)));
+        ts.forEach((t, i) => { t.review = (rvs[i] && P(rvs[i].v)) || {}; });
+        ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => sentOf(t, s.k)).length, 0);
+        ST[g.id].rev = ts.reduce((a, t) => a + PROG.filter(s => workState(t, s) === 'sent').length, 0);
+        paintGuide();
+      }
       card.querySelector('[data-st="alum"]').textContent = mem.length;
       card.querySelector('[data-st="prog"]').textContent = Math.round(pr * 100) + ' %';
       card.querySelector('[data-st="bar"]').style.width = Math.round(pr * 100) + '%';
@@ -5456,10 +5492,9 @@ function vSeguiment(v) {
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
-    ${rows ? `<div class="sleg" aria-label="Llegenda dels blocs">${groups.map(([gk, gl]) => `<span data-g="${gk}"><i></i>${esc(gl)}</span>`).join('')}<span><i class="x"></i>Tancat</span></div>` : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
     <div class="row"><button type="button" class="btn" id="sAdd">+ Afegir un equip</button></div>
-    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte (mira la llegenda de dalt) i s'omple a mesura que l'equip avança.</p>`;
+    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte i s'omple a mesura que l'equip avança; les ratllades encara estan tancades. Passa-hi el ratolí per veure'n el nom i el percentatge.</p>`;
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { edTeam = edTeam === +b.dataset.ed ? -1 : +b.dataset.ed; rr(); });
@@ -5651,7 +5686,7 @@ document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navb
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);
 // En mòbil, el botó del menú s'amaga en baixar i torna en pujar
-{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); const bb = $('#bellBtn'); if (bb) bb.classList.toggle('away', nb.classList.contains('away') && !$('#bellPop')); ly = y; }, { passive: true }); }
+{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); const bb = $('#bellBtn'), sb = $('#segBtn'); if (bb) bb.classList.toggle('away', nb.classList.contains('away') && !$('#bellPop')); if (sb) sb.classList.toggle('away', nb.classList.contains('away')); ly = y; }, { passive: true }); }
 // El logo porta al tauler: «Els meus grups» (professorat) o l'inici de l'equip (alumnat)
 const brand = document.querySelector('.brand'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Anar al tauler';
 const goHome = () => { setNav(false);
