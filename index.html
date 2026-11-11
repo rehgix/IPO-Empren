@@ -1124,6 +1124,7 @@ table.fin{box-shadow:none}
 .ssq img{width:100%;height:100%;object-fit:contain;background:#fff;padding:4px}
 .swho b{display:block;font-size:20px;font-weight:650;letter-spacing:-.02em;line-height:1.15;overflow-wrap:anywhere}
 .swho small{color:var(--muted);font-size:14px}
+.swho .smem{display:block;margin-top:4px;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
 .sseg{display:flex;gap:5px}
 .sseg i{display:block;flex:1;height:16px;border-radius:8px;background:linear-gradient(90deg,var(--gc) var(--p),var(--track) var(--p))}
 .sseg i.x{background:none;border:2px dashed var(--dash)}
@@ -5311,7 +5312,7 @@ function vSeguiment(v) {
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<i class="x" title="${esc(gl)}: tancat"></i>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<i data-g="${gk}" style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>`; }).join('');
-    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b></span></span>
+    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = t.members.map(m => (m.name || m.email || '').trim()).filter(Boolean); return `<small class="smem">${ns.length ? ns.map(esc).join(', ') : 'Encara sense alumnes'}</small>`; })()}</span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
