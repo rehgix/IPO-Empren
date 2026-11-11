@@ -14,5 +14,5 @@ window.makeFB = function(){ const kids=(c)=>Object.keys(DB).filter(k=>k.startsWi
   async set(p,d){WRITES.push(['set',p]);DB[p]=d}, async update(p,d){Object.assign(DB[p],d)}, async del(p){delete DB[p]},
   async list(c,w){ let l=kids(c); if(w) l=l.filter(x=>(x[w[0]]||[]).includes(w[2])); return JSON.parse(JSON.stringify(l)); },
   listenDoc(p,cb){cb(DB[p]||null);return()=>{}}, listenCol(c,cb){cb(kids(c));return()=>{}},
-  async batch(ops){ ops.forEach(o=>{WRITES.push([o.op,o.path, JSON.stringify(o.data||'').slice(0,80)]); if(o.op==='set')DB[o.path]=o.data; else delete DB[o.path];}); },
+  async batch(ops){ ops.forEach(o=>{WRITES.push([o.op,o.path, JSON.stringify(o.data||'').slice(0,80)]); if(o.op==='set')DB[o.path]=o.data; else if(o.op==='update')DB[o.path]=Object.assign(DB[o.path]||{},o.data); else delete DB[o.path];}); },
   async driveToken(e){ return {token:'TOK', email:e}; } }; };

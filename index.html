@@ -1362,6 +1362,28 @@ body.navopen{overflow:hidden}
 .rv-l{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.rv-l div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4}.rv-l b{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
 @media (max-width:820px){.rv-l{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
+/* ---------- Campaneta i finestra d'avisos de l'alumnat ---------- */
+.bellbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));right:max(14px,env(safe-area-inset-right,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);box-shadow:var(--sh-md);cursor:pointer}
+.bellbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bellbtn:hover{background:var(--soft)}.bellbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.bellbtn[hidden]{display:none}
+.bellbtn .belln{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font:700 11.5px/20px var(--font);text-align:center;box-shadow:0 0 0 2px var(--bg)}
+@media (max-width:620px){.bellbtn{transition:transform .25s var(--ease),opacity .2s var(--ease)}.bellbtn.away:not(:focus-visible){transform:translateY(-90px);opacity:0;pointer-events:none}}
+.bellpop{position:fixed;top:calc(max(14px,calc(env(safe-area-inset-top,0px) + 8px)) + 54px);right:max(14px,env(safe-area-inset-right,0px));z-index:90;width:min(380px,calc(100vw - 28px));max-height:min(70vh,560px);display:flex;flex-direction:column;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh-float,0 18px 50px rgba(0,0,0,.18));overflow:hidden}
+.bp-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}.bp-h b{font-size:16px}
+.bp-l{overflow:auto;padding:8px;display:grid;gap:4px}
+.bp-i{display:grid;gap:4px;text-align:left;font:inherit;color:inherit;background:none;border:0;border-radius:14px;padding:10px 12px;cursor:pointer}
+.bp-i:hover{background:var(--soft)}.bp-i.new{background:var(--accent-soft)}
+.bp-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.bp-t b{font-size:14px}
+.bp-c{font-size:14px;line-height:1.45;overflow-wrap:anywhere}.bp-d{font-size:12px;color:var(--muted)}
+.hi-g{display:grid;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:16px}
+.hi-g.warn{background:#fff1f0;border-color:#fecaca}
+.hi-g h4{margin:0 0 2px;font-size:14px}.hi-g p{margin:0}
+.hi-m{display:grid;gap:2px}.hi-m p{font-size:14px;line-height:1.45;padding:0 10px 4px;overflow-wrap:anywhere}
+.hi-i{display:flex;align-items:center;justify-content:space-between;gap:10px;font:inherit;font-size:14.5px;font-weight:600;color:inherit;background:none;border:0;border-radius:10px;padding:7px 10px;cursor:pointer;text-align:left}
+.hi-chips{display:flex;flex-wrap:wrap;gap:6px}.hi-chips button{font:inherit;font-size:13px;color:inherit;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}.hi-chips button:hover{border-color:var(--ink)}
+.hi-i:hover{background:var(--soft)}.hi-i em{font-style:normal;font-size:13px;color:var(--muted);white-space:nowrap}
+html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,113,.35)}
 /* ---------- Retocs de la revisió general ---------- */
 /* Xifres del capçal de Seguiment: s'encongeixen si no caben a la targeta (abans «100 %» sortia de la seva) */
 .snums div{container-type:inline-size}.snums b{font-size:clamp(24px,32cqi,46px)}
@@ -1696,12 +1718,20 @@ function workState(t, s) {
   if (se && se.h === secHash(t, s.k)) return rv.status && (!rv.at || rv.at >= se.at) ? rv.status : 'sent';
   return 'edit';
 }
+/* ---------- Professor o professora: segons el nom de qui ha creat el grup (o el que triï a «Configuració») ---------- */
+const FEM_NAMES = new Set('carmen carme merce mercedes montserrat montse pilar rosario rocio isabel raquel ruth rut esther ester ines dolores lourdes consuelo amparo soledad trinidad beatriz beatriu noemi abril judit judith elisabet maribel mabel belen nieves irene meritxell roser anne cinta assumpcio concepcio encarnacio asuncion maite mari marisol sol itziar miren leire naiara uxue ingrid ivet iris angels remei roso carmen isabel nuri rosaura carol raquel ariadna ainhoa ines aurora elisabeth lidia lydia yasmin jasmin sheila noor nur maryam mariam miriam myriam esperanza caridad purificacion paz luz merce'.split(' '));
+const MASC_A = new Set('borja luca nicola elia joshua josua bautista sasha garcia'.split(' '));
+function nameFem(n) { const f = String(n || '').trim().split(/\s+/)[0].toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (!f) return false; if (FEM_NAMES.has(f)) return true; if (MASC_A.has(f)) return false; return /a$/.test(f); }
+let JCFG = {}; // configuració del grup a la pàgina «Tria el teu equip» (encara no hi ha G)
+const profFem = () => { const c = G && (G.profName || G.profFem) ? G : JCFG; return c.profFem ? c.profFem === 'f' : nameFem(c.profName); };
+// PR('el') → «el professor» / «la professora»; també 'El', 'al', 'pel', 'del' i 'n' (només la paraula)
+function PR(w) { const f = profFem(), n = f ? 'professora' : 'professor'; return { n, el: (f ? 'la ' : 'el ') + n, El: (f ? 'La ' : 'El ') + n, al: (f ? 'a la ' : 'al ') + n, pel: (f ? 'per la ' : 'pel ') + n, del: (f ? 'de la ' : 'del ') + n }[w] || n; }
 const WS_LABEL = { none: 'Sense fer', edit: 'En edició', sent: 'Enviat', correcte: 'Correcte', millorar: 'A millorar' };
 function sendSection(k) { const t = T(); t.data._meta = t.data._meta || {}; t.data._meta.sent = Object.assign({}, t.data._meta.sent || {}, { [k]: { at: Date.now(), h: secHash(t, k) } }); t.updated = Date.now(); save(); }
 function sendBarHtml(t, s, ac) {
   const ws = workState(t, s), se = sentOf(t, s.k), when = se ? new Date(se.at).toLocaleString('ca-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
-  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo al professor perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo al professor.', sent: `<b>✓ Enviat al professor</b> el ${when}. Si hi feu canvis, l'haureu de tornar a enviar.`, correcte: '<b>✓ Revisat pel professor: correcte.</b>', millorar: '<b>El professor us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
-  const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar al professor'}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar al professor</button>` : '';
+  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: `<b>✓ Enviat ${PR('al')}</b> el ${when}. Si hi feu canvis, l'haureu de tornar a enviar.`, correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
+  const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar ' + PR('al')}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar ${PR('al')}</button>` : '';
   return `<div class="sendbar ws-${ws}"><i class="wsdot ${ws}"></i><div class="sb-t">${msg}</div>${btn}</div>`;
 }
 function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'prof') return; const s = sec(tab); el.innerHTML = sendBarHtml(T(), s, access(tab)); bindSendBar(); }
@@ -1842,6 +1872,55 @@ function setNav(open) {
   if (!open && was && b && s.contains(document.activeElement)) b.focus();
 }
 let liveFn = null;
+/* ---------- Avisos per a l'alumnat: finestra en entrar i campaneta amb l'historial dels comentaris ---------- */
+const stuView = () => G && role !== 'prof' && !(CLOUD && ME && ME.isProf) && T();
+// Totes les revisions de l'equip, de la més nova a la més antiga
+function notifs(t) {
+  const out = [];
+  PROG.forEach(s => { const r = t.review[s.k]; if (!r || typeof r !== 'object') return;
+    const l = Array.isArray(r.log) && r.log.length ? r.log : (r.status || filled(r.comment) ? [{ at: r.at || 0, s: r.status, c: r.comment }] : []);
+    l.forEach(e => { if (e && typeof e === 'object') out.push({ k: s.k, l: s.l, at: Number(e.at) || 0, s: String(e.s || ''), c: String(e.c || '') }); }); });
+  return out.sort((a, b) => b.at - a.at);
+}
+const seenKey = () => 'ipoSeen:' + (GID || 'demo') + ':' + (T() ? T().id : '') + ':' + (USER ? USER.email : '');
+const seenGet = () => { try { return Number(localStorage.getItem(seenKey())) || 0; } catch (e) { return 0; } };
+const seenSet = () => { try { localStorage.setItem(seenKey(), String(Date.now())); } catch (e) {} };
+const nTxt = s => s === 'millorar' ? 'A millorar' : s === 'correcte' ? 'Correcte' : 'Comentari';
+function bellUpdate() {
+  let b = $('#bellBtn'); const t = stuView();
+  if (!t) { if (b) b.hidden = true; $('#bellPop') && $('#bellPop').remove(); return; }
+  if (!b) { document.body.insertAdjacentHTML('beforeend', `<button type="button" class="bellbtn" id="bellBtn" aria-haspopup="dialog" aria-expanded="false">${ico('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>')}<span class="belln" hidden></span></button>`); b = $('#bellBtn'); b.onclick = bellToggle; }
+  b.hidden = false;
+  const seen = seenGet(), n = notifs(t).filter(x => x.at > seen).length, c = b.querySelector('.belln');
+  c.hidden = !n; c.textContent = n > 9 ? '9+' : n;
+  b.setAttribute('aria-label', n ? `Notificacions: ${n} de noves` : 'Notificacions'); b.title = 'Notificacions';
+}
+function bellToggle() {
+  const old = $('#bellPop'), b = $('#bellBtn'); if (old) { old.remove(); b.setAttribute('aria-expanded', 'false'); return; }
+  const t = stuView(); if (!t) return;
+  const seen = seenGet(), l = notifs(t);
+  document.body.insertAdjacentHTML('beforeend', `<div class="bellpop" id="bellPop" role="dialog" aria-label="Notificacions"><div class="bp-h"><b>Notificacions</b><span class="small muted">Comentaris ${PR('del')}</span></div>
+    <div class="bp-l">${l.length ? l.map(x => `<button type="button" class="bp-i ${x.at > seen ? 'new' : ''}" data-nk="${esc(x.k)}"><span class="bp-t"><span class="wsbadge ${x.s === 'millorar' || x.s === 'correcte' ? x.s : 'sent'}">${nTxt(x.s)}</span><b>${esc(x.l)}</b></span>${x.c ? `<span class="bp-c">${esc(x.c)}</span>` : ''}${x.at ? `<span class="bp-d">${new Date(x.at).toLocaleString('ca-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>` : ''}</button>`).join('') : `<p class="small muted" style="margin:0;padding:8px 4px">Encara no hi ha cap comentari ${PR('del')}.</p>`}</div></div>`);
+  b.setAttribute('aria-expanded', 'true'); seenSet(); bellUpdate();
+  const pop = $('#bellPop');
+  pop.querySelectorAll('[data-nk]').forEach(x => x.onclick = () => { pop.remove(); b.setAttribute('aria-expanded', 'false'); go(x.dataset.nk); });
+  setTimeout(() => document.addEventListener('click', function off(e) { if (!pop.isConnected) return document.removeEventListener('click', off); if (!pop.contains(e.target) && !b.contains(e.target)) { pop.remove(); b.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', off); } }), 0);
+}
+// Finestra en entrar: el que cal millorar (amb el comentari) i el que falta enviar
+function stuWelcome() {
+  const t = stuView(); if (!t) return;
+  const k = 'ipoHi:' + (GID || 'demo') + ':' + t.id; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) {}
+  const mil = PROG.filter(s => access(s.k) !== 'closed' && milPending(t, s));
+  const open = PROG.filter(s => access(s.k) === 'open' && !mil.includes(s) && !okDone(t, s)), ed = open.filter(s => workState(t, s) === 'edit'), no = open.filter(s => workState(t, s) === 'none');
+  if (!mil.length && !ed.length && !no.length) return;
+  const li = s => `<button type="button" class="hi-i" data-hk="${esc(s.k)}"><span>${esc(s.l)}</span><em>Anar-hi →</em></button>`;
+  bkDialog(`<div class="bkic">${ico('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>')}</div><b>Hola! Teniu feina pendent</b>
+    ${mil.length ? `<div class="hi-g warn"><h4>${PR('El')} us demana millores</h4>${mil.map(s => { const c = (t.review[s.k].comment || '').trim(); return `<div class="hi-m">${li(s)}${c ? `<p>«${esc(c)}»</p>` : ''}</div>`; }).join('')}<p class="small muted">Feu els canvis i torneu a enviar l'apartat.</p></div>` : ''}
+    ${ed.length ? `<div class="hi-g"><h4>Començats però sense enviar</h4>${ed.map(li).join('')}</div>` : ''}
+    ${no.length ? `<div class="hi-g"><h4>Oberts i sense començar</h4><div class="hi-chips">${no.map(s => `<button type="button" data-hk="${esc(s.k)}">${esc(s.l)}</button>`).join('')}</div></div>` : ''}
+    <div class="row"><button type="button" class="btn" data-bkclose>D'acord</button></div>`,
+    (o, close) => o.querySelectorAll('[data-hk]').forEach(x => x.onclick = () => { close(); go(x.dataset.hk); }));
+}
 function render() {
   renderSide(); liveFn = null;
   const v = $('#view'); v.dataset.g = role === 'prof' ? 'prof' : (sec(tab) ? sec(tab).g : 'proj');
@@ -1853,7 +1932,7 @@ function render() {
   updateTeamBanner();
   if (CLOUD) cloudAfterRender(v);
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-  navSave();
+  navSave(); bellUpdate();
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
@@ -1929,7 +2008,7 @@ function lockedPage(v, k) {
   const s = sec(k), i = ALL.findIndex(x => x.k === k), prev = ALL[i - 1];
   {
     const a = G.access && G.access[k];
-    v.innerHTML = `${head(`${esc(s.gl)}${s.ca ? ' · ' + s.ca : ''}`, s.l)}<div class="locked-box">${ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>')}<div><b>Aquest apartat encara no està obert.</b><p class="muted">El professor l'obrirà quan hi arribeu a classe${a && a.from ? `, previsiblement el ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' })}` : ''}. Mentrestant, podeu completar els apartats que ja teniu oberts.</p></div></div>
+    v.innerHTML = `${head(`${esc(s.gl)}${s.ca ? ' · ' + s.ca : ''}`, s.l)}<div class="locked-box">${ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>')}<div><b>Aquest apartat encara no està obert.</b><p class="muted">${PR('El')} l'obrirà quan hi arribeu a classe${a && a.from ? `, previsiblement el ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' })}` : ''}. Mentrestant, podeu completar els apartats que ja teniu oberts.</p></div></div>
       <div class="row stepnav">${prev && prev.k !== 'inici' ? `<button class="btn ghost" data-go="${prev.k}">← ${prev.l}</button>` : '<span></span>'}<button class="btn" data-go="inici">Tornar a l'inici</button></div>`;
   }
 }
@@ -1939,7 +2018,7 @@ function pageBody(v, k, intro, body, opts = {}) {
   const rv = t.review[k];
   const [d, n] = s.p ? s.p(t) : [0, 0];
   v.innerHTML = `${flashHtml()}${head(`${esc(s.gl)}${s.ca ? ' · ' + s.ca : ''}${s.act ? ' · ' + s.act : ''}${s.p ? ` · <span id="secProg">${Math.min(d, n)} de ${n} apartats</span>` : ''}`, s.l, opts.actions || '')}
-    ${rv && (rv.comment || rv.status) ? `<div class="notice ${rv.status === 'correcte' ? 'info' : ''}"><b>${rv.status === 'correcte' ? 'Revisat pel professor: correcte.' : rv.status === 'millorar' ? 'El professor us demana millores.' : 'Comentari del professor.'}</b> ${esc(rv.comment || '')}</div>` : ''}
+    ${rv && (rv.comment || rv.status) ? `<div class="notice ${rv.status === 'correcte' ? 'info' : ''}"><b>${rv.status === 'correcte' ? 'Revisat ' + PR('pel') + ': correcte.' : rv.status === 'millorar' ? PR('El') + ' us demana millores.' : 'Comentari ' + PR('del') + '.'}</b> ${esc(rv.comment || '')}</div>` : ''}
     ${intro ? `<div class="intro muted">${intro}</div>` : ''}
     <div class="${opts.aside ? 'dec-layout' : ''}"><div id="pageBody" style="display:grid;gap:20px;min-width:0">${body}</div>${opts.aside ? '<aside class="sheet forecast" id="pageAside" aria-live="polite"></aside>' : ''}</div>
     ${s.p && !(CLOUD && ME && ME.isProf) ? `<div id="sendBarWrap">${sendBarHtml(t, s, ac)}</div>` : ''}
@@ -1979,7 +2058,7 @@ const openFrom = ks => ks.map(k => G.access && G.access[k] && G.access[k].from).
 function vInici(v) {
   const t = T(), pr = progress(t), m = t.data.marca;
   // Estat de les revisions: quants apartats estan correctes, enviats, a millorar o en edició
-  const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }; PROG.forEach(s => { const w = workState(t, s); if (w in wc) wc[w]++; });
+  const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }; PROG.forEach(s => { const w = milPending(t, s) ? 'millorar' : okDone(t, s) ? 'correcte' : workState(t, s); if (w in wc) wc[w]++; });
   const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
   const names = t.members.map(x => esc(x.name)).filter(Boolean).join(', ');
   const chips = [names || 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir'), t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'];
@@ -1990,7 +2069,7 @@ function vInici(v) {
     const ok = ss.filter(s => workState(t, s) === 'correcte').length;
     const rows = ss.map(s => { const ac = access(s.k), w = workState(t, s), rv = t.review[s.k];
       const meta = [s.act || s.ca, ac === 'readonly' ? 'Només lectura' : ''].filter(Boolean).join(' · ');
-      return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>El professor us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
+      return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   v.innerHTML = `${flashHtml()}<section class="ihero">
     <div class="iname">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
@@ -3291,7 +3370,7 @@ function vPitch(v) {
   page(v, 'pitch', 'Prepareu la comunicació del projecte: un discurs breu i persuasiu (pitch) que expliqui la vostra empresa en pocs minuts. Us servirà per a la presentació final i per al dossier.',
     card('Guió del pitch', pad(PE.PITCH.map(([k, l, h]) => ta('pitch.' + k, l, h, 2)).join('') + '<p class="small muted" id="wc"></p>'))
     + card('Format de la presentació', pad(radios('pitch.format', [['classe', 'Presentació a classe', 'L\'exposeu davant del grup, amb suport visual (diapositives o pòster).'], ['video', 'Vídeo pitch gravat', 'Un vídeo de 2-3 minuts que pugeu al Google Drive.']], true)
-      + (T().data.pitch.format === 'video' ? `<div class="pfield vlink"><label for="vurl">Enllaç del vídeo al Google Drive</label><div class="help">Al Drive, feu clic dret sobre el vídeo › <b>Compartir</b> › <b>Copiar l'enllaç</b>, i enganxeu-lo aquí. Comproveu que l'accés general sigui «Qualsevol persona amb l'enllaç», perquè el professor el pugui veure.</div><input type="url" id="vurl" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." data-path="pitch.videoUrl" data-allow-paste="1" value="${esc(T().data.pitch.videoUrl || '')}"><div class="small" id="vmsg" aria-live="polite"></div></div>` : ''))));
+      + (T().data.pitch.format === 'video' ? `<div class="pfield vlink"><label for="vurl">Enllaç del vídeo al Google Drive</label><div class="help">Al Drive, feu clic dret sobre el vídeo › <b>Compartir</b> › <b>Copiar l'enllaç</b>, i enganxeu-lo aquí. Comproveu que l'accés general sigui «Qualsevol persona amb l'enllaç», perquè ${PR('el')} el pugui veure.</div><input type="url" id="vurl" inputmode="url" autocomplete="off" placeholder="https://drive.google.com/..." data-path="pitch.videoUrl" data-allow-paste="1" value="${esc(T().data.pitch.videoUrl || '')}"><div class="small" id="vmsg" aria-live="polite"></div></div>` : ''))));
   liveFn = words; words();
   const vu = $('#vurl');
   if (vu) { const chk = () => { const u = vu.value.trim(), m = $('#vmsg'); if (!u) { m.innerHTML = ''; return; }
@@ -3384,7 +3463,7 @@ function vDossier(v) {
     <p class="muted intro">Aquest dossier recull tot el projecte. Copieu-ne el text per publicar-lo a la carpeta del projecte (Pt4).</p>
     ${SECS.filter(g => g[0] !== 'lliura').map(([, gl, , items]) => items.filter(([k]) => sec(k).p).map(([k]) => card(esc(sec(k).l), pad(secHtml(t, k)), esc([sec(k).ca, sec(k).act].filter(Boolean).join(' · ')))).join('')).join('')}
     <textarea id="dosTxt" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>`;
-  $('#deliver').onclick = () => { t.delivered = Date.now(); t.updated = t.delivered; save(); flash = { ok: true, html: '<b>Dossier lliurat.</b> El professor el pot revisar i us deixarà comentaris a cada apartat.' }; render(); window.scrollTo(0, 0); };
+  $('#deliver').onclick = () => { t.delivered = Date.now(); t.updated = t.delivered; save(); flash = { ok: true, html: '<b>Dossier lliurat.</b> ' + PR('El') + ' el pot revisar i us deixarà comentaris a cada apartat.' }; render(); window.scrollTo(0, 0); };
   $('#copyDos').onclick = async () => { const x = dossierText(t); try { await navigator.clipboard.writeText(x); $('#copyDos').textContent = 'Copiat'; } catch (e) { const ta = $('#dosTxt'); ta.classList.remove('sr-only'); ta.removeAttribute('aria-hidden'); ta.value = x; ta.rows = 12; ta.select(); $('#copyDos').textContent = 'Text a sota: prem Ctrl+C'; } };
 }
 /* ================= QUALIFICACIÓ PER ACTIVITATS, IA I INFORMES ================= */
@@ -4135,7 +4214,7 @@ function teamFromDoc(d) {
   return normTeam(t);
 }
 const groupFields = () => {
-  const cfg = {}; ['sector', 'acts', 'rubs', 'aiCfg', 'access', 'allowPaste', 'rubHide'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
+  const cfg = {}; ['sector', 'acts', 'rubs', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
@@ -4408,6 +4487,7 @@ async function openProf() {
   G.teams = docs.map(teamFromDoc);
   await Promise.all(G.teams.map(async t => { const ps = await FB.list(gpath('teams', t.id, 'prof')).catch(() => []); ps.forEach(p => { const v = P(p.v) || {}; if (p.id === 'review') t.review = v; else if (p.id === 'ai') t.ai = v; else if (p.id === 'grades') { t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }); }));
   ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
+  if (CLOUD && groupOwner() && USER && USER.name && G.profName !== USER.name) G.profName = USER.name; // per dir «professor» o «professora» a l'alumnat
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
   if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w, join: GROUP.join !== false })) { SNAP.group = ''; cloudSave(); }
   ROSTER = await FB.list(gpath('members')).catch(() => []); INVITES = await FB.list(gpath('invites')).catch(() => []);
@@ -4439,7 +4519,7 @@ async function openStudent(tid) {
   document.body.classList.remove('cloud-msg', 'is-prof'); document.body.classList.add('is-student');
   ME.teamId = tid;
   const [d, rv, gr] = await Promise.all([FB.get(gpath('teams', tid)), FB.get(gpath('teams', tid, 'prof', 'review')).catch(() => null), G.showGrades ? FB.get(gpath('teams', tid, 'prof', 'grades')).catch(() => null) : null]);
-  if (!d) return cloudMsg('El teu equip ja no existeix', 'Demana al professor que et torni a assignar un equip.');
+  if (!d) return cloudMsg('El teu equip ja no existeix', 'Demana ' + PR('al') + ' que et torni a assignar un equip.');
   FILES[tid] = {};
   const t = teamFromDoc(Object.assign({ id: tid }, d));
   if (rv) t.review = P(rv.v) || {};
@@ -4447,7 +4527,7 @@ async function openStudent(tid) {
   G.teams = [t]; ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   const nv = lastGid === null ? navLoad() : null; if (nv) tab = nv.tab; // en recarregar, torna on eres
   snapTeam(t); role = 0; claimRow(); if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
-  render(); sideUser();
+  render(); sideUser(); stuWelcome();
   // Les imatges pesen molt: es baixen després de mostrar la pàgina i es redibuixa quan arriben (sense interrompre qui està escrivint)
   const ids = fileIdsOf(d), gid0 = GID; if (ids.length) Promise.all(ids.map(async id => { const f = await FB.get(gpath('teams', tid, 'files', id)).catch(() => null); if (f) FILES[tid][id] = f.data; })).then(function again() {
     if (GID !== gid0 || !G) return; const a = document.activeElement; if (a && /INPUT|TEXTAREA|SELECT/.test(a.tagName)) return void setTimeout(again, 2500); const y = window.scrollY; render(); window.scrollTo(0, y); });
@@ -4458,16 +4538,17 @@ async function openStudent(tid) {
   listenGrades();
 }
 function joinView(g, m) {
+  JCFG = P(g.cfg) || {};
   document.body.classList.add('cloud-msg'); sideUser();
   const v = $('#view');
   v.innerHTML = `${head(esc(g.name), 'Tria el teu equip')}
-    <p class="intro muted">Entres com a <b>${esc(USER.email)}</b>. Tria l'equip on treballes. Només ho has de fer el primer dia: si t'equivoques, demana al professor que et canviï.</p>
+    <p class="intro muted">Entres com a <b>${esc(USER.email)}</b>. Tria l'equip on treballes. Només ho has de fer el primer dia: si t'equivoques, demana ${PR('al')} que et canviï.</p>
     ${m ? '<div class="notice">El teu equip anterior ja no existeix. Tria\'n un altre.</div>' : ''}
-    ${g.join === false ? '<div class="notice">El professor ha tancat l\'entrada lliure en aquest grup. Demana-li que t\'hi afegeixi.</div>' : `<div class="joinlist">${(g.teamList || []).map(t => `<button class="btn ghost" data-join="${esc(t.id)}">${esc(t.name)}</button>`).join('') || '<p class="muted">El professor encara no ha creat cap equip.</p>'}</div>`}<div id="joinMsg"></div>`;
+    ${g.join === false ? '<div class="notice">' + PR('El') + ' ha tancat l\'entrada lliure en aquest grup. Demana-li que t\'hi afegeixi.</div>' : `<div class="joinlist">${(g.teamList || []).map(t => `<button class="btn ghost" data-join="${esc(t.id)}">${esc(t.name)}</button>`).join('') || '<p class="muted">' + PR('El') + ' encara no ha creat cap equip.</p>'}</div>`}<div id="joinMsg"></div>`;
   v.querySelectorAll('[data-join]').forEach(b => b.onclick = async () => {
     v.querySelectorAll('[data-join]').forEach(x => { x.disabled = true; }); b.textContent = 'Entrant...';
     try { await FB.set(gpath('members', USER.uid), { email: USER.email, name: USER.name || '', team: b.dataset.join, joined: Date.now(), expiresAt: { __ts: g.expiresAt } }); route(); }
-    catch (e) { $('#joinMsg').innerHTML = '<div class="notice">No s\'ha pogut entrar a l\'equip. Demana al professor que t\'hi afegeixi.</div>'; v.querySelectorAll('[data-join]').forEach(x => { x.disabled = false; }); }
+    catch (e) { $('#joinMsg').innerHTML = '<div class="notice">No s\'ha pogut entrar a l\'equip. Demana ' + PR('al') + ' que t\'hi afegeixi.</div>'; v.querySelectorAll('[data-join]').forEach(x => { x.disabled = false; }); }
   });
 }
 
@@ -5306,7 +5387,7 @@ const SQ_COL = ['#FFD23F', '#FFB0D0', '#9BE7D9', '#C9BCFF', '#B9D0FF', '#FFC9A8'
 function vSeguiment(v) {
   const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g[0], g[1], g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(g => g[2].length);
   const nT = G.teams.length, nAl = G.teams.reduce((a, t) => a + t.members.length, 0), avg = nT ? G.teams.reduce((a, t) => a + progress(t), 0) / nT : 0;
-  const wsN = (t, w) => PROG.filter(s => workState(t, s) === w).length, nRev = G.teams.reduce((a, t) => a + wsN(t, 'sent'), 0);
+  const wsN = (t, w) => PROG.filter(s => w === 'millorar' ? milPending(t, s) : workState(t, s) === w).length, nRev = G.teams.reduce((a, t) => a + wsN(t, 'sent'), 0);
   const rows = G.teams.map((t, i) => { const m = t.data.marca, logo = logoSrc(m.logo), rev = wsN(t, 'sent'), mil = wsN(t, 'millorar');
     const ini = projName(t).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
@@ -5362,6 +5443,18 @@ function vObertura(v) {
   $('#accAllOpen').onclick = () => { PROG.forEach(s => { st(s.k).state = 'open'; }); save(); rr(); };
   $('#accAllClose').onclick = () => { PROG.forEach(s => { st(s.k).state = 'closed'; }); save(); rr(); };
 }
+// Historial de revisions de cada apartat (per a les notificacions de l'alumnat): cada canvi de nota o comentari en deixa constància
+function revLog(t, k) {
+  const r = t.review[k]; if (!r) return;
+  const l = Array.isArray(r.log) ? r.log : (r.log = []), now = Date.now(), last = l[l.length - 1], e = { at: now, s: r.status || '', c: (r.comment || '').trim() };
+  const recent = last && now - last.at < 5 * 6e4; // canvis seguits del mateix moment: una sola notificació
+  if (!e.s && !e.c) { if (recent) l.pop(); return; }
+  if (recent) l[l.length - 1] = e; else if (!last || last.s !== e.s || last.c !== e.c) l.push(e);
+  if (l.length > 20) l.splice(0, l.length - 20);
+}
+// L'equip ha de millorar l'apartat i encara no l'ha tornat a enviar (encara que ja hi estigui fent canvis)
+const milPending = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'millorar' && workState(t, s) !== 'sent' && !(se && se.at > (r.at || 0)); };
+const okDone = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'correcte' && !(se && se.at > (r.at || 0)); };
 let revFilter = 'tots';
 const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'Reviseu l\'ortografia.', 'Connecteu-ho amb el vostre sector.'];
 function vRevisio(v) {
@@ -5401,8 +5494,8 @@ function vRevisio(v) {
   v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); window.scrollTo(0, 0); });
   v.querySelectorAll('[data-rf]').forEach(b => b.onclick = () => { revFilter = b.dataset.rf; rr(); });
   v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { const el = $('#rv-' + b.dataset.jump); if (!el) { revFilter = 'tots'; render(); } const e2 = $('#rv-' + b.dataset.jump); if (e2) e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
-  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); save(); rr(); });
-  v.querySelectorAll('[data-cm]').forEach(a => a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); });
+  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); revLog(t, k); save(); rr(); });
+  v.querySelectorAll('[data-cm]').forEach(a => { a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); }; a.onchange = () => { revLog(t, a.dataset.cm); save(); }; });
   v.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, a = v.querySelector(`[data-cm="${k}"]`); a.value = (a.value.trim() ? a.value.trim() + ' ' : '') + b.textContent; a.dispatchEvent(new Event('input')); a.focus(); });
 }
 function vAvaluacio(v) {
@@ -5446,6 +5539,7 @@ function vConfig(v) {
   v.innerHTML = `${flashHtml()}${head('Configuració', esc(G.name))}
     ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador: cada persona pot triar el seu.</p>${themeSw()}`))}
     ${card('Grup classe', pad(`<div class="pfield"><label for="gName">Nom del grup</label><input type="text" id="gName" value="${esc(G.name)}"></div>
+      <div class="pfield"><label for="gFem">Com us anomena l'eina davant l'alumnat</label><div class="help">Als missatges per a l'alumnat («Enviar al professor», «La professora us demana millores»...).${G.profName ? ` Amb «Automàtic» es tria segons el nom de qui ha creat el grup (${esc(G.profName)}): ara diu «${PR('n')}».` : ''}</div><select class="field-sel" id="gFem"><option value="">Automàtic</option><option value="m" ${G.profFem === 'm' ? 'selected' : ''}>Professor</option><option value="f" ${G.profFem === 'f' ? 'selected' : ''}>Professora</option></select></div>
       <div class="pfield"><label for="gSector">Tipus d'empresa (sector) del grup</label><div class="help">Si el canvies, també canvia als equips que tenien el sector anterior. Els equips que n'han triat un altre el conserven. Sota pots canviar el de cada equip.</div><select class="field-sel" id="gSector">${secOptsAll(G.sector)}</select></div>
       <div class="pfield"><label>Equips i tipus d'empresa de cadascun</label>${G.teams.map((t, i) => `<div class="member tsrow"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><select class="field-sel" data-tsec="${i}" aria-label="Sector de ${esc(t.name)}">${secOptsAll(t.data.idea.sector, true)}</select><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>
       ${(G.trash || []).length ? `<div class="pfield"><label>Paperera d'equips</label><div class="help">Els equips esborrats es guarden ${TRASH_DAYS} dies amb tot el seu projecte. Després s'eliminen del tot.</div>${G.trash.map((x, i) => `<div class="member trow"><span><b>${esc(x.name)}</b><span class="small muted"> · s'eliminarà el ${fmtDay(x.at + TRASH_DAYS * 864e5)}</span></span><button type="button" class="btn ghost small" data-trec="${i}">Recuperar</button><button type="button" class="btn ghost small" data-tkill="${i}">Eliminar del tot</button></div>`).join('')}<div id="killBox"></div></div>` : ''}`))}
@@ -5461,6 +5555,7 @@ function vConfig(v) {
     </div>`}`;
   bindActsConfig(v); bindCloudConfig(v);
   $('#gName').oninput = e => { G.name = e.target.value; save(); renderSide(); };
+  $('#gFem').onchange = e => { if (e.target.value) G.profFem = e.target.value; else delete G.profFem; save(); render(); };
   $('#gSector').onchange = e => { const old = G.sector, n = G.teams.filter(t => !t.data.idea.sector || t.data.idea.sector === old); G.sector = e.target.value; n.forEach(t => { t.data.idea.sector = G.sector; }); save(); const y = window.scrollY; render(); window.scrollTo(0, y); toast(n.length ? `Sector canviat al grup i a ${n.length === 1 ? '1 equip' : n.length + ' equips'}.` : 'Sector del grup canviat.'); };
   v.querySelectorAll('[data-tsec]').forEach(s => s.onchange = () => { const t = G.teams[+s.dataset.tsec]; t.data.idea.sector = s.value; t.updated = Date.now(); save(); toast(`Sector de ${t.name} canviat.`); });
   v.querySelectorAll('[data-tn]').forEach(i => i.oninput = () => { G.teams[+i.dataset.tn].name = i.value; save(); renderSide(); });
@@ -5495,7 +5590,7 @@ document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navb
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);
 // En mòbil, el botó del menú s'amaga en baixar i torna en pujar
-{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); ly = y; }, { passive: true }); }
+{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); const bb = $('#bellBtn'); if (bb) bb.classList.toggle('away', nb.classList.contains('away') && !$('#bellPop')); ly = y; }, { passive: true }); }
 // El logo porta al tauler: «Els meus grups» (professorat) o l'inici de l'equip (alumnat)
 const brand = document.querySelector('.brand'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Anar al tauler';
 const goHome = () => { setNav(false);

@@ -26,6 +26,8 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 
 ## Normes de codi
 - Tots els textos de la web, en **català**.
+- Quan un text per a l'alumnat parla del docent, fes servir `PR()` (`PR('el')` → «el professor» / «la professora», també `'El'`, `'al'`, `'pel'`, `'del'`, `'n'`): es tria segons el nom de qui ha creat el grup o l'opció de «Configuració».
+- Alumnat: en entrar veu una finestra amb el que ha de millorar i el que falta enviar (`stuWelcome`), i una campaneta amb l'historial de comentaris (`bellUpdate`, `notifs`). Cada canvi de revisió del professor queda a `review[apartat].log` (`revLog`).
 - Escriu el codi com el que ja hi ha: funcions compactes, noms curts, comentaris breus en català.
 - Tot el text que ve de l'alumnat passa per `esc()` abans de posar-lo a la pàgina.
 - Ha de funcionar en mòbil (hi ha regles `@media (max-width:620px)`).
