@@ -11,6 +11,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
   - Després de canviar les regles, comprova amb `gh run list -R rehgix/IPO-Empren` que l'execució acaba bé. Si falla, mira el registre (`gh run view <id> --log-failed`) i explica-ho a l'usuari en paraules senzilles.
   - El compte de servei de GitHub (`github-action-…@ipo-empren.iam.gserviceaccount.com`) té el rol «Administrador de Firebase Rules». Si surt «403 The caller does not have permission», és que li falta aquest rol (IAM de Google Cloud, projecte IPO Empren).
 - `firebase.json`: configuració de Firebase (hosting i ruta de les regles).
+- `fonts/` i `lib/`: la lletra (Geist) i les llibreries (QR, PDF, Excel) se serveixen des de la mateixa web. **No carreguis res de servidors externs** (Google Fonts, CDN): si cal una llibreria nova, copia-la a `lib/`.
 - Seguretat: les imatges de l'alumnat es posen amb `imgSrc()` i els colors amb `col()`; les dades d'equip que arriben de la xarxa passen per `shapeLike()` (a `unpackSection`).
 - Les dades es guarden a Firebase i s'esborren cada 15 de juliol.
 - Sense sessió iniciada, la web mostra un grup d'exemple amb 3 equips de sectors diferents (Sol a Casa, d'electricitat; LabMar, de laboratori; Al Dia, de gestoria). Serveix per provar els canvis. Els textos són frases curtes i genèriques, perquè l'alumnat no els pugui copiar. Si algú crea un grup d'exemple a la nuvolatge, queda amb l'entrada lliure tancada (`join: false`) perquè l'alumnat no hi pugui entrar mai.
@@ -32,6 +33,11 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 ## Comprovar abans de desar
 - Obre `index.html` al navegador integrat i prova el canvi amb el grup d'exemple, tant amb la vista d'un equip («Veure com») com amb la del professor.
 - Mira-ho també amb amplada de mòbil quan el canvi afecti el disseny.
+
+## Revisió automàtica
+- `tests/smoke.cjs` obre totes les pàgines (grup d'exemple i tauler amb un Firebase de mentida, `tests/mock-fb.js`) en ordinador i mòbil, i falla si hi ha errors de programa, pàgines que se surten de la pantalla, pàgines buides o peticions a servidors externs.
+- S'executa sola a GitHub abans de publicar: **si falla, la web no es publica**. Passa-la abans del push amb `node tests/smoke.cjs` i, després del push, comprova amb `gh run list -R rehgix/IPO-Empren` que tot ha anat bé.
+- Si afegeixes una pàgina o una ruta nova amb sessió, afegeix-la a la llista de `tests/smoke.cjs`.
 
 ## Git: sempre commit i push
 - Després de cada canvi que funcioni: `git add`, commit amb un missatge curt en català (com els de l'historial, p. ex. «Bàner amb el nom i el logo de l'equip a la capçalera») i **push a `main` sense preguntar**.

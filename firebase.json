@@ -11,7 +11,8 @@
       "token*",
       "CLAUDE.md",
       "README.md",
-      "firestore.rules"
+      "firestore.rules",
+      "tests/**"
     ],
     "headers": [
       {
