@@ -6,6 +6,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 jobs:
   build_and_deploy:
     runs-on: ubuntu-latest
@@ -17,3 +18,11 @@ jobs:
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_IPO_EMPREN }}
           channelId: live
           projectId: ipo-empren
+      # Publica també les regles de seguretat de la base de dades (firestore.rules)
+      - name: Publica les regles de Firestore
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_IPO_EMPREN }}
+        run: |
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+          GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json" npx -y firebase-tools@13 deploy --only firestore:rules --project ipo-empren --non-interactive
+          rm -f "$RUNNER_TEMP/sa.json"
