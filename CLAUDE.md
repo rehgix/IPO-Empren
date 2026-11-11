@@ -5,7 +5,8 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 ## Com està fet
 - **Tota l'aplicació és a `index.html`** (estils, menú, pàgines, revisió, notes, exemples). No hi ha cap pas de compilació: s'obre directament al navegador.
 - `config.js`: configuració pública de Firebase i dominis de correu permesos (`biada.net`). No és secreta.
-- `fbapi.js`: llibreria de Firebase ja empaquetada. **No s'edita.**
+- `fbapi.js`: llibreria de Firebase ja empaquetada. **No s'edita.** Única excepció: s'hi ha afegit `driveToken()` (permís de Google Drive per a les còpies de seguretat). Si es torna a generar, cal tornar-la a afegir.
+- Còpies de seguretat (`bkView`, `bkHome`, `bkRun`, `bkRestore` a `index.html`): cada professor desa els seus grups al seu Google Drive. Sense servidor, la còpia setmanal es fa en entrar al tauler.
 - `firestore.rules`: regles de seguretat de la base de dades. Si es canvien, cal avisar l'usuari que s'han de publicar a Firebase a part (no es publiquen amb el push). Un apartat nou amb dades pròpies s'ha d'afegir a `studentEditOk` i a `dataKeysOk`, o l'alumnat no el podrà desar.
 - Seguretat: les imatges de l'alumnat es posen amb `imgSrc()` i els colors amb `col()`; les dades d'equip que arriben de la xarxa passen per `shapeLike()` (a `unpackSection`).
 - Les dades es guarden a Firebase i s'esborren cada 15 de juliol.

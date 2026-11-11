@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%23f7a21b%22/%3E%3Cpath d=%22M5 17l4.5-5.5 3.5 2.5 6-7.5%22 fill=%22none%22 stroke=%22%23111%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
-<link rel="preload" href="config.js?v=2" as="script"><link rel="preload" href="fbapi.js" as="script">
+<link rel="preload" href="config.js?v=2" as="script"><link rel="preload" href="fbapi.js?v=2" as="script">
 <title>IPO Emprèn</title>
 <script>
 // Aparença: 'auto' (segons el sistema), 'light' o 'dark'. Es desa en aquest navegador i s'aplica abans de pintar.
@@ -774,6 +774,11 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .qrimg{width:min(420px,72vw,62vh);aspect-ratio:1;display:grid;place-items:center}
 .qrimg svg{width:100%;height:100%}
 .qrbox p{margin:0;color:#52525b}
+.bkbox{background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:24px;padding:24px;display:grid;gap:12px;width:min(520px,100%);max-height:100%;overflow:auto}
+.bkbox>b{font-size:19px}.bkbox p{margin:0;line-height:1.5}
+.bkic{width:48px;height:48px;border-radius:14px;background:var(--soft);display:grid;place-items:center}.bkic svg{width:26px;height:26px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.bklist{display:grid;gap:8px;margin-bottom:12px}.bkrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:wrap}
+.bkpick{margin-top:14px;display:grid;gap:8px}.bkpick p{margin:0}
 .qrbox code{font-size:15px;word-break:break-all;background:#f4f4f5;padding:6px 10px;border-radius:8px}
 .cmsg{white-space:pre-wrap;font:14px/1.5 var(--font);padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--soft);margin:10px 0}
 .gcard{gap:8px}
@@ -1531,7 +1536,7 @@ body.navopen{overflow:hidden}
 @media (max-width:820px){.rv-l{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
 </style>
-<script src="config.js?v=2"></script><script src="fbapi.js"></script>
+<script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
 /* ===== PROJECTE EMPRENEDOR · IPO II (RA4 i RA5) =====
    Dades de referència i càlculs. Sense joc: només eines per construir el projecte. */
@@ -4511,6 +4516,7 @@ async function route(retry = 0) {
   stopListen(); syncStatus('idle');
   if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
   if (location.hash === '#config') return homeConfig();
+  if (location.hash === '#copies') return bkView();
   const gid = hashGid();
   if (!gid) return homeView();
   $('#view').innerHTML = '<div class="cloud-load"><span class="spin"></span> Obrint el grup...</div>';
@@ -4648,10 +4654,10 @@ function homeNav(cur) {
   const gr = (t, g, items) => items.filter(Boolean).length ? `<div class="ngroup" data-g="${g}"><div class="ghead">${ico(GICONS[g])}<span>${t}</span></div>${items.join('')}</div>` : '';
   $('#tabs').innerHTML = gr(prof ? 'Professorat' : 'Inici', 'prof', [prof || cur === 'grups' ? it('grups', 'Els meus grups') : '', h.ok ? it('nou', 'Crear un grup nou') : ''])
     + (isAdmin() ? gr('Administració', 'admin', [it('admin', 'Panell d\'administrador', h.nReq)]) : '')
-    + gr('Recursos', 'rec', [it('config', 'Configuració')]);
+    + gr('Recursos', 'rec', [prof ? it('copies', 'Còpies de seguretat') : '', it('config', 'Configuració')]);
   $('#tabs').querySelectorAll('[data-home]').forEach(b => b.onclick = () => { const k = b.dataset.home; setNav(false);
     if (k === 'nou') { homeNew = true; if (location.hash && location.hash !== '#') location.hash = ''; else homeView(); return; }
-    const want = { grups: '', admin: '#admin', config: '#config' }[k];
+    const want = { grups: '', admin: '#admin', config: '#config', copies: '#copies' }[k];
     if ((location.hash || '') === want || (want === '' && location.hash === '#')) route(); else location.hash = want; });
 }
 // Configuració general (fora d'un grup): aparença, compte i dades
@@ -4665,8 +4671,232 @@ async function homeConfig() {
     ${card('El teu compte', pad(`<div class="sumrow"><span class="muted small">Correu</span><div><b>${esc(USER.email)}</b></div></div>${USER.name ? `<div class="sumrow"><span class="muted small">Nom</span><div>${esc(USER.name)}</div></div>` : ''}<div class="sumrow"><span class="muted small">Permisos</span><div>${esc(perm)}</div></div>
       <div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="cfgOut">Tancar la sessió</button>${isAdmin() ? '<a class="btn ghost small" href="#admin">Anar al panell d\'administrador</a>' : ''}</div>`))}
     ${card('Les dades', pad(`<p class="small" style="margin:0">Les dades de tots els grups s'esborren automàticament cada 15 de juliol. El proper esborrat serà el <b>${fmtDay(nextExpiry())}</b>. Abans, descarrega els informes dels equips des de cada grup.</p>
+      <p class="small">Per tenir una còpia de seguretat dels teus grups al Google Drive, ves a <a href="#copies">Còpies de seguretat</a>.</p>
       <p class="small muted">La configuració de cada grup (equips, activitats, rúbriques, IA i alumnat) és dins del grup, a «Configuració».</p>`))}`;
   $('#cfgOut').onclick = async () => { await FB.signOut(); location.hash = ''; location.reload(); };
+}
+/* ---------- Còpies de seguretat a Google Drive ---------- */
+// Cada professor desa una còpia de tots els seus grups al seu propi Google Drive, en una carpeta de l'eina.
+// La web no té servidor: la còpia setmanal es fa quan el professor entra al tauler i ja fa 7 dies o més de l'última.
+// El permís de Drive (drive.file) només deixa veure els arxius que ha creat l'eina, no la resta del Drive.
+const BK_DIR = 'IPO Emprèn · Còpies de seguretat', BK_KEEP = 8, BK_DAYS = 7, DRV = 'https://www.googleapis.com/drive/v3/files';
+const bkKey = () => 'ipoBk:' + (USER ? USER.email : '');
+const bkGet = () => { try { return JSON.parse(localStorage.getItem(bkKey()) || '{}') || {}; } catch (e) { return {}; } };
+const bkSet = o => { const s = Object.assign(bkGet(), o); try { localStorage.setItem(bkKey(), JSON.stringify(s)); } catch (e) {} return s; };
+const bkDue = () => { const s = bkGet(); return s.on === true && Date.now() - (s.last || 0) >= BK_DAYS * 864e5 && Date.now() > (s.snooze || 0); };
+let DRVTOK = null, BK_RUN = null, BK_ASKED = false;
+// Permís de Drive guardat (dura uns 50 minuts)
+function drvTok() {
+  if (DRVTOK && DRVTOK.u === USER.email && DRVTOK.exp > Date.now()) return DRVTOK.t;
+  try { const x = JSON.parse(sessionStorage.getItem('ipoDrv') || 'null'); if (x && x.u === USER.email && x.exp > Date.now()) { DRVTOK = x; return x.t; } } catch (e) {}
+  return null;
+}
+// Obre la finestra de Google per donar permís a Drive. S'ha de cridar directament des d'un clic
+async function drvConnect() {
+  if (!FB.driveToken) throw new Error('fbapi');
+  const r = await FB.driveToken(USER.email);
+  if (!r || !r.token) throw new Error('no-token');
+  if (r.email && USER && r.email !== USER.email) throw new Error('other-account');
+  DRVTOK = { t: r.token, exp: Date.now() + 50 * 6e4, u: USER.email };
+  try { sessionStorage.setItem('ipoDrv', JSON.stringify(DRVTOK)); } catch (e) {}
+  return r.token;
+}
+const drvNeed = () => drvTok() ? Promise.resolve(drvTok()) : drvConnect();
+function bkErr(e) {
+  const c = String((e && (e.code || e.message)) || e || '');
+  if (/popup-closed|cancelled-popup|user-cancelled/.test(c)) return 'Has tancat la finestra de Google sense donar el permís.';
+  if (/popup-blocked/.test(c)) return 'El navegador ha bloquejat la finestra de Google. Permet les finestres emergents per a aquesta web i torna-ho a provar.';
+  if (/other-account/.test(c)) return 'Has triat un altre compte de Google. Torna-ho a provar amb el teu compte de l\'institut.';
+  if (/no-token/.test(c)) return 'Cal tornar a donar permís a Google Drive. Torna-ho a provar.';
+  if (/fbapi/.test(c)) return 'La web s\'ha d\'actualitzar. Recarrega la pàgina i torna-ho a provar.';
+  if (/drive 403/.test(c)) return 'Google Drive no ha deixat desar la còpia. Pot ser que l\'institut no permeti connectar eines externes al Drive. Mentrestant, descarrega la còpia a l\'ordinador.';
+  return 'No s\'ha pogut completar. Comprova la connexió i torna-ho a provar. (' + c.slice(0, 120) + ')';
+}
+// Petició a l'API de Google Drive amb el permís
+async function drv(url, opt = {}) {
+  const t = drvTok(); if (!t) throw new Error('no-token');
+  const r = await fetch(url.startsWith('http') ? url : DRV + url, Object.assign({}, opt, { headers: Object.assign({ Authorization: 'Bearer ' + t }, opt.headers || {}) }));
+  if (r.status === 401) { DRVTOK = null; try { sessionStorage.removeItem('ipoDrv'); } catch (e) {} throw new Error('no-token'); }
+  if (!r.ok) { let m = ''; try { m = (await r.json()).error.message; } catch (e) {} throw new Error('drive ' + r.status + (m ? ': ' + m : '')); }
+  return r;
+}
+// Carpeta de les còpies (la crea si no existeix)
+async function bkFolder() {
+  const s = bkGet(); if (s.fid) { try { const f = await (await drv('/' + s.fid + '?fields=id,trashed')).json(); if (f && !f.trashed) return f.id; } catch (e) { if (/no-token/.test(e.message)) throw e; } }
+  const q = encodeURIComponent(`name='${BK_DIR}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
+  const l = await (await drv('?q=' + q + '&fields=files(id)&spaces=drive')).json();
+  let id = l.files && l.files.length ? l.files[0].id : null;
+  if (!id) id = (await (await drv('', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: BK_DIR, mimeType: 'application/vnd.google-apps.folder' }) })).json()).id;
+  bkSet({ fid: id }); return id;
+}
+async function bkList(fid) {
+  const q = encodeURIComponent(`'${fid}' in parents and trashed=false`);
+  const l = await (await drv(`?q=${q}&orderBy=${encodeURIComponent('createdTime desc')}&pageSize=100&fields=files(id,name,createdTime,size,appProperties)`)).json();
+  return l.files || [];
+}
+// Recull totes les dades dels grups on el professor és professor
+async function bkCollect() {
+  const gs = await FB.list('groups', ['profs', 'array-contains', USER.email]);
+  const out = { app: 'IPO Emprèn', v: 1, at: Date.now(), email: USER.email, groups: [] };
+  for (const g of gs) {
+    const base = 'groups/' + g.id;
+    const [teams, members, invites] = await Promise.all([FB.list(base + '/teams'), FB.list(base + '/members').catch(() => []), FB.list(base + '/invites').catch(() => [])]);
+    const ts = await Promise.all(teams.map(async t => { const tb = base + '/teams/' + t.id;
+      const [prof, files] = await Promise.all([FB.list(tb + '/prof').catch(() => []), FB.list(tb + '/files').catch(() => [])]); return { t, prof, files }; }));
+    out.groups.push({ id: g.id, doc: g, teams: ts, members, invites });
+  }
+  return out;
+}
+const bkName = at => { const d = new Date(at), p = n => String(n).padStart(2, '0'); return `Còpia IPO Emprèn ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}.${p(d.getMinutes())}.json`; };
+// Puja l'arxiu al Drive (pujada en dues passes: serveix també per a còpies grans)
+async function bkUpload(fid, data) {
+  const meta = { name: bkName(data.at), parents: [fid], mimeType: 'application/json', appProperties: { ipo: '1', groups: String(data.groups.length), auto: data.auto ? '1' : '0' } };
+  const r = await drv('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/json' }, body: JSON.stringify(meta) });
+  const loc = r.headers.get('Location'); if (!loc) throw new Error('drive upload');
+  await drv(loc, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+}
+// Fa una còpia completa i esborra les més antigues (en deixa BK_KEEP)
+function bkRun(auto) {
+  return BK_RUN || (BK_RUN = (async () => {
+    const fid = await bkFolder(), data = await bkCollect(); data.auto = !!auto;
+    await bkUpload(fid, data);
+    try { const l = await bkList(fid); await Promise.all(l.slice(BK_KEEP).map(f => drv('/' + f.id, { method: 'DELETE' }).catch(() => {}))); } catch (e) {}
+    bkSet({ last: data.at, n: data.groups.length, snooze: 0 });
+    return data;
+  })().finally(() => { BK_RUN = null; }));
+}
+function bkDownload(data) {
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], { type: 'application/json' }));
+  a.download = bkName(data.at); document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+}
+// Desa en blocs que no passin del límit de mida de Firebase (les imatges poden pesar molt)
+async function bkBatch(ops) {
+  let part = [], size = 0;
+  for (const o of ops) { const s = JSON.stringify(o.data || '').length; if (part.length && (size + s > 6e6 || part.length >= 400)) { await FB.batch(part); part = []; size = 0; } part.push(o); size += s; }
+  if (part.length) await FB.batch(part);
+}
+// Torna a posar les dades de la còpia als grups triats
+async function bkRestore(data, gids) {
+  const strip = x => { const d = Object.assign({}, x); delete d.id; return d; };
+  for (const gid of gids) {
+    const b = data.groups.find(g => g.id === gid); if (!b) continue;
+    const base = 'groups/' + gid, now = Date.now();
+    const exp = (b.doc.expiresAt || 0) > now + 864e5 ? b.doc.expiresAt : nextExpiry(), ts = { __ts: exp };
+    const cur = await FB.get(base).catch(() => null), gdoc = Object.assign(strip(b.doc), { expiresAt: ts, course: courseLabel(exp) });
+    if (!cur) { gdoc.owner = USER.uid; gdoc.profs = Array.from(new Set([...(gdoc.profs || []), USER.email])); }
+    else { gdoc.owner = cur.owner; if (cur.owner !== USER.uid) gdoc.profs = cur.profs; }
+    await FB.batch([{ op: 'set', path: base, data: gdoc }]);
+    const tids = gdoc.teamIds || [], ops = [], files = [];
+    b.teams.forEach(({ t, prof, files: fs }) => { const tb = base + '/teams/' + t.id;
+      ops.push({ op: 'set', path: tb, data: Object.assign(strip(t), { expiresAt: ts }) });
+      prof.forEach(p => ops.push({ op: 'set', path: tb + '/prof/' + p.id, data: Object.assign(strip(p), { expiresAt: ts }) }));
+      fs.forEach(f => files.push({ op: 'set', path: tb + '/files/' + f.id, data: Object.assign(strip(f), { expiresAt: ts }) })); });
+    // Alumnes: els que encara hi són es mantenen; els que ja no hi són tornen com a invitació al seu equip
+    const have = new Set((await FB.list(base + '/members').catch(() => [])).map(m => m.id)), invited = new Set(b.invites.map(i => i.id));
+    b.members.forEach(m => {
+      if (have.has(m.id)) ops.push({ op: 'set', path: base + '/members/' + m.id, data: Object.assign(strip(m), { expiresAt: ts }) });
+      else if (m.email && tids.includes(m.team) && !invited.has(m.email)) { invited.add(m.email); ops.push({ op: 'set', path: base + '/invites/' + m.email, data: { name: m.name || '', team: m.team, added: now, expiresAt: ts } }); }
+    });
+    b.invites.filter(i => tids.includes(i.team)).forEach(i => ops.push({ op: 'set', path: base + '/invites/' + i.id, data: Object.assign(strip(i), { expiresAt: ts }) }));
+    await bkBatch(ops); await bkBatch(files);
+  }
+  HOMEC = null; HOME = null;
+}
+const bkValid = d => d && d.app === 'IPO Emprèn' && Array.isArray(d.groups);
+// Finestra emergent
+function bkDialog(html, bind) {
+  const o = document.createElement('div'); o.className = 'qrbig bkdlg'; o.setAttribute('role', 'dialog');
+  o.innerHTML = `<div class="bkbox">${html}</div>`;
+  const close = () => { o.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); };
+  o.onclick = e => { if (e.target === o || e.target.closest('[data-bkclose]')) close(); }; document.addEventListener('keydown', k);
+  document.body.appendChild(o); bind && bind(o, close); return close;
+}
+// En entrar al tauler: la primera vegada explica les còpies; després, fa la còpia setmanal o la recorda
+function bkHome(v, prof) {
+  if (!prof || !USER) return;
+  const s = bkGet();
+  if (s.seen === undefined && !BK_ASKED) { BK_ASKED = true;
+    bkDialog(`<div class="bkic">${ico('<path d="M7 18a5 5 0 0 1-.5-10 6 6 0 0 1 11.5 1.5A4.3 4.3 0 0 1 17 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>')}</div>
+      <b>Còpies de seguretat al teu Google Drive</b>
+      <p>Pots guardar una còpia de tots els teus grups (equips, feina de l'alumnat, revisions i notes) al teu Google Drive. Si mai passés res, podries recuperar les dades des d'aquí.</p>
+      <p>Si l'actives, es fa una còpia <b>cada setmana</b> quan entres a l'eina, i també en pots fer quan vulguis des de «Còpies de seguretat». L'eina només veu la seva carpeta de còpies, no la resta del teu Drive.</p>
+      <div class="bkmsg"></div><div class="row"><button type="button" class="btn" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkclose>Ara no</button></div>`,
+      (o, close) => {
+        o.querySelector('[data-bkclose]').addEventListener('click', () => { bkSet({ seen: true, on: false }); toast('D\'acord. Ho pots activar quan vulguis a «Còpies de seguretat».'); });
+        o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); b.disabled = true;
+          try { await drvConnect(); bkSet({ seen: true, on: true }); b.innerHTML = '<span class="spin"></span> Fent la primera còpia...'; await bkRun(false); close(); toast('Fet! La primera còpia ja és al teu Google Drive.'); }
+          catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Activar les còpies'; m.innerHTML = `<div class="notice">${esc(bkErr(err))}</div>`; } };
+      });
+    return;
+  }
+  if (!bkDue()) return;
+  if (drvTok()) { bkRun(true).then(() => toast('Còpia setmanal desada al teu Google Drive.')).catch(e => console.warn(e)); return; }
+  v.insertAdjacentHTML('afterbegin', `<div class="notice info bknudge"><b>Toca fer la còpia setmanal dels teus grups al Google Drive.</b> Només cal un clic.
+    <div class="row" style="margin-top:10px"><button type="button" class="btn small" data-bkdo>Fer-la ara</button><button type="button" class="btn ghost small" data-bklater>Més tard</button></div></div>`);
+  const n = v.querySelector('.bknudge');
+  n.querySelector('[data-bklater]').onclick = () => { bkSet({ snooze: Date.now() + 864e5 }); n.remove(); };
+  n.querySelector('[data-bkdo]').onclick = async e => { const b = e.target; b.disabled = true;
+    try { await drvConnect(); b.innerHTML = '<span class="spin"></span> Fent la còpia...'; await bkRun(true); n.remove(); toast('Còpia setmanal desada al teu Google Drive.'); }
+    catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Fer-la ara'; n.insertAdjacentHTML('beforeend', `<p class="small" style="margin:8px 0 0">${esc(bkErr(err))}</p>`); } };
+}
+// Pàgina «Còpies de seguretat»
+async function bkView() {
+  bareView(); const v = $('#view');
+  v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
+  const h = await homeRole(); homeNav('copies');
+  if (!h.ok && !h.groups) { v.innerHTML = `${head('IPO Emprèn', 'Còpies de seguretat')}<div class="notice info">Les còpies de seguretat són per al professorat que té grups.</div>`; return; }
+  const draw = () => {
+    const s = bkGet(), conn = !!drvTok();
+    v.innerHTML = `${head('IPO Emprèn', 'Còpies de seguretat')}
+      <p class="intro muted">Una còpia guarda tots els teus grups: equips, feina de l'alumnat, arxius, revisions, notes i llista d'alumnes. Es desa al teu Google Drive, a la carpeta «${esc(BK_DIR)}». L'eina només veu aquesta carpeta, no la resta del teu Drive.</p>
+      ${card('Google Drive', pad(`<div class="sumrow"><span class="muted small">Última còpia</span><div><b>${s.last ? fmtDay(s.last) + ' a les ' + new Date(s.last).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Encara cap'}</b>${s.last && s.n != null ? ` <span class="small muted">(${s.n} ${s.n === 1 ? 'grup' : 'grups'})</span>` : ''}</div></div>
+        <label class="choice" style="margin:12px 0"><input type="checkbox" id="bkAuto" ${s.on ? 'checked' : ''}><span><b>Fer una còpia automàtica cada setmana</b><span class="small muted" style="display:block">Es fa quan entres a l'eina i ja fa ${BK_DAYS} dies de l'última. Es guarden les ${BK_KEEP} còpies més recents.</span></span></label>
+        <div id="bkMsg"></div>
+        <div class="row"><button type="button" class="btn" id="bkNow">Fer una còpia ara</button><button type="button" class="btn ghost" id="bkPc">Descarregar una còpia a l'ordinador</button>${s.fid && conn ? `<a class="btn ghost" href="https://drive.google.com/drive/folders/${esc(s.fid)}" target="_blank" rel="noopener">Obrir la carpeta al Drive</a>` : ''}</div>`))}
+      ${card('Recuperar les dades d\'una còpia', pad(`<p class="small muted" style="margin-top:0">Tria una còpia i quins grups vols recuperar. Les dades actuals d'aquests grups se substitueixen per les de la còpia. Els alumnes que ja no hi siguin tornaran a entrar al seu equip quan obrin l'enllaç del grup.</p>
+        <div id="bkList"></div>
+        <div class="row"><button type="button" class="btn ghost" id="bkSee">Veure les còpies del Drive</button><label class="btn ghost" style="cursor:pointer">Recuperar des d'un arxiu de l'ordinador<input type="file" id="bkFile" accept=".json,application/json" hidden></label></div>
+        <div id="bkPick"></div>`))}`;
+    const msg = (html, ok) => { $('#bkMsg').innerHTML = html ? `<div class="notice${ok ? ' info' : ''}" style="margin-bottom:12px">${html}</div>` : ''; };
+    $('#bkAuto').onchange = async e => { const on = e.target.checked;
+      if (!on) { bkSet({ on: false, seen: true }); msg('Còpia automàtica desactivada.', true); return; }
+      try { await drvNeed(); bkSet({ on: true, seen: true }); msg('Còpia automàtica activada.', true); if (bkDue()) { msg('<span class="spin"></span> Fent la primera còpia...', true); await bkRun(true); draw(); toast('Còpia desada al teu Google Drive.'); } }
+      catch (err) { console.warn(err); e.target.checked = false; msg(esc(bkErr(err))); } };
+    $('#bkNow').onclick = async e => { const b = e.target; b.disabled = true;
+      try { await drvNeed(); b.innerHTML = '<span class="spin"></span> Fent la còpia...'; await bkRun(false); draw(); toast('Còpia desada al teu Google Drive.'); }
+      catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Fer una còpia ara'; msg(esc(bkErr(err))); } };
+    $('#bkPc').onclick = async e => { const b = e.target; b.disabled = true; b.innerHTML = '<span class="spin"></span> Preparant...';
+      try { bkDownload(await bkCollect()); } catch (err) { console.warn(err); msg(esc(bkErr(err))); } b.disabled = false; b.textContent = 'Descarregar una còpia a l\'ordinador'; };
+    $('#bkSee').onclick = async e => { const b = e.target, box = $('#bkList'); b.disabled = true;
+      try { await drvNeed(); box.innerHTML = '<div class="cloud-load"><span class="spin"></span> Buscant les còpies...</div>';
+        const l = await bkList(await bkFolder());
+        box.innerHTML = l.length ? `<div class="bklist">${l.map(f => { const ap = f.appProperties || {}, g = Number(ap.groups);
+          return `<div class="bkrow"><div><b>${esc(fmtDay(Date.parse(f.createdTime)))}</b> <span class="small muted">a les ${new Date(f.createdTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })} · ${ap.auto === '1' ? 'automàtica' : 'manual'}${g ? ' · ' + g + (g === 1 ? ' grup' : ' grups') : ''}</span></div><button type="button" class="btn ghost small" data-bkf="${esc(f.id)}">Recuperar</button></div>`; }).join('')}</div>`
+          : '<p class="small muted">Encara no hi ha cap còpia al teu Drive.</p>';
+        box.querySelectorAll('[data-bkf]').forEach(x => x.onclick = async () => { x.disabled = true; x.innerHTML = '<span class="spin"></span>';
+          try { const d = await (await drv('/' + x.dataset.bkf + '?alt=media')).json(); x.disabled = false; x.textContent = 'Recuperar'; pick(d); }
+          catch (err) { console.warn(err); x.disabled = false; x.textContent = 'Recuperar'; msg(esc(bkErr(err))); } });
+      } catch (err) { console.warn(err); box.innerHTML = ''; msg(esc(bkErr(err))); } b.disabled = false; };
+    $('#bkFile').onchange = e => { const f = e.target.files[0]; if (!f) return; const r = new FileReader();
+      r.onload = () => { let d = null; try { d = JSON.parse(r.result); } catch (x) {} if (!bkValid(d)) { msg('Aquest arxiu no és una còpia d\'IPO Emprèn.'); return; } pick(d); }; r.readAsText(f); e.target.value = ''; };
+    // Triar els grups a recuperar i confirmar
+    const pick = d => { const box = $('#bkPick');
+      if (!bkValid(d) || !d.groups.length) { box.innerHTML = '<div class="notice">Aquesta còpia no té cap grup.</div>'; return; }
+      box.innerHTML = `<div class="bkpick"><b>Còpia del ${esc(fmtDay(d.at))}</b><p class="small muted">Marca els grups que vols recuperar:</p>
+        ${d.groups.map(g => `<label class="choice"><input type="checkbox" data-bkg="${esc(g.id)}" checked><span><b>${esc(g.doc.name || 'Grup sense nom')}</b> <span class="small muted">· ${(g.doc.teamList || g.teams).length} equips · ${g.members.length} alumnes</span></span></label>`).join('')}
+        <div class="notice" style="margin:12px 0">Les dades actuals dels grups marcats se substituiran per les d'aquesta còpia. El que s'hagi fet després de la còpia es perdrà.</div>
+        <div id="bkPMsg"></div><div class="row"><button type="button" class="btn" id="bkGo">Recuperar els grups marcats</button><button type="button" class="btn ghost" id="bkNo">Cancel·lar</button></div></div>`;
+      box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      $('#bkNo').onclick = () => { box.innerHTML = ''; };
+      $('#bkGo').onclick = async e => { const ids = [...box.querySelectorAll('[data-bkg]:checked')].map(x => x.dataset.bkg), b = e.target;
+        if (!ids.length) { $('#bkPMsg').innerHTML = '<p class="small">Marca almenys un grup.</p>'; return; }
+        b.disabled = true; b.innerHTML = '<span class="spin"></span> Recuperant...';
+        try { await bkRestore(d, ids); box.innerHTML = `<div class="notice info"><b>Fet!</b> S'${ids.length === 1 ? 'ha recuperat el grup' : 'han recuperat ' + ids.length + ' grups'}. <a href="#">Anar als meus grups</a></div>`; }
+        catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Recuperar els grups marcats';
+          const c = String((err && (err.code || err.message)) || ''); $('#bkPMsg').innerHTML = `<div class="notice">${/permission/.test(c) ? 'No tens permís per recuperar algun d\'aquests grups. Si el grup ja no existeix, només el pot recuperar un professor que pugui crear grups.' : 'No s\'ha pogut recuperar. Torna-ho a provar.'}<br><span class="small muted">Codi: ${esc(c.slice(0, 120))}</span></div>`; } };
+    };
+  };
+  draw();
 }
 function reqCard(req) { // Què veu qui encara no pot crear grups
   if (req && req.status === 'pending') return `<div class="notice info"><b>Has demanat accés com a professor el ${fmtDay(req.at)}.</b> Quan l'administrador l'aprovi, rebràs un correu i aquí mateix podràs crear els teus grups.</div>`;
@@ -4822,6 +5052,7 @@ async function homeView(msg, d) {
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
   if (ok) { $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); } else bindReq();
+  bkHome(v, ok || gs.length > 0);
   if (homeNew && $('#ngName')) { homeNew = false; const f = $('#ngName'); f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); }
   v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   const nb = v.querySelector('[data-hq="nou"]'); if (nb) nb.onclick = () => { const f = $('#ngName'); if (!f) return; f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); };
