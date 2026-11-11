@@ -111,11 +111,12 @@ service cloud.firestore {
               || (exists(/databases/$(database)/documents/groups/$(gid)/invites/$(me()))
                   && get(/databases/$(database)/documents/groups/$(gid)/invites/$(me())).data.team == request.resource.data.team));
         allow update, delete: if isProf(gid);
-        // L'alumne només pot afegir les seves connexions (data i dispositiu, com a molt 30)
+        // L'alumne només pot afegir les seves connexions (data i dispositiu, com a molt 30) i posar-hi el nom del seu compte de Google
         allow update: if signed() && request.auth.uid == uid
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log', 'last'])
-          && request.resource.data.log is list && request.resource.data.log.size() <= 30
-          && request.resource.data.last is number;
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['log', 'last', 'name'])
+          && (!('log' in request.resource.data) || (request.resource.data.log is list && request.resource.data.log.size() <= 30))
+          && (!('last' in request.resource.data) || request.resource.data.last is number)
+          && (!('name' in request.resource.data.diff(resource.data).affectedKeys()) || request.resource.data.name == request.auth.token.name);
       }
 
       // INVITACIONS: alumnes que el professor afegeix a mà (el document es diu com el correu)

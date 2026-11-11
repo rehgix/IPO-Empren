@@ -1124,7 +1124,8 @@ table.fin{box-shadow:none}
 .ssq img{width:100%;height:100%;object-fit:contain;background:#fff;padding:4px}
 .swho b{display:block;font-size:20px;font-weight:650;letter-spacing:-.02em;line-height:1.15;overflow-wrap:anywhere}
 .swho small{color:var(--muted);font-size:14px}
-.swho .smem{display:block;margin-top:4px;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+.swho .smem{display:grid;gap:1px;margin-top:5px;font-size:13px;line-height:1.35;overflow-wrap:anywhere}
+@media (min-width:981px){.stm{grid-template-columns:minmax(230px,1.35fr) minmax(170px,1.4fr) 86px minmax(150px,.9fr) minmax(160px,1fr)}}
 .sseg{display:flex;gap:5px}
 .sseg i{display:block;flex:1;height:16px;border-radius:8px;background:linear-gradient(90deg,var(--gc) var(--p),var(--track) var(--p))}
 .sseg i.x{background:none;border:2px dashed var(--dash)}
@@ -1771,12 +1772,16 @@ function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s 
 const TRASH_DAYS = 7, trashIds = () => new Set(((G && G.trash) || []).map(x => x.id));
 function addTeam() { let n = G.teams.length + 1; while (G.teams.some(t => t.name === 'Equip ' + n)) n++; G.teams.push({ id: newId(), name: 'Equip ' + n, members: [], data: emptyData(G.sector), review: {}, delivered: null, evals: { levels: {}, comment: '' }, grades: {}, ai: {} }); save(); return G.teams.length - 1; }
 // Cada alumne que entra a l'equip té la seva fila a «Equip i rols», amb el seu nom (així no es trepitgen)
+// Noms ben escrits: «IZAN martín molina» → «Izan Martín Molina» (les partícules del mig, en minúscula: «Joan de la Rosa», «Pere d'Amat»)
+const NOM_PART = new Set(['de', 'del', 'dels', 'la', 'les', 'el', 'els', 'i', 'y', 'da', 'van', 'von', 'di']);
+function nomBo(n) { const s = String(n || '').trim().replace(/\s+/g, ' '); if (!s) return '';
+  return s.toLowerCase().split(' ').map((w, i) => i && NOM_PART.has(w) ? w : w.replace(/(^|[-'’])(\p{L})/gu, (m, a, c) => (i && !a && /^[dl]['’]/.test(w) ? c : a + c.toUpperCase()))).join(' '); }
 const normNom = x => String(x || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/\s+/g, ' ');
 function claimRow() {
   if (!CLOUD || !ME || ME.isProf || !G || !USER) return; const t = G.teams[role]; if (!t) return;
-  if (t.members.some(m => m.uid === ME.uid)) { const sn = SNAP.teams[t.id]; if (sn && J(t.members) !== sn.members) save(); return; } // la fila ja hi és: es desa quan l'apartat s'obri
-  const nm = String(USER.name || '').trim(), same = nm && t.members.find(m => !m.uid && normNom(m.name) === normNom(nm));
-  if (same) same.uid = ME.uid;
+  const nm = nomBo(USER.name), mine = t.members.find(m => m.uid === ME.uid);
+  if (mine) { if (nm && mine.name !== nm) { mine.name = nm; t.updated = Date.now(); save(); return; } const sn = SNAP.teams[t.id]; if (sn && J(t.members) !== sn.members) save(); return; } // la fila ja hi és: es desa quan l'apartat s'obri same = nm && t.members.find(m => !m.uid && normNom(m.name) === normNom(nm));
+  if (same) { same.uid = ME.uid; same.name = nm; }
   else if (t.members.length < 3 && !sentOf(t, 'equip')) t.members.push({ name: nm || String(ME.email || '').split('@')[0], uid: ME.uid, accio: '', social: '', mental: '', resp: '' });
   else return;
   t.updated = Date.now(); save();
@@ -2116,7 +2121,7 @@ function vEquip(v) {
   const t = T();
   const cs = CLOUD && ME && !ME.isProf, mine = m => cs && m.uid === ME.uid, other = m => cs && m.uid && m.uid !== ME.uid;
   const rows = t.members.map((m, i) => `<div class="interview${mine(m) ? ' mine' : ''}"><div class="row" style="justify-content:space-between"><b>Persona ${i + 1}${mine(m) ? ' <span class="pill">Aquesta fila és la teva</span>' : ''}${other(m) ? ' <span class="pill grey">La completa ' + esc(m.name || 'una altra persona') + '</span>' : ''}</b>${other(m) ? '' : `<button type="button" class="btn ghost small" data-del-member="${i}">Treure</button>`}</div>
-    <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.name)}" ${other(m) ? 'disabled' : ''}>
+    <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.uid ? nomBo(m.name) : m.name)}" ${other(m) || (cs && m.uid) ? 'disabled title="És el nom del compte de Google de l\'institut"' : ''}>
     <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}" data-rerender="1" ${other(m) ? 'disabled' : ''}><option value="">${r.label}</option>${r.opts.map(([o]) => `<option value="${o}" ${rolN(m[k]) === o ? 'selected' : ''} ${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? 'disabled' : ''}>${o}${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? ' (ja triat)' : ''}</option>`).join('')}</select>`).join('')}</div>
     <textarea rows="2" placeholder="Responsabilitats concretes d'aquesta persona en el projecte" aria-label="Responsabilitats" data-member="resp" data-idx="${i}" ${other(m) ? 'disabled' : ''}>${esc(m.resp)}</textarea></div>`).join('');
   const dups = t.members.flatMap((m, i) => ROL_KEYS.filter(k => rolDup(t, i, k)).map(k => `${esc(m.name || 'Persona ' + (i + 1))}: ${esc(rolN(m[k]))}`));
@@ -3412,7 +3417,7 @@ function vPitch(v) {
 function pairs(t, k) {
   const d = t.data, s = (l, x) => [l, x];
   switch (k) {
-    case 'equip': return t.members.map(m => s(m.name || 'Sense nom', `${[m.accio, m.social, m.mental].filter(Boolean).map(rolN).join(' · ')}${m.resp ? '. ' + m.resp : ''}`));
+    case 'equip': return t.members.map(m => s(nomBo(m.name) || 'Sense nom', `${[m.accio, m.social, m.mental].filter(Boolean).map(rolN).join(' · ')}${m.resp ? '. ' + m.resp : ''}`));
     case 'idea': return [s('Sector', sectorLabel(d.idea.sector)), s('Nom', d.idea.nom), s('Activitat', d.idea.activitat), s('Element diferenciador', d.idea.diferenciador), s('Expectativa de benefici', d.idea.benefici), s('Why · Per a què', d.idea.why), s('How · Com', d.idea.how), s('What · Què', d.idea.what), s('Motivació extrínseca', d.idea.motExt), s('Motivació intrínseca', d.idea.motInt), s('Motivació transcendent', d.idea.motTrans)];
     case 'empatia': return [s('Buyer persona', d.empatia.persona), s('Què veu', d.empatia.veu), s('Què escolta', d.empatia.escolta), s('Què pensa i sent', d.empatia.pensa), s('Què diu i fa', d.empatia.diu), s('Frustracions', d.empatia.frustracions), s('Motivacions', d.empatia.motivacions)];
     case 'entrevistes': return [s('Hipòtesi', d.entrevistes.hipotesi), ...d.entrevistes.items.map((x, i) => s(`Entrevista ${i + 1}: ${x.qui || ''}`, [x.resposta, x.apren].filter(Boolean).join(' → '))), s('Conclusió', d.entrevistes.conclusio)];
@@ -3480,7 +3485,7 @@ function secHtml(t, k, who = false) {
   return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.rows.map(row).join('')}</div>`).join('');
 }
 function dossierText(t) {
-  let out = `PROJECTE EMPRENEDOR · ${projName(t)}\n${t.name}${t.members.length ? ' · ' + t.members.map(m => m.name).filter(Boolean).join(', ') : ''}\n`;
+  let out = `PROJECTE EMPRENEDOR · ${projName(t)}\n${t.name}${t.members.length ? ' · ' + t.members.map(m => nomBo(m.name)).filter(Boolean).join(', ') : ''}\n`;
   ALL.filter(s => s.p).forEach(s => { const ps = pairs(t, s.k).filter(([, x]) => x && String(x).trim()); if (!ps.length) return; out += `\n## ${s.l}\n` + groupPairs(s.k, ps).map(g => (g.title ? `### ${g.title}\n` : '') + g.rows.map(([l, x]) => `${l}: ${x}`).join('\n')).join('\n') + '\n'; });
   return out;
 }
@@ -3814,7 +3819,7 @@ function vQualificacio(v) {
 function reportBody(t, forStudents) {
   ensureEval();
   const r4 = raGradeAct(t, 'RA4'), r5 = raGradeAct(t, 'RA5');
-  const roles = t.members.map(m => `<tr><td>${esc(m.name)}</td><td>${esc([m.accio, m.social, m.mental].filter(Boolean).map(rolN).join(' · '))}</td><td>${esc(m.resp || '')}</td></tr>`).join('');
+  const roles = t.members.map(m => `<tr><td>${esc(nomBo(m.name))}</td><td>${esc([m.accio, m.social, m.mental].filter(Boolean).map(rolN).join(' · '))}</td><td>${esc(m.resp || '')}</td></tr>`).join('');
   const summary = ['RA4', 'RA5'].map(ra => { const r = ra === 'RA4' ? r4 : r5; return `<tr class="rasec t-${ra.toLowerCase()}"><td colspan="6">${ra} · ${esc(RA_TEXT[ra])}</td></tr>` + G.acts.filter(a => a.ra === ra).map(a => { const g = t.grades[a.c] || {}; return `<tr class="t-${ra.toLowerCase()}"><td><span class="rcode">${esc(a.c)}</span></td><td>${esc(a.n)}${a.ext ? ' <span class="tagauto">externa</span>' : ''}</td><td>${ra}</td><td class="n">${f1(a.w)}%</td><td>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : '—'}</td><td class="n"><span class="gchip ${gcls(g.nota)}">${f1(g.nota)}</span></td></tr>`; }).join('') + `<tr class="rasum t-${ra.toLowerCase()}"><td colspan="5">Mitjana ponderada de l'${ra} (${r.done} de ${r.total} activitats)</td><td class="n"><span class="gchip ${gcls(r.nota)}">${f1(r.nota)}</span></td></tr>`; }).join('');
   const acts = G.acts.map(a => { const g = t.grades[a.c] || {}, ev = actEvidence(t, a);
     return `<section class="ract ra-${a.ra.toLowerCase()}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
@@ -4146,7 +4151,7 @@ function whoShift(t, list, idx) {
 }
 const whoPaths = (t, k) => { const w = t.data._who, pre = SEC_PATHS[k] || [k + '.']; return w && w.f ? Object.keys(w.f).filter(p => pre.some(x => p === x || p.startsWith(x))) : []; };
 function secAuthors(t, k) { const ids = new Set(); whoPaths(t, k).forEach(p => t.data._who.f[p].forEach(([a]) => a && ids.add(a))); return [...ids].sort(); }
-function whoName(t, id) { const w = t.data._who || {}, r = (ROSTER || []).find(m => whoId(m.email) === id); return (r && r.name) || (w.u || {})[id] || id; }
+function whoName(t, id) { const w = t.data._who || {}, r = (ROSTER || []).find(m => whoId(m.email) === id); return nomBo((r && r.name) || (w.u || {})[id]) || id; }
 function whoColor(t, id) { const ids = Object.keys((t.data._who || {}).u || {}).sort(); return WHO_COLORS[Math.max(0, ids.indexOf(id)) % WHO_COLORS.length]; }
 function whoChips(t, k) {
   const ids = secAuthors(t, k); if (!ids.length) return '';
@@ -4486,7 +4491,7 @@ async function route(retry = 0) {
   let tid = m && (g.teamIds || []).includes(m.team) ? m.team : null;
   if (!tid) { // Si el professor l'ha afegit a mà, entra directament al seu equip
     const em = USER.email.toLowerCase(); let iv = null; try { iv = await FB.get(gpath('invites', em)); } catch (e) {}
-    if (iv && (g.teamIds || []).includes(iv.team)) { try { await FB.set(gpath('members', USER.uid), { email: USER.email, name: iv.name || USER.name || '', team: iv.team, joined: Date.now(), expiresAt: { __ts: g.expiresAt } }); tid = iv.team; FB.del(gpath('invites', em)).catch(() => {}); } catch (e) {} }
+    if (iv && (g.teamIds || []).includes(iv.team)) { try { await FB.set(gpath('members', USER.uid), { email: USER.email, name: USER.name || iv.name || '', team: iv.team, joined: Date.now(), expiresAt: { __ts: g.expiresAt } }); tid = iv.team; FB.del(gpath('invites', em)).catch(() => {}); } catch (e) {} }
   }
   if (!tid) return joinView(g, m);
   logIn(m);
@@ -4500,6 +4505,7 @@ function devName() {
   return os + (br ? ' · ' + br : '');
 }
 function logIn(m) {
+  if (m && USER.name && m.name !== USER.name) FB.update(gpath('members', USER.uid), { name: USER.name }).catch(() => {}); // el nom del compte de Google de l'institut
   const k = 'empren-log-' + GID + '-' + USER.uid; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) {}
   const now = Date.now(), log = ((m && m.log) || []).concat({ at: now, dev: devName() }).slice(-30);
   FB.update(gpath('members', USER.uid), { log, last: now }).catch(() => {});
@@ -5181,7 +5187,7 @@ function vAlumnes(v) {
   const all = CLOUD ? ROSTER.concat(pend) : G.teams.flatMap(t => t.members.filter(m => m.name).map(m => ({ name: m.name, team: t.id, loc: 1 })));
   const byTeam = id => all.filter(x => x.team === id), orphan = all.filter(x => !G.teams.some(t => t.id === x.team));
   const empty = G.teams.filter(t => !byTeam(t.id).some(x => !x.inv)), nIn = all.filter(x => !x.inv).length;
-  const locRow = x => `<div class="rostrow"><span class="rostwho"><span><b>${esc(x.name)}</b></span></span></div>`;
+  const locRow = x => `<div class="rostrow"><span class="rostwho"><span><b>${esc(nomBo(x.name))}</b></span></span></div>`;
   v.innerHTML = `${flashHtml()}${head(esc(G.name), 'Gestiona l\'alumnat')}
     <p class="intro muted">Aquí tens l'enllaç per penjar al Classroom i la llista dels alumnes que ja han entrat, equip per equip.</p>
     ${CLOUD ? '' : '<div class="notice info">Aquest és el grup d\'exemple: no hi entra ningú. Amb la sessió iniciada, aquí hi veuràs l\'enllaç del teu grup i els alumnes que hi han entrat. Ara la llista mostra els noms que els equips han escrit a «L\'equip».</div>'}
@@ -5214,7 +5220,7 @@ function vAlumnes(v) {
   if ($('#mailsCp')) cp($('#mailsCp'), all.map(x => x.email).filter(Boolean).join(', '), '✓ Correus copiats');
 }
 function rostRow(x) { const k = x.inv ? 'invites' : 'members';
-  return `<div class="rostrow"><span class="rostwho"><span><b>${esc(x.name || x.email)}</b>${x.inv ? ' <span class="pill" title="Encara no ha entrat a l\'eina">Pendent</span>' : ''}</span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span><select class="field-sel" data-move="${esc(x.id)}" data-k="${k}" aria-label="Equip de ${esc(x.email)}">${G.teams.map(t => `<option value="${esc(t.id)}" ${t.id === x.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="rostbtn">${x.inv ? `<button type="button" class="btn ghost small" data-invmail="${esc(x.id)}" title="Torna a obrir el Gmail amb la invitació">Invitació</button>` : ''}<button type="button" class="btn ghost small" data-unassign="${esc(x.id)}" data-k="${k}" data-mail="${esc(String(x.email || '').toLowerCase())}">Eliminar</button></span>${x.inv ? '' : rostLog(x)}</div>`; }
+  return `<div class="rostrow"><span class="rostwho"><span><b>${esc(nomBo(x.name) || x.email)}</b>${x.inv ? ' <span class="pill" title="Encara no ha entrat a l\'eina">Pendent</span>' : ''}</span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span><select class="field-sel" data-move="${esc(x.id)}" data-k="${k}" aria-label="Equip de ${esc(x.email)}">${G.teams.map(t => `<option value="${esc(t.id)}" ${t.id === x.team ? 'selected' : ''}>${esc(t.name)}</option>`).join('')}</select><span class="rostbtn">${x.inv ? `<button type="button" class="btn ghost small" data-invmail="${esc(x.id)}" title="Torna a obrir el Gmail amb la invitació">Invitació</button>` : ''}<button type="button" class="btn ghost small" data-unassign="${esc(x.id)}" data-k="${k}" data-mail="${esc(String(x.email || '').toLowerCase())}">Eliminar</button></span>${x.inv ? '' : rostLog(x)}</div>`; }
 // Data d'entrada i historial de connexions (data, hora i dispositiu)
 const fmtWhen = ms => new Date(ms).toLocaleString('ca-ES', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 function rostLog(x) {
@@ -5414,6 +5420,8 @@ const fmt1 = x => x === null ? '—' : x.toLocaleString('ca-ES', { maximumFracti
 function teamSel() { return `<select class="field-sel" id="teamSel" style="width:auto" aria-label="Equip">${G.teams.map((t, i) => `<option value="${i}" ${i === profTeam ? 'selected' : ''}>${esc(projName(t))}</option>`).join('')}</select>`; }
 function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { profTeam = Number(e.target.value); render(); }; }
 
+// Noms de l'equip: els comptes que hi han entrat (nom de Google); al grup d'exemple, els de «Equip i rols»
+const teamNames = t => (CLOUD && ROSTER.length ? ROSTER.filter(m => m.team === t.id).map(m => nomBo(m.name) || m.email) : t.members.map(m => nomBo(m.name))).filter(Boolean).sort((a, b) => a.localeCompare(b, 'ca'));
 const SQ_COL = ['#FFD23F', '#FFB0D0', '#9BE7D9', '#C9BCFF', '#B9D0FF', '#FFC9A8', '#BDEBC9'];
 function vSeguiment(v) {
   const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g[0], g[1], g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(g => g[2].length);
@@ -5424,7 +5432,7 @@ function vSeguiment(v) {
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<i class="x" title="${esc(gl)}: tancat"></i>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<i data-g="${gk}" style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>`; }).join('');
-    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = t.members.map(m => (m.name || m.email || '').trim()).filter(Boolean); return `<small class="smem">${ns.length ? ns.map(esc).join(', ') : 'Encara sense alumnes'}</small>`; })()}</span></span>
+    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
@@ -5453,7 +5461,7 @@ let edTeam = -1; // equip que s'està editant al Seguiment
 function edPanel(t, i) { const n = t.members.length;
   return `<div class="sedpanel"><div class="pfield"><label for="edName">Nom de l'equip</label><div class="help">Si l'equip ja té nom de projecte, es veu aquest; el nom de l'equip és el que ho identifica.</div><input type="text" id="edName" value="${esc(t.name)}"></div>
     <div class="pfield"><label for="edSec">Tipus d'empresa (sector)</label><select class="field-sel" id="edSec">${secOptsAll(t.data.idea.sector, true)}</select></div>
-    <p class="small muted">${n ? n + (n === 1 ? ' persona' : ' persones') + ': ' + esc(t.members.map(m => m.name).filter(Boolean).join(', ')) : 'Encara no hi ha cap persona a l\'equip.'}${t.delivered ? ' · Dossier lliurat' : ''}</p>
+    <p class="small muted">${n ? n + (n === 1 ? ' persona' : ' persones') + ': ' + esc(t.members.map(m => nomBo(m.name)).filter(Boolean).join(', ')) : 'Encara no hi ha cap persona a l\'equip.'}${t.delivered ? ' · Dossier lliurat' : ''}</p>
     <div class="row"><button type="button" class="btn ghost small" id="edRev">Revisar el projecte</button><button type="button" class="btn ghost small" id="edView">Veure com aquest equip</button>${t.delivered ? '<button type="button" class="btn ghost small" id="edReopen">Reobrir el dossier</button>' : ''}<button type="button" class="btn ghost small danger" id="edDel">Esborrar l'equip</button></div><div id="edBox"></div></div>`; }
 const ACC_OPEN = new Set(); // apartats amb les dates desplegades a «Planificació»
 function vObertura(v) {
@@ -5516,7 +5524,7 @@ function vRevisio(v) {
         <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip (el veuran a la pàgina d'aquest apartat)">${esc(rv.comment || '')}</textarea>
       </footer></section>`;
   }).join('') || '<div class="notice info">No hi ha cap apartat amb aquest filtre.</div>';
-  v.innerHTML = `${head(`Revisió dels projectes${t.members.length ? ' · ' + t.members.map(m => esc(m.name)).filter(Boolean).join(', ') : ''}`, esc(projName(t)))}
+  v.innerHTML = `${head(`Revisió dels projectes${teamNames(t).length ? ' · ' + teamNames(t).map(esc).join(', ') : ''}`, esc(projName(t)))}
     <div class="rtabs" role="tablist" aria-label="Equips">${tabs}</div>
     <div class="rsum">
       <div class="rsum-i sent"><b>${cnt('sent')}</b><span>enviats per revisar</span></div>
