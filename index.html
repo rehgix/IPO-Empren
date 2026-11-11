@@ -779,6 +779,8 @@ body.cloud-msg .side-label,body.cloud-msg .role{display:none}
 .bkic{width:48px;height:48px;border-radius:14px;background:var(--soft);display:grid;place-items:center}.bkic svg{width:26px;height:26px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .bklist{display:grid;gap:8px;margin-bottom:12px}.bkrow{display:flex;gap:10px;align-items:center;justify-content:space-between;padding:10px 12px;border:1px solid var(--line);border-radius:12px;flex-wrap:wrap}
 .bkpick{margin-top:14px;display:grid;gap:8px}.bkpick p{margin:0}
+.bkpw{font:15px/1.5 var(--font);padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--ink);width:100%;max-width:340px}
+.bkpw:focus{background:var(--bg);border-color:var(--ink);outline:none}
 .qrbox code{font-size:15px;word-break:break-all;background:#f4f4f5;padding:6px 10px;border-radius:8px}
 .cmsg{white-space:pre-wrap;font:14px/1.5 var(--font);padding:12px 14px;border:1px dashed var(--line);border-radius:12px;background:var(--soft);margin:10px 0}
 .gcard{gap:8px}
@@ -4748,19 +4750,49 @@ async function bkCollect() {
   }
   return out;
 }
+// Xifrat de les còpies amb contrasenya (AES-GCM; la clau surt de la contrasenya amb PBKDF2). Sense la contrasenya, l'arxiu no es pot llegir
+const b64 = u8 => { let x = ''; for (let i = 0; i < u8.length; i += 32768) x += String.fromCharCode.apply(null, u8.subarray(i, i + 32768)); return btoa(x); };
+const unb64 = x => { const b = atob(x), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+async function bkKeyOf(pw, salt) {
+  const k = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveKey']);
+  return crypto.subtle.deriveKey({ name: 'PBKDF2', salt, iterations: 200000, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+}
+async function bkEnc(data, pw) {
+  const salt = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+  const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, await bkKeyOf(pw, salt), new TextEncoder().encode(JSON.stringify(data)));
+  return { app: 'IPO Emprèn', v: 1, enc: 1, at: data.at, email: data.email, n: data.groups.length, salt: b64(salt), iv: b64(iv), data: b64(new Uint8Array(ct)) };
+}
+async function bkDec(f, pw) {
+  try { const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: unb64(f.iv) }, await bkKeyOf(pw, unb64(f.salt)), unb64(f.data)); return JSON.parse(new TextDecoder().decode(pt)); }
+  catch (e) { throw new Error('bad-pw'); }
+}
+// Contrasenya de les còpies: es desa al núvol (només la veu el mateix professor) i en aquest navegador
+let BKPW = null;
+async function bkPw() {
+  if (BKPW && BKPW.u === USER.email) return BKPW.pw;
+  let pw = bkGet().pw || '';
+  try { const d = await FB.get('bkkeys/' + USER.email); if (d && typeof d.pw === 'string') { pw = d.pw; bkSet({ pw }); } else if (pw) FB.set('bkkeys/' + USER.email, { pw, at: Date.now() }).catch(() => {}); } catch (e) {}
+  BKPW = { u: USER.email, pw }; return pw;
+}
+async function bkPwSet(pw) {
+  bkSet({ pw }); BKPW = { u: USER.email, pw };
+  try { await FB.set('bkkeys/' + USER.email, { pw, at: Date.now() }); return true; } catch (e) { console.warn(e); return false; }
+}
+// Prepara l'arxiu de la còpia: xifrat si hi ha contrasenya
+async function bkPack(data) { const pw = await bkPw(); return pw ? bkEnc(data, pw) : data; }
 const bkName = at => { const d = new Date(at), p = n => String(n).padStart(2, '0'); return `Còpia IPO Emprèn ${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}.${p(d.getMinutes())}.json`; };
 // Puja l'arxiu al Drive (pujada en dues passes: serveix també per a còpies grans)
-async function bkUpload(fid, data) {
-  const meta = { name: bkName(data.at), parents: [fid], mimeType: 'application/json', appProperties: { ipo: '1', groups: String(data.groups.length), auto: data.auto ? '1' : '0' } };
+async function bkUpload(fid, data, file) {
+  const meta = { name: bkName(data.at), parents: [fid], mimeType: 'application/json', appProperties: { ipo: '1', groups: String(data.groups.length), auto: data.auto ? '1' : '0', enc: file.enc ? '1' : '0' } };
   const r = await drv('https://www.googleapis.com/upload/drive/v3/files?uploadType=resumable', { method: 'POST', headers: { 'Content-Type': 'application/json; charset=UTF-8', 'X-Upload-Content-Type': 'application/json' }, body: JSON.stringify(meta) });
   const loc = r.headers.get('Location'); if (!loc) throw new Error('drive upload');
-  await drv(loc, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) });
+  await drv(loc, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(file) });
 }
 // Fa una còpia completa i esborra les més antigues (en deixa BK_KEEP)
 function bkRun(auto) {
   return BK_RUN || (BK_RUN = (async () => {
     const fid = await bkFolder(), data = await bkCollect(); data.auto = !!auto;
-    await bkUpload(fid, data);
+    await bkUpload(fid, data, await bkPack(data));
     try { const l = await bkList(fid); await Promise.all(l.slice(BK_KEEP).map(f => drv('/' + f.id, { method: 'DELETE' }).catch(() => {}))); } catch (e) {}
     bkSet({ last: data.at, n: data.groups.length, snooze: 0 });
     return data;
@@ -4773,7 +4805,7 @@ function bkDownload(data) {
 // Botó «Descarregar a l'ordinador»: la mateixa còpia, però en un arxiu a l'ordinador (no cal Google Drive)
 async function bkPcBtn(b, box) {
   const t = b.textContent; b.disabled = true; b.innerHTML = '<span class="spin"></span> Preparant...';
-  try { bkDownload(await bkCollect()); toast('Còpia descarregada. Guarda l\'arxiu en un lloc segur.'); }
+  try { bkDownload(await bkPack(await bkCollect())); toast('Còpia descarregada. Guarda l\'arxiu en un lloc segur.'); }
   catch (e) { console.warn(e); if (box) box.innerHTML = `<div class="notice">No s'ha pogut preparar la còpia. Torna-ho a provar.</div>`; else toast('No s\'ha pogut preparar la còpia.'); }
   b.disabled = false; b.textContent = t;
 }
@@ -4810,7 +4842,7 @@ async function bkRestore(data, gids) {
   }
   HOMEC = null; HOME = null;
 }
-const bkValid = d => d && d.app === 'IPO Emprèn' && Array.isArray(d.groups);
+const bkValid = d => d && d.app === 'IPO Emprèn' && (Array.isArray(d.groups) || (d.enc === 1 && typeof d.data === 'string'));
 // Finestra emergent
 function bkDialog(html, bind) {
   const o = document.createElement('div'); o.className = 'qrbig bkdlg'; o.setAttribute('role', 'dialog');
@@ -4855,19 +4887,31 @@ async function bkView() {
   v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
   const h = await homeRole(); homeNav('copies');
   if (!h.ok && !h.groups) { v.innerHTML = `${head('IPO Emprèn', 'Còpies de seguretat')}<div class="notice info">Les còpies de seguretat són per al professorat que té grups.</div>`; return; }
+  await bkPw();
   const draw = () => {
-    const s = bkGet(), conn = !!drvTok();
+    const s = bkGet(), conn = !!drvTok(), pw = (BKPW && BKPW.pw) || '';
     v.innerHTML = `${head('IPO Emprèn', 'Còpies de seguretat')}
       <p class="intro muted">Una còpia guarda tots els teus grups: equips, feina de l'alumnat, arxius, revisions, notes i llista d'alumnes. Es desa al teu Google Drive, a la carpeta «${esc(BK_DIR)}». L'eina només veu aquesta carpeta, no la resta del teu Drive.</p>
       ${card('Google Drive', pad(`<div class="sumrow"><span class="muted small">Última còpia</span><div><b>${s.last ? fmtDay(s.last) + ' a les ' + new Date(s.last).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' }) : 'Encara cap'}</b>${s.last && s.n != null ? ` <span class="small muted">(${s.n} ${s.n === 1 ? 'grup' : 'grups'})</span>` : ''}</div></div>
         <label class="choice" style="margin:12px 0"><input type="checkbox" id="bkAuto" ${s.on ? 'checked' : ''}><span><b>Fer una còpia automàtica cada setmana</b><span class="small muted" style="display:block">Es fa quan entres a l'eina i ja fa ${BK_DAYS} dies de l'última. Es guarden les ${BK_KEEP} còpies més recents.</span></span></label>
         <div id="bkMsg"></div>
         <div class="row"><button type="button" class="btn" id="bkNow">Fer una còpia ara</button><button type="button" class="btn ghost" id="bkPc">Descarregar una còpia a l'ordinador</button>${s.fid && conn ? `<a class="btn ghost" href="https://drive.google.com/drive/folders/${esc(s.fid)}" target="_blank" rel="noopener">Obrir la carpeta al Drive</a>` : ''}</div>`))}
+      ${card('Contrasenya de les còpies', pad(`<p class="small muted" style="margin-top:0">${pw ? 'Les còpies es desen <b>xifrades</b> amb aquesta contrasenya: sense ella, ningú que tingui l\'arxiu en pot llegir les dades. Es demana per recuperar una còpia.' : 'Ara les còpies <b>no estan xifrades</b>. Posa una contrasenya perquè ningú que tingui l\'arxiu en pugui llegir les dades. Es demanarà per recuperar una còpia.'}</p>
+        <div class="row"><input type="password" class="bkpw" id="bkPwF" value="${esc(pw)}" placeholder="Escriu una contrasenya" autocomplete="new-password" aria-label="Contrasenya de les còpies"><button type="button" class="btn ghost small" id="bkPwShow">Mostrar</button><button type="button" class="btn small" id="bkPwSave">Desar la contrasenya</button></div>
+        <div id="bkPwMsg"></div>
+        <p class="small muted" style="margin-bottom:0">La pots consultar sempre aquí amb «Mostrar». Si la canvies, les còpies que ja estan fetes es continuen obrint amb la contrasenya que tenien quan es van fer: apunta-la abans de canviar-la.</p>`))}
       ${card('Recuperar les dades d\'una còpia', pad(`<p class="small muted" style="margin-top:0">Tria una còpia i quins grups vols recuperar. Les dades actuals d'aquests grups se substitueixen per les de la còpia. Els alumnes que ja no hi siguin tornaran a entrar al seu equip quan obrin l'enllaç del grup.</p>
         <div id="bkList"></div>
         <div class="row"><button type="button" class="btn ghost" id="bkSee">Veure les còpies del Drive</button><label class="btn ghost" style="cursor:pointer">Recuperar des d'un arxiu de l'ordinador<input type="file" id="bkFile" accept=".json,application/json" hidden></label></div>
         <div id="bkPick"></div>`))}`;
     const msg = (html, ok) => { $('#bkMsg').innerHTML = html ? `<div class="notice${ok ? ' info' : ''}" style="margin-bottom:12px">${html}</div>` : ''; };
+    $('#bkPwShow').onclick = e => { const f = $('#bkPwF'), sh = f.type === 'password'; f.type = sh ? 'text' : 'password'; e.target.textContent = sh ? 'Amagar' : 'Mostrar'; };
+    $('#bkPwSave').onclick = async e => { const val = $('#bkPwF').value.trim(), m = $('#bkPwMsg'), note = (t, ok) => { m.innerHTML = `<div class="notice${ok ? ' info' : ''}" style="margin-top:12px">${t}</div>`; };
+      if (val === pw) return note('La contrasenya és la mateixa que ja tenies.', true);
+      if (val && val.length < 6) return note('La contrasenya ha de tenir 6 caràcters o més.');
+      if (val.length > 100) return note('La contrasenya és massa llarga.');
+      e.target.disabled = true; const ok = await bkPwSet(val); draw();
+      $('#bkPwMsg').innerHTML = `<div class="notice info" style="margin-top:12px">${val ? 'Contrasenya desada. Les còpies que facis a partir d\'ara aniran xifrades.' : 'Contrasenya treta. Les còpies que facis a partir d\'ara no aniran xifrades.'}${ok ? '' : ' <b>De moment només s\'ha pogut desar en aquest navegador:</b> apunta-la en un lloc segur.'}</div>`; };
     $('#bkAuto').onchange = async e => { const on = e.target.checked;
       if (!on) { bkSet({ on: false, seen: true }); msg('Còpia automàtica desactivada.', true); return; }
       try { await drvNeed(); bkSet({ on: true, seen: true }); msg('Còpia automàtica activada.', true); if (bkDue()) { msg('<span class="spin"></span> Fent la primera còpia...', true); await bkRun(true); draw(); toast('Còpia desada al teu Google Drive.'); } }
@@ -4876,12 +4920,12 @@ async function bkView() {
       try { await drvNeed(); b.innerHTML = '<span class="spin"></span> Fent la còpia...'; await bkRun(false); draw(); toast('Còpia desada al teu Google Drive.'); }
       catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Fer una còpia ara'; msg(esc(bkErr(err))); } };
     $('#bkPc').onclick = async e => { const b = e.target; b.disabled = true; b.innerHTML = '<span class="spin"></span> Preparant...';
-      try { bkDownload(await bkCollect()); } catch (err) { console.warn(err); msg(esc(bkErr(err))); } b.disabled = false; b.textContent = 'Descarregar una còpia a l\'ordinador'; };
+      try { bkDownload(await bkPack(await bkCollect())); } catch (err) { console.warn(err); msg(esc(bkErr(err))); } b.disabled = false; b.textContent = 'Descarregar una còpia a l\'ordinador'; };
     $('#bkSee').onclick = async e => { const b = e.target, box = $('#bkList'); b.disabled = true;
       try { await drvNeed(); box.innerHTML = '<div class="cloud-load"><span class="spin"></span> Buscant les còpies...</div>';
         const l = await bkList(await bkFolder());
         box.innerHTML = l.length ? `<div class="bklist">${l.map(f => { const ap = f.appProperties || {}, g = Number(ap.groups);
-          return `<div class="bkrow"><div><b>${esc(fmtDay(Date.parse(f.createdTime)))}</b> <span class="small muted">a les ${new Date(f.createdTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })} · ${ap.auto === '1' ? 'automàtica' : 'manual'}${g ? ' · ' + g + (g === 1 ? ' grup' : ' grups') : ''}</span></div><button type="button" class="btn ghost small" data-bkf="${esc(f.id)}">Recuperar</button></div>`; }).join('')}</div>`
+          return `<div class="bkrow"><div><b>${esc(fmtDay(Date.parse(f.createdTime)))}</b> <span class="small muted">a les ${new Date(f.createdTime).toLocaleTimeString('ca-ES', { hour: '2-digit', minute: '2-digit' })} · ${ap.auto === '1' ? 'automàtica' : 'manual'}${g ? ' · ' + g + (g === 1 ? ' grup' : ' grups') : ''}${ap.enc === '1' ? ' · xifrada' : ''}</span></div><button type="button" class="btn ghost small" data-bkf="${esc(f.id)}">Recuperar</button></div>`; }).join('')}</div>`
           : '<p class="small muted">Encara no hi ha cap còpia al teu Drive.</p>';
         box.querySelectorAll('[data-bkf]').forEach(x => x.onclick = async () => { x.disabled = true; x.innerHTML = '<span class="spin"></span>';
           try { const d = await (await drv('/' + x.dataset.bkf + '?alt=media')).json(); x.disabled = false; x.textContent = 'Recuperar'; pick(d); }
@@ -4891,6 +4935,15 @@ async function bkView() {
       r.onload = () => { let d = null; try { d = JSON.parse(r.result); } catch (x) {} if (!bkValid(d)) { msg('Aquest arxiu no és una còpia d\'IPO Emprèn.'); return; } pick(d); }; r.readAsText(f); e.target.value = ''; };
     // Triar els grups a recuperar i confirmar
     const pick = d => { const box = $('#bkPick');
+      if (bkValid(d) && d.enc) { // còpia xifrada: cal la contrasenya per obrir-la
+        box.innerHTML = `<div class="bkpick"><b>Còpia del ${esc(fmtDay(d.at))}</b><p class="small muted">Aquesta còpia està xifrada. Escriu la contrasenya de les còpies per obrir-la.</p>
+          <div class="row"><input type="password" class="bkpw" id="bkPwIn" placeholder="Contrasenya" autocomplete="off" aria-label="Contrasenya de la còpia"><button type="button" class="btn" id="bkPwGo">Obrir la còpia</button><button type="button" class="btn ghost" id="bkNo">Cancel·lar</button></div><div id="bkPMsg"></div></div>`;
+        box.scrollIntoView({ behavior: 'smooth', block: 'start' }); $('#bkPwIn').focus({ preventScroll: true });
+        $('#bkNo').onclick = () => { box.innerHTML = ''; };
+        const go = async () => { const b = $('#bkPwGo'), val = $('#bkPwIn').value; if (!val) return; b.disabled = true; b.innerHTML = '<span class="spin"></span> Obrint...';
+          try { pick(await bkDec(d, val)); } catch (err) { b.disabled = false; b.textContent = 'Obrir la còpia'; $('#bkPMsg').innerHTML = '<div class="notice">La contrasenya no és correcta. Si l\'has canviat, prova amb la que tenies quan es va fer aquesta còpia.</div>'; } };
+        $('#bkPwGo').onclick = go; $('#bkPwIn').onkeydown = e => { if (e.key === 'Enter') go(); };
+        return; }
       if (!bkValid(d) || !d.groups.length) { box.innerHTML = '<div class="notice">Aquesta còpia no té cap grup.</div>'; return; }
       box.innerHTML = `<div class="bkpick"><b>Còpia del ${esc(fmtDay(d.at))}</b><p class="small muted">Marca els grups que vols recuperar:</p>
         ${d.groups.map(g => `<label class="choice"><input type="checkbox" data-bkg="${esc(g.id)}" checked><span><b>${esc(g.doc.name || 'Grup sense nom')}</b> <span class="small muted">· ${(g.doc.teamList || g.teams).length} equips · ${g.members.length} alumnes</span></span></label>`).join('')}
