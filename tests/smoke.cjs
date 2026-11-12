@@ -67,6 +67,18 @@ async function check(page, width, where) {
       await check(c.page, width, name); pages++;
     }
     await c.page.close();
+    // 3) Alumnat: un alumne que ja és d'un equip ha d'entrar directament (i quedar apuntat a l'equip); un de nou ha de veure la llista d'equips
+    for (const [user, name] of [[{ uid: 's1', email: 'alu@biada.net', name: 'ALU PROVA GARCIA' }, 'alumne amb equip'], [{ uid: 's9', email: 'nou@biada.net', name: 'Nou Alumne' }, 'alumne sense equip']]) {
+      const a = await open(browser, width, true); a.st.where = name;
+      await a.page.addInitScript(u => { try { localStorage.setItem('mockUser', JSON.stringify(u)); } catch (e) {} }, user);
+      await a.page.goto(ORIGIN + 'index.html#g=g1'); await a.page.waitForTimeout(3500);
+      const r = await a.page.evaluate(() => ({ stu: document.body.classList.contains('is-student'), msg: document.body.classList.contains('cloud-msg'), join: document.querySelectorAll('[data-join]').length, row: /"uid":"s1"/.test(String((DB['groups/g1/teams/t1'] || {}).members)), txt: document.querySelector('#view').innerText.slice(0, 80) }));
+      if (user.uid === 's1' && (!r.stu || r.msg)) fail(`${width}px ${name}`, 'no entra a la pàgina del seu equip: ' + r.txt);
+      if (user.uid === 's1' && !r.row) fail(`${width}px ${name}`, 'no queda apuntat a la fitxa de l\'equip');
+      if (user.uid === 's9' && !r.join) fail(`${width}px ${name}`, 'no surt la llista d\'equips per triar: ' + r.txt);
+      await check(a.page, width, name); pages++;
+      await a.page.close();
+    }
   }
   await browser.close();
   if (fails.length) { console.error(`\nREVISIÓ FALLADA: ${fails.length} problemes\n` + [...new Set(fails)].slice(0, 40).map(f => ' ✗ ' + f).join('\n')); process.exit(1); }

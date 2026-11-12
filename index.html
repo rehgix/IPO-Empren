@@ -1799,7 +1799,8 @@ const normNom = x => String(x || '').trim().toLowerCase().normalize('NFD').repla
 function claimRow() {
   if (!CLOUD || !ME || ME.isProf || !G || !USER) return; const t = G.teams[role]; if (!t) return;
   const nm = nomBo(USER.name), mine = t.members.find(m => m.uid === ME.uid);
-  if (mine) { if (nm && mine.name !== nm) { mine.name = nm; t.updated = Date.now(); save(); return; } const sn = SNAP.teams[t.id]; if (sn && J(t.members) !== sn.members) save(); return; } // la fila ja hi és: es desa quan l'apartat s'obri same = nm && t.members.find(m => !m.uid && normNom(m.name) === normNom(nm));
+  if (mine) { if (nm && mine.name !== nm) { mine.name = nm; t.updated = Date.now(); save(); return; } const sn = SNAP.teams[t.id]; if (sn && J(t.members) !== sn.members) save(); return; } // la fila ja hi és: es desa quan l'apartat s'obri
+  const same = nm && t.members.find(m => !m.uid && normNom(m.name) === normNom(nm));
   if (same) { same.uid = ME.uid; same.name = nm; }
   else if (t.members.length < 3 && !sentOf(t, 'equip')) t.members.push({ name: nm || String(ME.email || '').split('@')[0], uid: ME.uid, accio: '', social: '', mental: '', resp: '' });
   else return;
@@ -4525,7 +4526,7 @@ async function guarded(fn, seq, retry) {
   try { await fn(); }
   catch (e) {
     console.warn(e); if (seq !== ROUTE_SEQ) return;
-    stopListen();
+    stopListen(); ME = null; G = null; // sense això, el logo obria una pàgina a mitges que no rebia els canvis dels companys
     if (retry < 2) setTimeout(() => { if (seq === ROUTE_SEQ) route(retry + 1); }, 900);
     else cloudMsg('No s\'ha pogut obrir el grup', 'Hi ha hagut un problema de connexió. Torna-ho a provar.', '<div class="row" style="margin-top:14px"><button class="btn" onclick="route()">Tornar-ho a provar</button></div>');
   }
@@ -4535,6 +4536,7 @@ function navSave() { if (!CLOUD || !GID || !G || !USER) return; try { localStora
 function navLoad() { try { const n = JSON.parse(localStorage.getItem('empren-nav') || 'null'); return n && n.gid === GID && USER && n.uid === USER.uid ? n : null; } catch (e) { return null; } }
 async function route(retry = 0) {
   const seq = ++ROUTE_SEQ;
+  if (syncT) { clearTimeout(syncT); syncT = null; if (ME && G && GID) cloudPush(); } // abans de recarregar res, s'envia el que quedava per desar
   stopListen(); syncStatus('idle');
   if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
   if (location.hash === '#config') return homeConfig();
@@ -4545,7 +4547,15 @@ async function route(retry = 0) {
   setTimeout(() => { if (seq === ROUTE_SEQ && retry < 1 && $('#view .cloud-load')) route(retry + 1); }, 12000); // si segueix carregant als 12 s, ho reintenta sol
   let g;
   let m0 = null; GID = gid; // el grup i el teu registre de membre es demanen alhora
-  try { [g, m0] = await Promise.all([FB.get('groups/' + gid), FB.get(gpath('members', USER.uid)).catch(() => null)]); } catch (e) { g = null; }
+  try { [g, m0] = await Promise.all([FB.get('groups/' + gid), FB.get(gpath('members', USER.uid)).catch(() => null)]); }
+  catch (e) { g = null; console.warn(e);
+    if (seq !== ROUTE_SEQ) return;
+    if (!/permission/i.test((e && (e.code || e.message)) || '')) { // problema de connexió (no és que el grup no existeixi): es reintenta
+      if (retry < 3) return void setTimeout(() => { if (seq === ROUTE_SEQ) route(retry + 1); }, 1200);
+      return cloudMsg('No s\'ha pogut obrir el grup', 'Hi ha hagut un problema de connexió. Torna-ho a provar.', '<div class="row" style="margin-top:14px"><button class="btn" onclick="route()">Tornar-ho a provar</button></div>');
+    }
+  }
+  if (seq !== ROUTE_SEQ) return;
   if (!g) return cloudMsg('No s\'ha trobat el grup', 'Comprova l\'enllaç que t\'ha donat el professor. Si l\'entrada al grup està tancada, demana-li que l\'obri o que et convidi. També pot ser que el grup s\'hagi esborrat en acabar el curs.', '<div class="row" style="margin-top:14px"><a class="btn ghost" href="#">Anar a l\'inici</a></div>');
   GID = gid; GROUP = Object.assign({ id: gid }, g);
   const isProf = (g.profs || []).includes(USER.email);
@@ -4632,7 +4642,7 @@ async function openStudent(tid) {
   if (G.showGrades) { if (gr) { const v = P(gr.v) || {}; t.grades = v.grades || {}; t.evals = v.evals || { levels: {}, comment: '' }; } }
   G.teams = [t]; ensureEval(); if (!G.access) G.access = defaultAccess(ALL.filter(s => s.p).map(s => s.k));
   const nv = lastGid === null ? navLoad() : null; if (nv) tab = nv.tab; // en recarregar, torna on eres
-  snapTeam(t); role = 0; claimRow(); if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
+  snapTeam(t); role = 0; try { claimRow(); } catch (e) { console.warn(e); } if ((!nv && lastGid !== GID) || !tab || !sec(tab)) tab = 'inici'; lastGid = GID;
   render(); sideUser(); stuWelcome();
   // Les imatges pesen molt: es baixen després de mostrar la pàgina i es redibuixa quan arriben (sense interrompre qui està escrivint)
   const ids = fileIdsOf(d), gid0 = GID; if (ids.length) Promise.all(ids.map(async id => { const f = await FB.get(gpath('teams', tid, 'files', id)).catch(() => null); if (f) FILES[tid][id] = f.data; })).then(function again() {
@@ -5750,7 +5760,7 @@ document.querySelector('.side-back').onclick = () => setNav(false);
 // El logo porta al tauler: «Els meus grups» (professorat) o l'inici de l'equip (alumnat)
 const brand = document.querySelector('.brand'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Anar al tauler';
 const goHome = () => { setNav(false);
-  if (CLOUD && !(ME && !ME.isProf && GID)) { if (location.hash && location.hash !== '#') location.hash = ''; else if (USER) route(); window.scrollTo(0, 0); return; }
+  if (CLOUD && !(ME && !ME.isProf && GID && G && UNSUB.length)) { if (location.hash && location.hash !== '#') location.hash = ''; else if (USER) route(); window.scrollTo(0, 0); return; }
   go(role === 'prof' ? 'seguiment' : 'inici'); };
 brand.onclick = goHome; brand.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); goHome(); } };
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.querySelector('.side.open')) setNav(false); });
