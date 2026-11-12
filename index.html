@@ -981,6 +981,13 @@ tbody tr{transition:background var(--t-fast)}
 [data-g="prof"]{--gc:#B86E00;--gs:#FFEFD0;--gl:#F5A00F}
 [data-g="admin"]{--gc:#6D3FC0;--gs:#EEE6FB;--gl:#B08CF5}
 body,body::before{background:var(--page)}
+/* Fons professional (només mode clar): quadrícula molt fina que s'esvaeix cap avall i una llum suau a dalt */
+html:not(.dark) body{background:
+  linear-gradient(to bottom,transparent 0,var(--page) 560px) fixed,
+  radial-gradient(900px 420px at 70% -120px,rgba(245,158,11,.07),transparent 70%) fixed,
+  linear-gradient(rgba(15,18,34,.045) 1px,transparent 1px) 0 0/32px 32px fixed,
+  linear-gradient(90deg,rgba(15,18,34,.045) 1px,transparent 1px) 0 0/32px 32px fixed,
+  var(--page)}
 /* Menú lateral (calaix) */
 .brand{border-color:var(--side-2)}
 .logo{background:var(--ink);box-shadow:none;border-radius:11px}
