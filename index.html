@@ -979,6 +979,9 @@ tbody tr{transition:background var(--t-fast)}
 [data-g="prof"]{--gc:#B86E00;--gs:#FFEFD0;--gl:#F5A00F}
 [data-g="admin"]{--gc:#6D3FC0;--gs:#EEE6FB;--gl:#B08CF5}
 body,body::before{background:var(--page)}
+/* Fons suau càlid (img/fons.svg) perquè la pàgina no sembli blanca; només en mode clar */
+html:not(.dark) body{background:#FFFBF4 url(img/fons.svg) center/cover fixed}
+html:not(.dark) body::before{background:#FFFBF4}
 /* Menú lateral (calaix) */
 .brand{border-color:var(--side-2)}
 .logo{background:var(--ink);box-shadow:none;border-radius:11px}
