@@ -24,6 +24,11 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `role`: `'prof'` o el número de l'equip. `profTeam`: l'equip que el professor està mirant.
 - `RUBRIC` i `G.acts`: rúbrica i activitats per a la nota. Si es mouen apartats, cal revisar que la nota continuï comptant bé.
 
+## Cicles (no tipus d'empresa)
+- El grup i cada equip trien el **cicle formatiu**, no un tipus d'empresa: cada equip hi pot muntar l'empresa que vulgui. A la barra del grup només surten el cicle i el sector professional.
+- Els perfils de cicle (`CICLES`, claus `c-...`) es construeixen sols a partir de `PE.SECTORS`: fan servir les pistes, els costos (`FINSEC`) i els préstecs (`OFERTES`) del primer tipus d'empresa del cicle, i els exemples d'activitats i clients de tots. Per canviar el perfil d'un cicle, canvia l'ordre o el contingut d'aquest primer tipus d'empresa.
+- Els sectors antics que hi hagi guardats passen sols al seu cicle (`cicleKey`, `normSectors`).
+
 ## Normes de codi
 - Tots els textos de la web, en **català**.
 - Quan un text per a l'alumnat parla del docent, fes servir `PR()` (`PR('el')` → «el professor» / «la professora», també `'El'`, `'al'`, `'pel'`, `'del'`, `'n'`): es tria segons el nom de qui ha creat el grup o l'opció de «Configuració».

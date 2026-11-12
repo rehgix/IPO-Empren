@@ -1972,6 +1972,7 @@ function stuWelcome() {
     (o, close) => o.querySelectorAll('[data-hk]').forEach(x => x.onclick = () => { close(); go(x.dataset.hk); }));
 }
 function render() {
+  normSectors();
   renderSide(); liveFn = null;
   const v = $('#view'); v.dataset.g = role === 'prof' ? 'prof' : (sec(tab) ? sec(tab).g : 'proj');
   // Animació d'entrada només quan canvia la pàgina (no en redibuixar la mateixa)
@@ -1994,7 +1995,7 @@ function segBtnUpdate() {
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
   const S = PE.SECTORS[G.sector], alt = G.teams.filter(t => t.data.idea.sector && t.data.idea.sector !== G.sector).length;
-  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s">${S && S.cicles ? `<span class="gb-i"><span class="muted">Cicle:</span> <b>${esc(secCicles(S).join(' / '))}</b></span>` : ''}${S && S.family ? `<span class="gb-i"><span class="muted">Sector professional:</span> <b>${esc(S.family)}</b></span>` : ''}<span class="gb-i"><span class="muted">Tipus d'empresa:</span> <b>${esc(S ? S.label : 'Sense triar')}</b></span>${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
+  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s"><span class="gb-i"><span class="muted">${S && S.group === 'cicle' ? 'Cicle' : 'Sector'}:</span> <b>${esc(S ? S.label : 'Sense triar')}</b></span>${S && S.family ? `<span class="gb-i"><span class="muted">Sector professional:</span> <b>${esc(S.family)}</b></span>` : ''}${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre cicle o sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
 }
 // Desa qualsevol canvi dels camps de l'equip
 function onField(e) {
@@ -2089,15 +2090,14 @@ function pageBody(v, k, intro, body, opts = {}) {
 }
 /* ================= PÀGINES DE L'EQUIP ================= */
 // Opcions de sector agrupades per família professional (i «Altres sectors» al final)
-// Desplegable de tipus d'empresa agrupat per cicle formatiu (amb el sector professional entre parèntesis).
-// Un tipus d'empresa que serveix per a dos cicles surt a tots dos; només es marca la primera vegada.
+// Desplegable de cicles, agrupats per sector professional (família); a sota, els altres sectors que no són de cap cicle
 const cicleNom = c => c.replace(/\s*\(.*\)\s*$/, '').trim();
 const secCicles = s => String(s.cicles || '').split(/\s+·\s+/).map(cicleNom).filter(Boolean); // separador amb espais: «Instal·lacions» porta un punt volat
-const secGroups = cur => { const cic = new Map(), alt = []; let picked = false;
-  Object.entries(PE.SECTORS).forEach(([k, s]) => { if (s.group !== 'biada') return alt.push([k, s]); secCicles(s).forEach(c => { if (!cic.has(c)) cic.set(c, { fam: s.family, l: [] }); cic.get(c).l.push([k, s]); }); });
-  const o = ([k, s]) => { const sel = cur === k && !picked; if (sel) picked = true; return `<option value="${k}" ${sel ? 'selected' : ''}>${esc(s.label)}</option>`; };
-  const ord = [...cic.entries()].sort((a, b) => (a[0].startsWith('CFGM') ? 0 : 1) - (b[0].startsWith('CFGM') ? 0 : 1) || a[0].localeCompare(b[0], 'ca'));
-  return ord.map(([c, g]) => `<optgroup label="${esc(c)} (${esc(g.fam)})">${g.l.map(o).join('')}</optgroup>`).join('') + `<optgroup label="Altres sectors (no vinculats a cap cicle)">${alt.map(o).join('')}</optgroup>`; };
+const secGroups = cur => { cur = cicleKey(cur); const fam = new Map(), alt = [];
+  Object.entries(PE.SECTORS).forEach(([k, s]) => { if (s.group === 'cicle') { if (!fam.has(s.family)) fam.set(s.family, []); fam.get(s.family).push([k, s]); } else if (s.group !== 'biada') alt.push([k, s]); });
+  const o = ([k, s]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${esc(s.label)}</option>`;
+  const ord = l => l.sort((a, b) => a[1].label.localeCompare(b[1].label, 'ca'));
+  return [...fam.entries()].sort((a, b) => a[0].localeCompare(b[0], 'ca')).map(([f, l]) => `<optgroup label="${esc(f)}">${ord(l).map(o).join('')}</optgroup>`).join('') + `<optgroup label="Altres sectors (no vinculats a cap cicle)">${alt.map(o).join('')}</optgroup>`; };
 const sectorLabel = k => PE.SECTORS[k] ? PE.SECTORS[k].label : '';
 const projName = t => t.data.marca.nom || t.data.idea.nom || t.name;
 function bindList(v, list, tpl, max) {
@@ -2165,7 +2165,7 @@ function vEquip(v) {
 function vIdea(v) {
   const t = T();
   page(v, 'idea', 'Tot projecte emprenedor es basa en una idea de negoci: l\'activitat a què us dedicareu, l\'element que us diferencia de la competència i l\'expectativa d\'obtenir un benefici. La idea ha de ser del vostre sector.',
-    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Cicle i tipus d'empresa</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1"><option value="" ${!t.data.idea.sector ? 'selected' : ''}>Tria el sector del teu cicle</option>${secGroups(t.data.idea.sector)}</select></div>`
+    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Cicle formatiu</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1"><option value="" ${!t.data.idea.sector ? 'selected' : ''}>Tria el teu cicle</option>${secGroups(t.data.idea.sector)}</select></div>`
       + txt('idea.nom', 'Nom provisional del projecte') + ta('idea.activitat', 'Activitat', 'El producte o servei que oferireu al mercat.') + ta('idea.diferenciador', 'Element diferenciador', 'El valor afegit que aporteu al client i que us distingeix de la competència.') + ta('idea.benefici', 'Expectativa de benefici', 'Com i per què l\'activitat generarà un benefici econòmic, social o cultural.')))
     + secIdeaCard('act')
     + card('Golden Circle', pad(`<div class="golden"><svg class="gc-svg" viewBox="0 0 240 240" role="img" aria-label="Golden Circle: Why al centre, How al mig i What a fora"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="22" class="tw">WHAT</text><text x="120" y="35" class="ts tw">Què</text><text x="120" y="60" class="th">HOW</text><text x="120" y="73" class="ts th">Com</text><text x="120" y="118" class="ty">WHY</text><text x="120" y="133" class="ts ty">Per a què</text></svg><div class="gc-fields">
@@ -3051,7 +3051,7 @@ function secIdeaCard(kind) {
   const k = T().data.idea.sector || G.sector, S = PE.SECTORS[k];
   const pills = a => `<div class="row">${a.map(x => `<span class="pill grey" style="white-space:normal">${esc(x)}</span>`).join('')}</div>`;
   if (!S) return card(kind === 'act' ? 'Exemples d\'activitats del vostre sector' : 'Clients habituals del vostre sector', pad('<p class="muted">Trieu el sector del projecte a «La idea de negoci» i aquí us sortiran exemples pensats per al vostre tipus d\'empresa.</p>'));
-  if (kind === 'act') return card('Exemples d\'activitats · ' + esc(S.short), pad(`<p class="small muted">${S.cicles ? 'Cicles relacionats: ' + esc(S.cicles) + '. ' : ''}Són exemples de feines habituals del sector per ajudar-vos a començar. La vostra activitat ha de ser pròpia: trieu què farà diferent el vostre projecte.</p>${pills(S.types)}`));
+  if (kind === 'act') return card('Exemples d\'activitats · ' + esc(S.short), pad(`<p class="small muted">${S.cicles && S.group !== 'cicle' ? 'Cicles relacionats: ' + esc(S.cicles) + '. ' : ''}Són exemples de feines habituals del sector per ajudar-vos a començar. La vostra activitat ha de ser pròpia: trieu què farà diferent el vostre projecte.</p>${pills(S.types)}`));
   return card('Clients habituals · ' + esc(S.short), pad(`<p class="small muted">Aquests són alguns tipus de clients d'aquest sector. Escolliu-ne un i pregunteu-vos: qui és la persona concreta que decideix la compra? Què necessita? Aquesta és la vostra buyer persona.</p>${pills(S.clients)}`));
 }
 function finSecCard(kind) {
@@ -3317,6 +3317,25 @@ const OFERTES = {
     b5: { prod: "Renting de mòbils i tauletes de proves", tipus: "Renting", max: 10000, tin: 8.6, anys: 3, com: 0.0, req: "Només per a ordinadors, mòbils i tauletes per provar les apps en diferents models. Els equips són la garantia.", nota: "Permet provar l'app en molts dispositius i renovar-los sovint, però l'import és petit i no paga sous ni publicitat per aconseguir usuaris." }
   }
 };
+/* ---------- Perfils per cicle formatiu ----------
+   El grup i cada equip trien el CICLE (no un tipus d'empresa concret), perquè cada equip hi pot muntar una empresa diferent.
+   Cada cicle fa servir les pistes, els costos i els préstecs del seu perfil general (el primer tipus d'empresa del cicle a PE.SECTORS),
+   i els exemples d'activitats i de clients de tots els tipus d'empresa del cicle. */
+const CICLES = {}; // clau del cicle → nom
+const cicleSlug = n => 'c-' + n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+(() => {
+  const by = new Map();
+  Object.entries(PE.SECTORS).forEach(([k, s]) => { if (s.group === 'biada') secCicles(s).forEach(c => { if (!by.has(c)) by.set(c, []); by.get(c).push(k); }); });
+  const uniq = (a, n) => [...new Set(a)].slice(0, n);
+  by.forEach((ks, nom) => { const ck = cicleSlug(nom), b = PE.SECTORS[ks[0]];
+    CICLES[ck] = nom;
+    PE.SECTORS[ck] = Object.assign({}, b, { group: 'cicle', cicles: nom, label: nom, short: nom.replace(/^CF(GM|GS|GB)\s+/, ''), base: ks[0], of: ks,
+      types: uniq(ks.flatMap(k => PE.SECTORS[k].types || []), 10), clients: uniq(ks.flatMap(k => PE.SECTORS[k].clients || []), 16) });
+    if (FINSEC[ks[0]]) FINSEC[ck] = FINSEC[ks[0]]; if (PISTES[ks[0]]) PISTES[ck] = PISTES[ks[0]]; if (OFERTES[ks[0]]) OFERTES[ck] = OFERTES[ks[0]]; });
+})();
+// Un sector antic (tipus d'empresa concret) passa al primer cicle on surt; els cicles i els «altres sectors» es queden igual
+function cicleKey(k) { const s = PE.SECTORS[k]; if (!s || s.group !== 'biada') return k || ''; const c = secCicles(s)[0]; return c ? cicleSlug(c) : k; }
+function normSectors() { if (!G) return; const gs = cicleKey(G.sector); if (gs !== G.sector) G.sector = gs; (G.teams || []).forEach(t => { if (t.data && t.data.idea) { const k = cicleKey(t.data.idea.sector); if (k !== t.data.idea.sector) t.data.idea.sector = k; } }); }
 
 // Cost d'una oferta per a un import: quota, cost total (interessos + comissió) i TAE aproximada
 function costOferta(o, P) {
@@ -4285,7 +4304,7 @@ function unpackSection(t, k, str) {
 const profPart = t => ({ review: J(t.review || {}), grades: J({ grades: t.grades || {}, evals: t.evals || { levels: {}, comment: '' } }), ai: J(t.ai || {}) });
 function teamDocOf(t, exp) { const data = {}; Object.keys(t.data).forEach(k => { data[k] = packSection(t, k); }); return { name: t.name, members: J(t.members || []), data, delivered: t.delivered || null, updated: t.updated || Date.now(), expiresAt: { __ts: exp } }; }
 function snapTeam(t) { const s = { name: t.name, members: J(t.members || []), delivered: J(t.delivered || null), data: {}, prof: profPart(t), files: Object.keys(teamFiles(t)) }; Object.keys(t.data).forEach(k => { s.data[k] = packSection(t, k); }); SNAP.teams[t.id] = s; }
-function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; t.members = Array.isArray(t.members) ? t.members.filter(isObj) : []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
+function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (t.data.idea) t.data.idea.sector = cicleKey(t.data.idea.sector); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; t.members = Array.isArray(t.members) ? t.members.filter(isObj) : []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
 function teamFromDoc(d) {
   const t = normTeam({ id: d.id, name: d.name, members: P(d.members) || [], delivered: d.delivered || null, updated: d.updated || 0, data: {} });
   Object.keys(d.data || {}).forEach(k => unpackSection(t, k, d.data[k]));
@@ -5142,7 +5161,7 @@ async function homeView(msg, d) {
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
-      <div class="pfield"><label for="ngSector">Cicle i tipus d'empresa dels projectes</label><div class="help">Tria el cicle del grup i, dins seu, el tipus d'empresa que muntaran els equips.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
+      <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button></div>`))}`;
@@ -5540,7 +5559,7 @@ function vSeguiment(v) {
   const P = $('.sedpanel'); if (!P) return; const t = G.teams[edTeam], i = edTeam;
   $('#edName').oninput = e => { t.name = e.target.value; t.updated = Date.now(); save(); renderSide(); };
   $('#edName').onchange = () => rr();
-  $('#edSec').onchange = e => { t.data.idea.sector = e.target.value; t.updated = Date.now(); save(); toast('Sector canviat.'); };
+  $('#edSec').onchange = e => { t.data.idea.sector = e.target.value; t.updated = Date.now(); save(); toast('Cicle canviat.'); };
   $('#edView').onclick = () => { role = i; tab = null; save(); render(); };
   $('#edRev').onclick = () => { profTeam = i; go('revisio'); };
   if ($('#edReopen')) $('#edReopen').onclick = () => { t.delivered = null; t.updated = Date.now(); save(); rr(); toast('Dossier reobert: l\'equip el pot tornar a lliurar.'); };
@@ -5550,7 +5569,7 @@ function vSeguiment(v) {
 let edTeam = -1; // equip que s'està editant al Seguiment
 function edPanel(t, i) { const n = t.members.length;
   return `<div class="sedpanel"><div class="pfield"><label for="edName">Nom de l'equip</label><div class="help">Si l'equip ja té nom de projecte, es veu aquest; el nom de l'equip és el que ho identifica.</div><input type="text" id="edName" value="${esc(t.name)}"></div>
-    <div class="pfield"><label for="edSec">Tipus d'empresa (sector)</label><select class="field-sel" id="edSec">${secOptsAll(t.data.idea.sector, true)}</select></div>
+    <div class="pfield"><label for="edSec">Cicle (o sector)</label><select class="field-sel" id="edSec">${secOptsAll(t.data.idea.sector, true)}</select></div>
     <p class="small muted">${n ? n + (n === 1 ? ' persona' : ' persones') + ': ' + esc(t.members.map(m => nomBo(m.name)).filter(Boolean).join(', ')) : 'Encara no hi ha cap persona a l\'equip.'}${t.delivered ? ' · Dossier lliurat' : ''}</p>
     <div class="row"><button type="button" class="btn ghost small" id="edRev">Revisar el projecte</button><button type="button" class="btn ghost small" id="edView">Veure com aquest equip</button>${t.delivered ? '<button type="button" class="btn ghost small" id="edReopen">Reobrir el dossier</button>' : ''}<button type="button" class="btn ghost small danger" id="edDel">Esborrar l'equip</button></div><div id="edBox"></div></div>`; }
 const ACC_OPEN = new Set(); // apartats amb les dates desplegades a «Planificació»
@@ -5674,8 +5693,8 @@ function vConfig(v) {
     ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador: cada persona pot triar el seu.</p>${themeSw()}`))}
     ${card('Grup classe', pad(`<div class="pfield"><label for="gName">Nom del grup</label><input type="text" id="gName" value="${esc(G.name)}"></div>
       <div class="pfield"><label for="gFem">Com us anomena l'eina davant l'alumnat</label><div class="help">Als missatges per a l'alumnat («Enviar al professor», «La professora us demana millores»...).${G.profName ? ` Amb «Automàtic» es tria segons el nom de qui ha creat el grup (${esc(G.profName)}): ara diu «${PR('n')}».` : ''}</div><select class="field-sel" id="gFem"><option value="">Automàtic</option><option value="m" ${G.profFem === 'm' ? 'selected' : ''}>Professor</option><option value="f" ${G.profFem === 'f' ? 'selected' : ''}>Professora</option></select></div>
-      <div class="pfield"><label for="gSector">Tipus d'empresa (sector) del grup</label><div class="help">Si el canvies, també canvia als equips que tenien el sector anterior. Els equips que n'han triat un altre el conserven. Sota pots canviar el de cada equip.</div><select class="field-sel" id="gSector">${secOptsAll(G.sector)}</select></div>
-      <div class="pfield"><label>Equips i tipus d'empresa de cadascun</label>${G.teams.map((t, i) => `<div class="member tsrow"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><select class="field-sel" data-tsec="${i}" aria-label="Sector de ${esc(t.name)}">${secOptsAll(t.data.idea.sector, true)}</select><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>
+      <div class="pfield"><label for="gSector">Cicle del grup</label><div class="help">Les pistes, els costos i els préstecs s'adapten al cicle. Si el canvies, també canvia als equips que tenien l'anterior; els que en tenen un altre el conserven. Sota pots canviar el de cada equip.</div><select class="field-sel" id="gSector">${secOptsAll(G.sector)}</select></div>
+      <div class="pfield"><label>Equips i cicle de cadascun</label>${G.teams.map((t, i) => `<div class="member tsrow"><input type="text" data-tn="${i}" value="${esc(t.name)}" aria-label="Nom de l'equip ${i + 1}"><select class="field-sel" data-tsec="${i}" aria-label="Sector de ${esc(t.name)}">${secOptsAll(t.data.idea.sector, true)}</select><button type="button" class="btn ghost small" data-tdel="${i}">Esborrar</button></div>`).join('')}<div id="delBox"></div><button type="button" class="btn ghost small" id="tAdd">+ Afegir un equip</button></div>
       ${(G.trash || []).length ? `<div class="pfield"><label>Paperera d'equips</label><div class="help">Els equips esborrats es guarden ${TRASH_DAYS} dies amb tot el seu projecte. Després s'eliminen del tot.</div>${G.trash.map((x, i) => `<div class="member trow"><span><b>${esc(x.name)}</b><span class="small muted"> · s'eliminarà el ${fmtDay(x.at + TRASH_DAYS * 864e5)}</span></span><button type="button" class="btn ghost small" data-trec="${i}">Recuperar</button><button type="button" class="btn ghost small" data-tkill="${i}">Eliminar del tot</button></div>`).join('')}<div id="killBox"></div></div>` : ''}`))}
     ${cloudConfigHtml()}
     ${actsConfigHtml()}
