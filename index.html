@@ -543,6 +543,8 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .gc-how{background:#fdf2e4;border-color:#f3dbbb}.gc-how label{color:#9a5513}
 .gc-what{background:#e8effc;border-color:#cbdaf6}.gc-what label{color:#234f9e}
 .gc-f textarea{background:#fff!important}
+.gcrev{display:grid;grid-template-columns:110px minmax(0,1fr);gap:18px;align-items:start}.gc-svg.gc-mini{position:static;width:110px;height:110px;margin-top:10px}.gc-mini text{font-size:19px}
+@media (max-width:620px){.gcrev{grid-template-columns:1fr}.gc-svg.gc-mini{margin:0 auto}}
 @media (max-width:760px){.golden{grid-template-columns:1fr}.gc-svg{position:static;margin:0 auto;width:220px;height:220px}}
 
 #view[data-g] .lc-proposta{background:var(--gs)!important}
@@ -3557,7 +3559,13 @@ function secHtml(t, k, who = false) {
   const row = ([l, x]) => { const [c, h] = who ? whoRow(t, k, x) : ['', esc(x).replace(/\n/g, '<br>')]; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; };
   const gs = groupPairs(k, ps);
   if (gs.length === 1 && !gs[0].title) return extra + gs[0].rows.map(row).join('');
-  return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.rows.map(row).join('')}</div>`).join('');
+  // A la revisió, el Golden Circle surt sempre sencer (amb el dibuix), encara que hi falti alguna part
+  if (k === 'idea' && who) { const gi = gs.findIndex(g => g.title === 'Golden Circle'), d = t.data.idea;
+    const gc = { title: 'Golden Circle', gc: true, rows: [['Why · Per a què', d.why], ['How · Com', d.how], ['What · Què', d.what]] };
+    if (gi >= 0) gs[gi] = gc; else gs.splice(gs.findIndex(g => g.title === 'La idea de negoci') + 1, 0, gc); }
+  const empty = l => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div class="muted small"><i>Sense respondre</i></div></div>`;
+  const gcSvg = '<svg class="gc-svg gc-mini" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="28" class="tw">WHAT</text><text x="120" y="66" class="th">HOW</text><text x="120" y="125" class="ty">WHY</text></svg>';
+  return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.gc ? `<div class="gcrev">${gcSvg}<div>${g.rows.map(r => r[1] && String(r[1]).trim() ? row(r) : empty(r[0])).join('')}</div></div>` : g.rows.map(row).join('')}</div>`).join('');
 }
 function dossierText(t) {
   let out = `PROJECTE EMPRENEDOR · ${projName(t)}\n${t.name}${t.members.length ? ' · ' + t.members.map(m => nomBo(m.name)).filter(Boolean).join(', ') : ''}\n`;
