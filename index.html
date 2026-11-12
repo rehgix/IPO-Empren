@@ -631,6 +631,8 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .sideuser{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;color:var(--side-fg,#bbb);opacity:.85}
 .sideuser span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .sideuser .linkbtn{color:inherit;font-size:12px;flex:none}
+.sideout{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;margin-top:8px;padding:8px 10px;border:1px solid currentColor;border-radius:9px;background:none;color:var(--side-fg,#bbb);font:inherit;font-size:13px;cursor:pointer;opacity:.85}
+.sideout:hover{opacity:1}.sideout svg{width:16px;height:16px}
 .glist{display:grid;margin:18px 0 24px}
 .gcard{display:grid;color:var(--ink);text-decoration:none}
 .linkbox{display:flex;gap:8px}
@@ -1418,6 +1420,12 @@ table.fin.treso td:first-child::after,table.fin.treso th:first-child::after{cont
 .bellbtn[hidden]{display:none}
 .bellbtn .belln{position:absolute;top:-6px;right:-6px;min-width:20px;height:20px;padding:0 5px;border-radius:999px;background:#dc2626;color:#fff;font:700 11.5px/20px var(--font);text-align:center;box-shadow:0 0 0 2px var(--bg)}
 @media (max-width:620px){.bellbtn{transition:transform .25s var(--ease),opacity .2s var(--ease)}.bellbtn.away:not(:focus-visible){transform:translateY(-90px);opacity:0;pointer-events:none}}
+.accbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));right:max(14px,env(safe-area-inset-right,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:999px;background:var(--bg);color:var(--ink);font:700 17px var(--font);box-shadow:var(--sh-md);cursor:pointer}
+.accbtn:hover{background:var(--soft)}.accbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.accbtn[hidden],body:has(.side.open) .accbtn{display:none}
+body:has(#accBtn:not([hidden])) .bellbtn{right:calc(max(14px,env(safe-area-inset-right,0px)) + 56px)}
+@media (max-width:620px){.accbtn{transition:transform .25s var(--ease),opacity .2s var(--ease)}.accbtn.away:not(:focus-visible){transform:translateY(-90px);opacity:0;pointer-events:none}}
+.accpop{position:fixed;top:calc(max(14px,calc(env(safe-area-inset-top,0px) + 8px)) + 54px);right:max(14px,env(safe-area-inset-right,0px));z-index:90;width:min(320px,calc(100vw - 28px));display:flex;flex-direction:column;gap:6px;padding:18px;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh-float,0 18px 50px rgba(0,0,0,.18))}
+.accpop span{overflow-wrap:anywhere}.accpop .btn{margin:10px 0 4px;justify-content:center}.accpop .btn svg{width:17px;height:17px}
 .bellpop{position:fixed;top:calc(max(14px,calc(env(safe-area-inset-top,0px) + 8px)) + 54px);right:max(14px,env(safe-area-inset-right,0px));z-index:90;width:min(380px,calc(100vw - 28px));max-height:min(70vh,560px);display:flex;flex-direction:column;background:var(--bg);color:var(--ink);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh-float,0 18px 50px rgba(0,0,0,.18));overflow:hidden}
 .bp-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 16px;border-bottom:1px solid var(--line)}.bp-h b{font-size:16px}
 .bp-l{overflow:auto;padding:8px;display:grid;gap:4px}
@@ -4483,7 +4491,7 @@ function listenGrades() {
 }
 
 /* ---------- Pantalles d'entrada ---------- */
-function cloudMsg(title, text, extra = '') { document.body.classList.add('cloud-msg'); $('#view').innerHTML = `${head('IPO Emprèn · Projecte emprenedor', esc(title))}<div class="notice info" style="max-width:70ch">${text}</div>${extra}`; }
+function cloudMsg(title, text, extra = '') { document.body.classList.add('cloud-msg'); $('#view').innerHTML = `${head('IPO Emprèn · Projecte emprenedor', esc(title))}<div class="notice info" style="max-width:70ch">${text}</div>${extra}${USER ? `<p class="small muted" style="margin-top:18px">Has entrat com a <b>${esc(USER.email)}</b>. <button type="button" class="linkbtn" id="msgOut">Entrar amb un altre compte</button></p>` : ''}`; const mo = $('#msgOut'); if (mo) mo.onclick = () => signOutNow(mo); }
 // Botó «Gestiona l'alumnat» (enllaç per al Classroom i llista d'alumnes), sota «Els meus grups»
 function stuBtn() {
   let b = $('#stuBtn'); const want = G && (CLOUD ? ME && ME.isProf && GID : true);
@@ -4498,12 +4506,36 @@ function dashBtn() {
   if (!b) { document.querySelector('.brand').insertAdjacentHTML('afterend', `<a id="dashBtn" class="dashbtn" href="#">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Els meus grups</span></a>`); }
   stuBtn();
 }
-function sideUser() { dashBtn(); const el = $('#sideAction'); if (el && USER) el.innerHTML = `<div class="sideuser"><span title="${esc(USER.email)}">${esc(USER.email)}</span><button type="button" class="linkbtn" id="signOut">Sortir</button></div>`; const so = $('#signOut'); if (so) so.onclick = async () => { await FB.signOut(); location.hash = ''; location.reload(); }; }
+function sideUser() { dashBtn(); accUpdate(); const el = $('#sideAction'); if (el && USER) el.innerHTML = `<div class="sideuser"><span title="${esc(USER.email)}">${esc(USER.email)}</span></div><button type="button" class="sideout" id="signOut">${ico('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h10"/>')}Tancar sessió</button>`; const so = $('#signOut'); if (so) so.onclick = () => signOutNow(so); }
+// Botó del compte (a dalt a la dreta): qui ha entrat i tancar la sessió
+function accUpdate() {
+  let b = $('#accBtn'); const on = CLOUD && !!USER;
+  if (!on) { if (b) b.hidden = true; $('#accPop') && $('#accPop').remove(); return; }
+  const nm = nomBo(USER.name) || USER.email, ini = (nm.match(/\p{L}/u) || ['?'])[0].toUpperCase();
+  if (!b) { document.body.insertAdjacentHTML('beforeend', '<button type="button" class="accbtn" id="accBtn" aria-haspopup="dialog" aria-expanded="false"></button>'); b = $('#accBtn'); b.onclick = accToggle; }
+  b.hidden = false; b.textContent = ini; b.title = 'El teu compte: ' + USER.email; b.setAttribute('aria-label', 'El teu compte i tancar la sessió');
+}
+function accToggle() {
+  const old = $('#accPop'), b = $('#accBtn'); if (old) { old.remove(); b.setAttribute('aria-expanded', 'false'); return; }
+  document.body.insertAdjacentHTML('beforeend', `<div class="accpop" id="accPop" role="dialog" aria-label="El teu compte"><b>${esc(nomBo(USER.name) || 'Compte de l\'institut')}</b><span class="small muted">${esc(USER.email)}</span>
+    <button type="button" class="btn ghost" id="accOut">${ico('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h10"/>')}Tancar sessió</button><p class="small muted" style="margin:0">Després podràs tornar a entrar amb el mateix compte o amb un altre.</p></div>`);
+  b.setAttribute('aria-expanded', 'true'); const o = $('#accOut'); o.onclick = () => signOutNow(o); o.focus();
+}
+document.addEventListener('click', e => { const p = $('#accPop'); if (p && !p.contains(e.target) && e.target.id !== 'accBtn') { p.remove(); $('#accBtn') && $('#accBtn').setAttribute('aria-expanded', 'false'); } });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#accPop')) { $('#accPop').remove(); $('#accBtn').setAttribute('aria-expanded', 'false'); $('#accBtn').focus(); } });
+// Tanca la sessió i torna a la pàgina d'entrar (es manté l'enllaç del grup, perquè en tornar a entrar s'obri el mateix grup)
+async function signOutNow(b) {
+  if (CLOUD && (syncT || syncBusy) && !confirm('Encara s\'estan desant canvis. Si tanques la sessió ara, es poden perdre. Vols tancar-la igualment?')) return;
+  if (b) b.disabled = true;
+  try { sessionStorage.setItem('ipoOut', '1'); } catch (e) {}
+  try { await FB.signOut(); } catch (e) {}
+  location.reload();
+}
 function loginView(msg) {
-  document.body.classList.add('cloud-msg');
+  document.body.classList.add('cloud-msg'); accUpdate();
   $('#view').innerHTML = `${head('IPO Emprèn · Projecte emprenedor', 'Entra amb el compte de l\'institut')}
     <p class="intro muted">Professorat i alumnat entren amb el compte de Google de l'institut. Cada alumne només veu la feina del seu equip.</p>
-    ${msg ? `<div class="notice">${msg}</div>` : ''}
+    ${msg ? `<div class="notice">${msg}</div>` : (() => { let o = ''; try { o = sessionStorage.getItem('ipoOut'); sessionStorage.removeItem('ipoOut'); } catch (e) {} return o ? '<div class="notice info">Has tancat la sessió. Pots tornar a entrar amb el mateix compte o amb un altre.</div>' : ''; })()}
     <div class="row" style="margin-top:16px"><button class="btn" id="gIn">${ico('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>')}Entrar amb Google</button></div>`;
   $('#gIn').onclick = async () => { $('#gIn').disabled = true; try { await FB.signIn(DOMAINS().length === 1 ? DOMAINS()[0] : ''); } catch (e) { $('#gIn').disabled = false; if (!/popup-closed|cancelled/.test(e.code || '')) loginView('No s\'ha pogut iniciar la sessió. Torna-ho a provar.'); } };
 }
@@ -4711,7 +4743,7 @@ async function homeConfig() {
     ${card('Les dades', pad(`<p class="small" style="margin:0">Les dades de tots els grups s'esborren automàticament cada 15 de juliol. El proper esborrat serà el <b>${fmtDay(nextExpiry())}</b>. Abans, descarrega els informes dels equips des de cada grup.</p>
       <p class="small">Per tenir una còpia de seguretat dels teus grups al Google Drive, ves a <a href="#copies">Còpies de seguretat</a>.</p>
       <p class="small muted">La configuració de cada grup (equips, activitats, rúbriques, IA i alumnat) és dins del grup, a «Configuració».</p>`))}`;
-  $('#cfgOut').onclick = async () => { await FB.signOut(); location.hash = ''; location.reload(); };
+  $('#cfgOut').onclick = e => signOutNow(e.currentTarget);
 }
 /* ---------- Còpies de seguretat a Google Drive ---------- */
 // Cada professor desa una còpia de tots els seus grups al seu propi Google Drive, en una carpeta de l'eina.
@@ -4720,7 +4752,12 @@ async function homeConfig() {
 const BK_DIR = 'IPO Emprèn · Còpies de seguretat', BK_KEEP = 8, BK_DAYS = 7, DRV = 'https://www.googleapis.com/drive/v3/files';
 const bkKey = () => 'ipoBk:' + (USER ? USER.email : '');
 const bkGet = () => { try { return JSON.parse(localStorage.getItem(bkKey()) || '{}') || {}; } catch (e) { return {}; } };
-const bkSet = o => { const s = Object.assign(bkGet(), o); try { localStorage.setItem(bkKey(), JSON.stringify(s)); } catch (e) {} return s; };
+const bkSet = o => { const s = Object.assign(bkGet(), o); try { localStorage.setItem(bkKey(), JSON.stringify(s)); } catch (e) {}
+  if (CLOUD && FB && USER && ('on' in o || 'last' in o)) bkCloud(); // si està activat i quan es va fer l'última còpia: igual a tots els ordinadors
+  return s; };
+// Desa al núvol l'estat de les còpies, amb la contrasenya (primer es llegeix, per no esborrar-la mai)
+function bkCloud() { const u = USER.email; bkPw().then(pw => { if (!USER || USER.email !== u || !BKPW.ok) return; const s = bkGet(); // si no s'ha pogut llegir el núvol, no s'hi escriu (es podria esborrar la contrasenya)
+  return FB.set('bkkeys/' + u, Object.assign({ pw: pw || '', at: s.pwAt || Date.now() }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {})); }).catch(e => console.warn(e)); }
 const bkDue = () => { const s = bkGet(); return s.on === true && Date.now() - (s.last || 0) >= BK_DAYS * 864e5 && Date.now() > (s.snooze || 0); };
 let DRVTOK = null, BK_RUN = null, BK_ASKED = false;
 // Permís de Drive guardat (dura uns 50 minuts)
@@ -4808,12 +4845,22 @@ let BKPW = null;
 async function bkPw() {
   if (BKPW && BKPW.u === USER.email) return BKPW.pw;
   let pw = bkGet().pw || '';
-  try { const d = await FB.get('bkkeys/' + USER.email); if (d && typeof d.pw === 'string') { pw = d.pw; bkSet({ pw }); } else if (pw) FB.set('bkkeys/' + USER.email, { pw, at: Date.now() }).catch(() => {}); } catch (e) {}
-  BKPW = { u: USER.email, pw }; return pw;
+  let up = false, ok = false;
+  try { const d = await FB.get('bkkeys/' + USER.email), l = bkGet(); ok = true;
+    if (d && typeof d.pw === 'string') { if (d.pw) pw = d.pw; const o = { pw, pwAt: d.at };
+      if (typeof d.on === 'boolean') { o.on = d.on; o.seen = true; } // activat (o descartat) en un altre ordinador o navegador
+      if ((d.last || 0) > (l.last || 0)) { o.last = d.last; o.n = d.n; } // l'última còpia es pot haver fet en un altre ordinador
+      try { localStorage.setItem(bkKey(), JSON.stringify(Object.assign(l, o))); } catch (e) {}
+      up = (typeof l.on === 'boolean' && typeof d.on !== 'boolean') || (l.last || 0) > (d.last || 0) || (!d.pw && pw); }
+    else up = !!(pw || typeof l.on === 'boolean'); } catch (e) {}
+  BKPW = { u: USER.email, pw, ok };
+  if (up) bkCloud(); // aquest navegador sabia més coses que el núvol: s'hi desen
+  return pw;
 }
 async function bkPwSet(pw) {
   bkSet({ pw }); BKPW = { u: USER.email, pw };
-  try { await FB.set('bkkeys/' + USER.email, { pw, at: Date.now() }); return true; } catch (e) { console.warn(e); return false; }
+  const s = bkSet({ pwAt: Date.now() });
+  try { await FB.set('bkkeys/' + USER.email, Object.assign({ pw, at: s.pwAt }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {})); return true; } catch (e) { console.warn(e); return false; }
 }
 // Prepara l'arxiu de la còpia: xifrat si hi ha contrasenya
 async function bkPack(data) { const pw = await bkPw(); return pw ? bkEnc(data, pw) : data; }
@@ -4892,6 +4939,7 @@ function bkDialog(html, bind) {
 // En entrar al tauler: la primera vegada explica les còpies; després, fa la còpia setmanal o la recorda
 function bkHome(v, prof) {
   if (!prof || !USER) return;
+  if (CLOUD && !(BKPW && BKPW.u === USER.email)) { bkPw().then(() => { if (USER && $('#view') === v && v.isConnected) bkHome(v, prof); }); return; } // primer, què diu el núvol
   const s = bkGet();
   if (s.seen === undefined && !BK_ASKED) { BK_ASKED = true;
     bkPw().then(pw => bkDialog(`<div class="bkic">${ico('<path d="M7 18a5 5 0 0 1-.5-10 6 6 0 0 1 11.5 1.5A4.3 4.3 0 0 1 17 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>')}</div>
@@ -5756,7 +5804,7 @@ document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navb
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);
 // En mòbil, el botó del menú s'amaga en baixar i torna en pujar
-{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); const bb = $('#bellBtn'), sb = $('#segBtn'); if (bb) bb.classList.toggle('away', nb.classList.contains('away') && !$('#bellPop')); if (sb) sb.classList.toggle('away', nb.classList.contains('away')); ly = y; }, { passive: true }); }
+{ let ly = 0; window.addEventListener('scroll', () => { const y = window.scrollY, nb = $('#navBtn'); if (Math.abs(y - ly) < 6) return; nb.classList.toggle('away', y > ly && y > 90 && !document.querySelector('.side.open')); const bb = $('#bellBtn'), sb = $('#segBtn'), ab = $('#accBtn'); if (bb) bb.classList.toggle('away', nb.classList.contains('away') && !$('#bellPop')); if (ab) ab.classList.toggle('away', nb.classList.contains('away') && !$('#accPop')); if (sb) sb.classList.toggle('away', nb.classList.contains('away')); ly = y; }, { passive: true }); }
 // El logo porta al tauler: «Els meus grups» (professorat) o l'inici de l'equip (alumnat)
 const brand = document.querySelector('.brand'); brand.setAttribute('role', 'link'); brand.tabIndex = 0; brand.title = 'Anar al tauler';
 const goHome = () => { setNav(false);

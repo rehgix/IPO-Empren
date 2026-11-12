@@ -76,8 +76,12 @@ service cloud.firestore {
     // CONTRASENYA de les còpies de seguretat (el document es diu com el correu): només la veu i la canvia el mateix professor
     match /bkkeys/{email} {
       allow get: if signed() && me() == email;
-      allow create, update: if signed() && me() == email && request.resource.data.keys().hasOnly(['pw', 'at'])
-        && request.resource.data.pw is string && request.resource.data.pw.size() <= 200 && request.resource.data.at is number;
+      // També es desa si les còpies estan activades i quan es va fer l'última (perquè no torni a preguntar a cada ordinador)
+      allow create, update: if signed() && me() == email && request.resource.data.keys().hasOnly(['pw', 'at', 'on', 'last', 'n'])
+        && request.resource.data.pw is string && request.resource.data.pw.size() <= 200 && request.resource.data.at is number
+        && (!('on' in request.resource.data) || request.resource.data.on is bool)
+        && (!('last' in request.resource.data) || request.resource.data.last is number)
+        && (!('n' in request.resource.data) || request.resource.data.n is number);
     }
     // SOL·LICITUDS d'accés com a professor (una per correu)
     match /profreq/{email} {
