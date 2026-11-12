@@ -3515,7 +3515,7 @@ function pairs(t, k) {
     case 'viab': { const V = PE.viability(d, d.juridica.forma); return V.revenue ? [s('Vendes previstes', N(V.revenue) + ' €'), s('Resultat previst del primer any', N(V.net) + ' €'), s('Punt mort', isFinite(V.breakEven) ? N(V.breakEven) + ' € a l\'any' : ''), s('Conclusió', d.viab.conclusio)] : [s('Conclusió', d.viab.conclusio)]; }
     case 'marca': return [s('Nom', d.marca.nom), s('Eslògan', d.marca.eslogan), s('Esbossos del logo', (d.marca.esbossos || []).length ? `${d.marca.esbossos.length} versions` : ''), s('Colors', d.marca.justColors), s('Icones i formes', d.marca.justIcones), s('Tipografia', d.marca.justTipo), s('Missió', d.marca.missio), s('Visió', d.marca.visio), s('Valors', d.marca.valors)];
     case 'p7': return PE.P7.map(([k, l]) => s(l, d.p7[k]));
-    case 'pitch': return [...PE.PITCH.map(([k, l]) => s(l, d.pitch[k])), s('Format', { classe: 'Presentació a classe', video: 'Vídeo pitch gravat', sites: 'Web del projecte', fira: 'Fira o jornada amb empreses' }[d.pitch.format]), s('Enllaç del vídeo', d.pitch.format === 'video' ? (d.pitch.videoUrl || '') : '')];
+    case 'pitch': return [...PE.PITCH.map(([k, l]) => s(l, d.pitch[k])), s('Format', { classe: 'Presentació a classe', video: 'Vídeo pitch gravat', sites: 'Web del projecte', fira: 'Fira o jornada amb empreses' }[d.pitch.format]), s('Enllaç del vídeo', d.pitch.format === 'video' ? (d.pitch.videoUrl || '') : null)];
   }
   return [];
 }
@@ -3550,22 +3550,24 @@ function groupPairs(k, ps) {
   return res;
 }
 function secHtml(t, k, who = false) {
-  const ps = pairs(t, k).filter(([, x]) => x && String(x).trim());
+  // A la revisió (who) surten tots els camps, també els que no s'han contestat; al dossier i a l'informe, només els contestats
+  const empty = l => `<div class="sumrow sumempty"><span class="muted small">${esc(l)}</span><div class="muted small"><i>Sense respondre</i></div></div>`;
+  const full = ([, x]) => x !== null && x !== undefined && String(x).trim() !== '';
+  const ps = pairs(t, k).filter(r => r[1] !== null && (who || full(r)));
   let extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
   if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
   if (k === 'marca' && esbImgs(t).length) extra += `<div class="small muted">Esbossos del logo</div>` + protoFilesHtml(esbImgs(t), false);
-  if (!ps.length) return extra + '<p class="muted">Sense contingut.</p>';
-  const row = ([l, x]) => { const [c, h] = who ? whoRow(t, k, x) : ['', esc(x).replace(/\n/g, '<br>')]; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; };
+  if (!ps.length) return extra + (who ? '<p class="muted"><i>Encara no han fet res d\'aquest apartat.</i></p>' : '<p class="muted">Sense contingut.</p>');
+  const row = ([l, x]) => { if (!full([l, x])) return empty(l); const [c, h] = who ? whoRow(t, k, x) : ['', esc(x).replace(/\n/g, '<br>')]; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; };
   const gs = groupPairs(k, ps);
   if (gs.length === 1 && !gs[0].title) return extra + gs[0].rows.map(row).join('');
   // A la revisió, el Golden Circle surt sempre sencer (amb el dibuix), encara que hi falti alguna part
   if (k === 'idea' && who) { const gi = gs.findIndex(g => g.title === 'Golden Circle'), d = t.data.idea;
     const gc = { title: 'Golden Circle', gc: true, rows: [['Why · Per a què', d.why], ['How · Com', d.how], ['What · Què', d.what]] };
     if (gi >= 0) gs[gi] = gc; else gs.splice(gs.findIndex(g => g.title === 'La idea de negoci') + 1, 0, gc); }
-  const empty = l => `<div class="sumrow"><span class="muted small">${esc(l)}</span><div class="muted small"><i>Sense respondre</i></div></div>`;
   const gcSvg = '<svg class="gc-svg gc-mini" viewBox="0 0 240 240" aria-hidden="true"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="28" class="tw">WHAT</text><text x="120" y="66" class="th">HOW</text><text x="120" y="125" class="ty">WHY</text></svg>';
-  return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.gc ? `<div class="gcrev">${gcSvg}<div>${g.rows.map(r => r[1] && String(r[1]).trim() ? row(r) : empty(r[0])).join('')}</div></div>` : g.rows.map(row).join('')}</div>`).join('');
+  return gs.map((g, i) => `<div class="subsec">${g.title ? `<h4 class="subh">${esc(g.title)}</h4>` : ''}${i === 0 ? extra : ''}${g.gc ? `<div class="gcrev">${gcSvg}<div>${g.rows.map(row).join('')}</div></div>` : g.rows.map(row).join('')}</div>`).join('');
 }
 function dossierText(t) {
   let out = `PROJECTE EMPRENEDOR · ${projName(t)}\n${t.name}${t.members.length ? ' · ' + t.members.map(m => nomBo(m.name)).filter(Boolean).join(', ') : ''}\n`;
@@ -3712,7 +3714,7 @@ function ensureEval() {
 function actEvidence(t, a) {
   return (a.ev || []).map(([k, labels]) => {
     if (k === 'dossier') return { title: 'Dossier', pairs: [['Dossier del projecte', t.delivered ? 'Lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'No lliurat']] };
-    let ps = pairs(t, k); if (labels) ps = ps.filter(([l]) => labels.includes(l));
+    let ps = pairs(t, k).filter(r => r[1] !== null); if (labels) ps = ps.filter(([l]) => labels.includes(l));
     return { title: sec(k).l, k, pairs: ps };
   });
 }
@@ -3831,7 +3833,7 @@ function gradeCard(t, a) {
   const noteIn = `<label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label>`;
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="small muted" style="font-weight:400">· ${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
-    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted">Buit</span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
+    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
     <div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>
     ${r ? rubGrid(a, r, rl, aiCfg().enabled ? airl : null) + `<div class="gradebar"><p class="small" style="margin:0;flex:1;min-width:200px">Nota segons la rúbrica: <b>${rg.nota === null ? `falten ${rg.total - rg.done} de ${rg.total} criteris` : f1(rg.nota) + ' · ' + LVL_NAMES[noteToLvl(rg.nota)]}</b><span class="muted"> · Si cal, pots canviar la nota a mà.</span></p>${noteIn}</div>`
       : rubNeed(a) ? `<div class="gradebar"><div class="notice info" style="margin:0;flex:1">Tria la rúbrica amb què vols corregir aquesta activitat. També pots escriure la nota directament.</div>${noteIn}</div>`
