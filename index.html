@@ -1400,6 +1400,14 @@ table.fin.treso td:first-child::after,table.fin.treso th:first-child::after{cont
 .segbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .segbtn:hover{background:var(--soft)}.segbtn:focus-visible{outline:2px solid var(--blue);outline-offset:2px}.segbtn[hidden],body:has(.side.open) .segbtn{display:none}
 @media (max-width:620px){.segbtn{transition:transform .25s var(--ease),opacity .2s var(--ease)}.segbtn.away:not(:focus-visible){transform:translateY(-90px);opacity:0;pointer-events:none}}
+.pd{display:grid;gap:12px}
+.pd-g{display:grid;gap:6px;padding:12px 14px;border:1px solid var(--line);border-radius:16px;background:var(--bg)}
+.pd-h{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}.pd-h b{font-size:15px}
+.pd-l{display:grid;gap:2px}
+.pd-i{display:flex;align-items:baseline;justify-content:space-between;gap:12px;font:inherit;font-size:14px;color:inherit;text-align:left;background:none;border:0;border-radius:10px;padding:8px 10px;cursor:pointer}
+.pd-i:hover{background:var(--soft)}.pd-t{min-width:0;overflow-wrap:anywhere}.pd-d{flex:none;font-size:12.5px;color:var(--muted)}
+.rcard.flash{box-shadow:0 0 0 3px var(--accent),var(--sh-md);transition:box-shadow .3s}
+.grpbar .gb-s{display:flex;flex-wrap:wrap;gap:2px 14px}.grpbar .gb-i{white-space:normal}
 /* ---------- Campaneta i finestra d'avisos de l'alumnat ---------- */
 .bellbtn{position:fixed;top:max(14px,calc(env(safe-area-inset-top,0px) + 8px));right:max(14px,env(safe-area-inset-right,0px));z-index:80;width:46px;height:46px;display:grid;place-items:center;border:1px solid var(--line);border-radius:14px;background:var(--bg);color:var(--ink);box-shadow:var(--sh-md);cursor:pointer}
 .bellbtn svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
@@ -1986,7 +1994,7 @@ function segBtnUpdate() {
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
   const S = PE.SECTORS[G.sector], alt = G.teams.filter(t => t.data.idea.sector && t.data.idea.sector !== G.sector).length;
-  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s"><span class="muted">Tipus d'empresa:</span> <b>${esc(S ? (S.family ? S.family + ' · ' + S.label : S.label) : 'Sense triar')}</b>${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
+  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s">${S && S.cicles ? `<span class="gb-i"><span class="muted">Cicle:</span> <b>${esc(secCicles(S).join(' / '))}</b></span>` : ''}${S && S.family ? `<span class="gb-i"><span class="muted">Sector professional:</span> <b>${esc(S.family)}</b></span>` : ''}<span class="gb-i"><span class="muted">Tipus d'empresa:</span> <b>${esc(S ? S.label : 'Sense triar')}</b></span>${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
 }
 // Desa qualsevol canvi dels camps de l'equip
 function onField(e) {
@@ -2081,9 +2089,15 @@ function pageBody(v, k, intro, body, opts = {}) {
 }
 /* ================= PÀGINES DE L'EQUIP ================= */
 // Opcions de sector agrupades per família professional (i «Altres sectors» al final)
-const secGroups = cur => { const fam = {}, alt = []; Object.entries(PE.SECTORS).forEach(([k, s]) => { if (s.group === 'biada') (fam[s.family] = fam[s.family] || []).push([k, s]); else alt.push([k, s]); });
-  const o = ([k, s]) => `<option value="${k}" ${cur === k ? 'selected' : ''}>${esc(s.label)}</option>`;
-  return Object.entries(fam).map(([f, l]) => `<optgroup label="${esc(f)}">${l.map(o).join('')}</optgroup>`).join('') + `<optgroup label="Altres sectors">${alt.map(o).join('')}</optgroup>`; };
+// Desplegable de tipus d'empresa agrupat per cicle formatiu (amb el sector professional entre parèntesis).
+// Un tipus d'empresa que serveix per a dos cicles surt a tots dos; només es marca la primera vegada.
+const cicleNom = c => c.replace(/\s*\(.*\)\s*$/, '').trim();
+const secCicles = s => String(s.cicles || '').split(/\s+·\s+/).map(cicleNom).filter(Boolean); // separador amb espais: «Instal·lacions» porta un punt volat
+const secGroups = cur => { const cic = new Map(), alt = []; let picked = false;
+  Object.entries(PE.SECTORS).forEach(([k, s]) => { if (s.group !== 'biada') return alt.push([k, s]); secCicles(s).forEach(c => { if (!cic.has(c)) cic.set(c, { fam: s.family, l: [] }); cic.get(c).l.push([k, s]); }); });
+  const o = ([k, s]) => { const sel = cur === k && !picked; if (sel) picked = true; return `<option value="${k}" ${sel ? 'selected' : ''}>${esc(s.label)}</option>`; };
+  const ord = [...cic.entries()].sort((a, b) => (a[0].startsWith('CFGM') ? 0 : 1) - (b[0].startsWith('CFGM') ? 0 : 1) || a[0].localeCompare(b[0], 'ca'));
+  return ord.map(([c, g]) => `<optgroup label="${esc(c)} (${esc(g.fam)})">${g.l.map(o).join('')}</optgroup>`).join('') + `<optgroup label="Altres sectors (no vinculats a cap cicle)">${alt.map(o).join('')}</optgroup>`; };
 const sectorLabel = k => PE.SECTORS[k] ? PE.SECTORS[k].label : '';
 const projName = t => t.data.marca.nom || t.data.idea.nom || t.name;
 function bindList(v, list, tpl, max) {
@@ -2151,7 +2165,7 @@ function vEquip(v) {
 function vIdea(v) {
   const t = T();
   page(v, 'idea', 'Tot projecte emprenedor es basa en una idea de negoci: l\'activitat a què us dedicareu, l\'element que us diferencia de la competència i l\'expectativa d\'obtenir un benefici. La idea ha de ser del vostre sector.',
-    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Sector (cicle formatiu)</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1"><option value="" ${!t.data.idea.sector ? 'selected' : ''}>Tria el sector del teu cicle</option>${secGroups(t.data.idea.sector)}</select></div>`
+    card('La idea de negoci', pad(`<div class="pfield"><label for="sectorSel">Cicle i tipus d'empresa</label><select class="field-sel" id="sectorSel" data-path="idea.sector" data-rerender="1"><option value="" ${!t.data.idea.sector ? 'selected' : ''}>Tria el sector del teu cicle</option>${secGroups(t.data.idea.sector)}</select></div>`
       + txt('idea.nom', 'Nom provisional del projecte') + ta('idea.activitat', 'Activitat', 'El producte o servei que oferireu al mercat.') + ta('idea.diferenciador', 'Element diferenciador', 'El valor afegit que aporteu al client i que us distingeix de la competència.') + ta('idea.benefici', 'Expectativa de benefici', 'Com i per què l\'activitat generarà un benefici econòmic, social o cultural.')))
     + secIdeaCard('act')
     + card('Golden Circle', pad(`<div class="golden"><svg class="gc-svg" viewBox="0 0 240 240" role="img" aria-label="Golden Circle: Why al centre, How al mig i What a fora"><circle cx="120" cy="120" r="118" class="c-what"/><circle cx="120" cy="120" r="80" class="c-how"/><circle cx="120" cy="120" r="42" class="c-why"/><text x="120" y="22" class="tw">WHAT</text><text x="120" y="35" class="ts tw">Què</text><text x="120" y="60" class="th">HOW</text><text x="120" y="73" class="ts th">Com</text><text x="120" y="118" class="ty">WHY</text><text x="120" y="133" class="ts ty">Per a què</text></svg><div class="gc-fields">
@@ -4562,7 +4576,9 @@ async function openProf() {
   const PT = ['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'], nv = lastGid === null ? navLoad() : null; // en recarregar, torna on eres
   if (nv) { role = Number.isInteger(nv.role) && nv.role >= 0 && nv.role < G.teams.length ? nv.role : 'prof'; tab = nv.tab; if (Number.isInteger(nv.team) && nv.team >= 0 && nv.team < G.teams.length) profTeam = nv.team; if (role === 'prof' && !PT.includes(tab)) tab = 'seguiment'; }
   else { role = 'prof'; if (lastGid !== GID || !tab || !PT.includes(tab)) tab = 'seguiment'; }
-  if (GOTAB && GOTAB.gid === GID && PT.includes(GOTAB.tab)) { role = 'prof'; tab = GOTAB.tab; } GOTAB = null; // des dels «Primers passos» del tauler
+  let goK = null;
+  if (GOTAB && GOTAB.gid === GID && PT.includes(GOTAB.tab)) { role = 'prof'; tab = GOTAB.tab; if (Number.isInteger(GOTAB.team) && GOTAB.team >= 0 && GOTAB.team < G.teams.length) { profTeam = GOTAB.team; revFilter = 'tots'; goK = GOTAB.k; } } GOTAB = null;
+  if (goK) setTimeout(() => { const c = document.getElementById('rv-' + goK); if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); } }, 350); // des dels «Primers passos» del tauler
   lastGid = GID;
   render(); sideUser();
   UNSUB.push(FB.listenDoc(gpath(), applyGroup, () => {}));
@@ -5096,9 +5112,25 @@ async function homeView(msg, d) {
       { ok: acc0 > 0, t: 'Obre els apartats', d: !g0 ? 'El grup comença amb tot tancat. Tu decideixes què treballa l\'alumnat i quan.' : acc0 ? `Tens <b>${acc0} ${acc0 === 1 ? 'apartat obert o programat' : 'apartats oberts o programats'}</b>.` : 'Ara mateix tot està tancat: l\'alumnat no pot treballar fins que obris algun apartat.', a: g0 ? `<button type="button" class="btn ${acc0 ? 'ghost ' : ''}small" data-gotab="obertura">Planificació</button>` : '' },
       { ok: nRev === 0 && nSent > 0, t: 'Revisa i qualifica', d: !g0 ? 'Segueix el progrés dels equips, revisa el que lliuren i posa les notes de RA4 i RA5.' : nRev == null ? 'Comprovant què han enviat els equips…' : nRev ? `Tens <b>${nRev} ${nRev === 1 ? 'apartat enviat' : 'apartats enviats'} per revisar</b>.` : nSent ? 'Ho tens tot revisat. Quan els equips enviïn més feina, sortirà aquí.' : 'Encara cap equip ha enviat res per revisar.', a: g0 && nRev ? '<button type="button" class="btn small" data-gotab="revisio">Anar a Revisió</button>' : '' }];
     const done = steps.filter(x => x.ok).length;
+    if (setupDone()) return ''; // amb el grup ja en marxa, la guia deixa lloc a «Pendent de corregir»
     return card(`Primers passos · ${done} de 4`, pad(`<ol class="hsteps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}"><span class="n">${x.ok ? '✓' : i + 1}</span><div><b>${x.t}</b><p>${x.d}</p>${x.a ? `<div class="row" style="margin-top:8px">${x.a}</div>` : ''}</div></li>`).join('')}</ol>`));
   };
-  const guide = `<div data-g="prof" id="hGuide">${guideHtml()}</div>`;
+  const setupDone = () => !!g0 && acc0 > 0 && !!ST[g0.id] && ST[g0.id].alum > 0;
+  // Pendent de corregir: apartats enviats i sense revisar, per grups, dels més antics als més nous
+  const agoTxt = at => { const d = Math.floor((Date.now() - at) / 864e5); return !at ? '' : d < 1 ? 'avui' : d === 1 ? 'ahir' : d < 30 ? `fa ${d} dies` : new Date(at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }); };
+  const PEND_OPEN = new Set();
+  const pendHtml = () => {
+    if (!gs.length) return '';
+    const loaded = gs.filter(g => ST[g.id] && ST[g.id].pend), all = loaded.reduce((a, g) => a + ST[g.id].pend.length, 0);
+    const blocks = gs.map(g => { const st = ST[g.id];
+      if (!st || !st.pend) return `<div class="pd-g"><div class="pd-h"><b>${esc(g.name)}</b><span class="small muted">${st && st.err ? 'No s\'ha pogut comprovar' : 'Comprovant…'}</span></div></div>`;
+      const l = st.pend, n = l.length, open = PEND_OPEN.has(g.id), vis = open ? l : l.slice(0, 5);
+      return `<div class="pd-g"><div class="pd-h"><b>${esc(g.name)}</b>${n ? `<span class="wsbadge sent">${n} per corregir</span>` : '<span class="wsbadge correcte">Tot corregit</span>'}</div>
+        ${n ? `<div class="pd-l">${vis.map(x => `<button type="button" class="pd-i" data-pg="${esc(g.id)}" data-pt="${x.ti}" data-pk="${esc(x.k)}"><span class="pd-t"><b>${esc(x.team)}</b> · ${esc(x.l)}</span><span class="pd-d">${agoTxt(x.at)}</span></button>`).join('')}</div>
+        ${n > 5 ? `<button type="button" class="linkbtn small" data-pmore="${esc(g.id)}">${open ? 'Mostrar-ne menys' : `Veure'ls tots (${n})`}</button>` : ''}` : ''}</div>`; }).join('');
+    return card(`Pendent de corregir${loaded.length === gs.length ? ` · ${all}` : ''}`, pad(`<div class="pd">${blocks}</div>`));
+  };
+  const guide = `<div data-g="prof" id="hGuide">${guideHtml()}</div><div data-g="prof" id="hPend">${pendHtml()}</div>`;
   v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
     ${hero}${stats}${quickHtml}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
@@ -5110,7 +5142,7 @@ async function homeView(msg, d) {
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
-      <div class="pfield"><label for="ngSector">Sector dels projectes</label><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
+      <div class="pfield"><label for="ngSector">Cicle i tipus d'empresa dels projectes</label><div class="help">Tria el cicle del grup i, dins seu, el tipus d'empresa que muntaran els equips.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button></div>`))}`;
@@ -5144,11 +5176,13 @@ async function homeView(msg, d) {
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
     box.querySelector('[data-yes]').onclick = async e => { e.target.disabled = true; try { await deleteGroupDeep(g.id); HOMEC = null; homeView('Grup esborrat.'); } catch (err) { toast('No s\'ha pogut esborrar.'); } }; });
   // Guia: es torna a dibuixar quan arriben les dades, i porta a la pàgina del grup que toca
-  const bindGuide = () => { const box = v.querySelector('#hGuide'); if (!box) return;
+  const bindGuide = () => { const box = v.querySelector('#hGuide'), pb = v.querySelector('#hPend'); if (!box) return;
+    if (pb) { pb.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { GOTAB = { gid: b.dataset.pg, tab: 'revisio', team: Number(b.dataset.pt), k: b.dataset.pk }; if (location.hash === '#g=' + b.dataset.pg) route(); else location.hash = '#g=' + b.dataset.pg; });
+      pb.querySelectorAll('[data-pmore]').forEach(b => b.onclick = () => { const id = b.dataset.pmore; PEND_OPEN.has(id) ? PEND_OPEN.delete(id) : PEND_OPEN.add(id); paintGuide(); }); }
     box.querySelectorAll('[data-gotab]').forEach(b => b.onclick = () => { GOTAB = { gid: g0.id, tab: b.dataset.gotab }; location.hash = '#g=' + g0.id; });
     box.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = () => v.querySelector(`.gcard [data-gcopy="${g0.id}"]`)?.click());
     box.querySelectorAll('[data-hq="nou"]').forEach(b => b.onclick = () => v.querySelector('.hquick [data-hq="nou"]')?.click() || $('#ngName')?.focus()); };
-  const paintGuide = () => { const box = v.querySelector('#hGuide'); if (box) { box.innerHTML = guideHtml(); bindGuide(); } };
+  const paintGuide = () => { const box = v.querySelector('#hGuide'), pb = v.querySelector('#hPend'); if (box) box.innerHTML = guideHtml(); if (pb) pb.innerHTML = pendHtml(); bindGuide(); };
   bindGuide();
   // Totals del resum (alumnes i progrés mitjà), que s'omplen a mesura que carreguen els grups
   const tot = { alum: 0, n: 0, sum: 0, fail: 0 }, hs = k => v.querySelector(`[data-hs="${k}"]`);
@@ -5159,13 +5193,17 @@ async function homeView(msg, d) {
       const [teams, mem] = await Promise.all([FB.list('groups/' + g.id + '/teams'), FB.list('groups/' + g.id + '/members')]);
       const ts = teams.filter(d => (g.teamIds || []).includes(d.id)).map(d => { const t = teamFromDoc(d), mk = P((d.data || {}).marca) || {}; if (String(mk.logo || '').startsWith('file:') && !t.data.marca.logo) t.data.marca.logo = 'file'; return t; }), pr = ts.length ? ts.reduce((a, t) => a + progress(t), 0) / ts.length : 0;
       ST[g.id] = { alum: mem.length, p: Math.round(pr * 100) };
-      if (g === g0) { // feina enviada i pendent de revisar a l'últim grup
+      // Feina enviada i pendent de revisar (per a «Pendent de corregir» i la guia)
+      try {
         const rvs = await Promise.all(ts.map(t => FB.get('groups/' + g.id + '/teams/' + t.id + '/prof/review').catch(() => null)));
         ts.forEach((t, i) => { t.review = (rvs[i] && P(rvs[i].v)) || {}; });
+        const ids = g.teamIds || [], pend = [];
+        ts.forEach(t => PROG.forEach(s => { if (workState(t, s) === 'sent') pend.push({ ti: ids.indexOf(t.id), team: projName(t), k: s.k, l: s.l, at: (sentOf(t, s.k) || {}).at || 0 }); }));
+        ST[g.id].pend = pend.sort((a, b) => a.at - b.at);
         ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => sentOf(t, s.k)).length, 0);
-        ST[g.id].rev = ts.reduce((a, t) => a + PROG.filter(s => workState(t, s) === 'sent').length, 0);
-        paintGuide();
-      }
+        ST[g.id].rev = pend.length;
+      } catch (e) { ST[g.id].err = true; }
+      paintGuide();
       card.querySelector('[data-st="alum"]').textContent = mem.length;
       card.querySelector('[data-st="prog"]').textContent = Math.round(pr * 100) + ' %';
       card.querySelector('[data-st="bar"]').style.width = Math.round(pr * 100) + '%';
