@@ -7,7 +7,7 @@
 <script>
 // Aparença: 'auto' (segons el sistema), 'light' o 'dark'. Es desa en aquest navegador i s'aplica abans de pintar.
 const THEME_MQ = matchMedia('(prefers-color-scheme: dark)');
-function themePref() { try { return localStorage.getItem('ipoTema') || 'auto'; } catch (e) { return 'auto'; } }
+function themePref() { try { return localStorage.getItem('ipoTema') || 'light'; } catch (e) { return 'light'; } }
 function applyTheme() { const p = themePref(); document.documentElement.classList.toggle('dark', p === 'dark' || (p === 'auto' && THEME_MQ.matches));
   document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === p))); }
 function setTheme(p) { try { localStorage.setItem('ipoTema', p); } catch (e) {} applyTheme(); }
@@ -126,8 +126,8 @@ textarea{font-size:13px;min-height:140px}
 <div class="app">
   <aside class="side">
     <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</div>
-    <div class="side-label"><label for="roleSel">Veure com</label></div>
-    <div class="role"><select id="roleSel"></select></div>
+    <div class="side-label">Veure com</div>
+    <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Professor/a</button><button type="button" data-rs="stu">Alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
     <div class="side-label" id="navLabel">Secció</div>
     <nav class="nav" id="tabs" role="tablist" aria-label="Seccions"></nav>
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
@@ -1455,6 +1455,65 @@ html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,11
 @media (pointer:coarse){.linkbtn{padding-block:8px}}
 /* Camps de text llargs: en pantalles amples no ocupen tota l'amplada (línies massa llargues per llegir bé) */
 @media (min-width:1100px){.pfield > textarea,.pfield > input[type=text],.pfield > select.field-sel{max-width:920px}}
+/* ---------- Millores de disseny (novembre 2026) ---------- */
+/* Menú lateral fix a l'ordinador (en pantalles estretes continua sent un calaix) */
+@media (min-width:1100px){
+  .app{grid-template-columns:268px minmax(0,1fr)}
+  .side{position:sticky;top:0;height:100vh;width:auto;transform:none;visibility:visible;padding-top:22px;z-index:auto;box-shadow:none;border-right:1px solid var(--line);transition:none}
+  .side.open{box-shadow:none}.side.open > *,.side.open .ngroup{animation:none}
+  .navbtn,.side-back{display:none}
+  .segbtn{left:calc(268px + 14px)}
+  .panel{margin-left:0}
+  .content{padding-left:40px;padding-right:40px}
+  .iname{container-type:inline-size}.iname h1{font-size:clamp(44px,13cqi,104px);padding-right:80px}
+  .stm{grid-template-columns:minmax(180px,1.35fr) minmax(140px,1.4fr) 76px minmax(120px,.9fr) minmax(130px,1fr);gap:10px 18px}
+}
+/* Títol «Seguiment»: la mida s'adapta a la seva targeta (amb el menú fix, la targeta és més estreta) */
+.sttl{container-type:inline-size}.sttl h1{font-size:clamp(36px,17cqi,68px)}
+/* Si la llista d'equips queda estreta (menú fix i pantalla no gaire ampla), cada equip passa a dues columnes */
+.slist{container-type:inline-size}
+@container (max-width:860px){
+  .stm{grid-template-columns:minmax(0,1fr) auto}
+  .stm > .sseg,.stm > .stg,.stm > .snx{grid-column:1/-1}
+  .stm > .spc{grid-row:1;grid-column:2}
+}
+/* Icona de «Tancar sessió»: només el traç (abans quedava plena i semblava un altaveu) */
+.sideout svg,#accOut svg{fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+/* «Veure com»: Professor/a | Alumne, d'un sol clic */
+.rseg{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;border-radius:999px;background:var(--side-2)}
+.rseg button{font:500 13.5px var(--font);color:var(--side-muted);background:none;border:0;border-radius:999px;padding:8px 6px;cursor:pointer;transition:background var(--t-fast),color var(--t-fast)}
+.rseg button:hover:not(:disabled){color:var(--side-fg)}
+.rseg button[aria-pressed="true"]{background:var(--side-3);color:var(--side-fg);box-shadow:var(--sh-xs);font-weight:600}
+.rseg button:disabled{opacity:.45;cursor:default}
+.role{display:grid;gap:8px}.role select[hidden]{display:none}
+/* Targetes blanques amb una vora fina: es veuen més nítides al projector */
+.grpbar,.stm,.list,.stat,.iprog,.istats,.gcard,.sheet,.rtab,.rcard,.notice.info{border:1px solid rgba(15,18,34,.07)}
+html.dark :is(.grpbar,.stm,.list,.stat,.iprog,.istats,.gcard,.sheet,.rtab,.rcard,.notice.info){border-color:rgba(255,255,255,.07)}
+/* Comentaris ràpids: botons de debò (fons gris suau i vora sòlida) */
+.rquick button{border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:5px 12px}
+.rquick button:hover{border-color:#e08a0b;background:var(--accent-soft,#fff6e6);color:#a85a00}
+html.dark .rquick button{background:var(--soft);border-color:#3f3f46}
+/* Correcte / A millorar: color propi des del principi, més intens quan està triat */
+.rb{display:inline-flex;align-items:center;gap:7px}
+.rb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.rb.ok{background:#f1f9f4;border-color:#bfe3cc;color:#1d6b3e}
+.rb.warn{background:#fdf6ec;border-color:#f3d4a6;color:#9a5513}
+.rb.ok.on{background:#26884f;border-color:#26884f;color:#fff}
+.rb.warn.on{background:#d97706;border-color:#d97706;color:#fff}
+html.dark .rb.ok{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);color:#4ade80}
+html.dark .rb.warn{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);color:#fbbf24}
+html.dark .rb.ok.on{background:#16a34a;border-color:#16a34a;color:#fff}
+html.dark .rb.warn.on{background:#d97706;border-color:#d97706;color:#fff}
+/* Seguiment: icona del bloc sota cada franja, i llegenda a dalt */
+.sseg{align-items:start}
+.sseg .sb{flex:1;display:grid;justify-items:center;gap:5px;min-width:0}
+.sseg .sb i{width:100%}
+.sseg .sb svg,.sleg svg{width:13px;height:13px;fill:none;stroke:var(--gc,var(--muted));stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.sleg{margin:2px 4px 0}.sleg span{color:var(--muted)}
+/* Tauler: botó de l'enllaç per a l'alumnat, ben visible a cada grup */
+.btn.glink{background:var(--accent-soft,#fff6e6);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--accent-ink,#b45309)}
+.btn.glink svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+html.dark .btn.glink{background:rgba(245,158,11,.12);color:#fbbf24}
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -1881,6 +1940,7 @@ const GICONS = {
   rec: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 0 1 4.8 1c0 1.7-2.3 2.2-2.3 3.5M12 17.5h0"/>'
 };
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const IC_OUT = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>';
 const ico = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const head = (label, big, actions = '') => `<div class="head"><div><div class="label">${label}</div><div class="big">${big}</div></div>${actions ? `<div class="actions">${actions}</div>` : ''}</div>`;
 const card = (title, body, right = '') => `<div class="list"><div class="list-head"><span>${title}</span>${right ? `<span class="muted">${right}</span>` : ''}</div><div class="list-body">${body}</div></div>`;
@@ -1902,8 +1962,9 @@ function menu() {
 }
 function renderSide() {
   $('#gameName').textContent = G.name;
-  $('#roleSel').innerHTML = `<option value="prof">Professor/a</option>` + G.teams.map((t, i) => `<option value="${i}">${esc(projName(t))}</option>`).join('');
-  $('#roleSel').value = String(role);
+  $('#roleSel').innerHTML = `<option value="prof" hidden>Professor/a</option>` + G.teams.map((t, i) => `<option value="${i}">${esc(projName(t))}</option>`).join('');
+  $('#roleSel').value = String(role); $('#roleSel').hidden = role === 'prof';
+  document.querySelectorAll('[data-rs]').forEach(b => { const on = (b.dataset.rs === 'prof') === (role === 'prof'); b.setAttribute('aria-pressed', String(on)); b.disabled = b.dataset.rs === 'stu' && !G.teams.length; });
   const pr = role === 'prof' ? (G.teams.length ? G.teams.reduce((a, t) => a + progress(t), 0) / G.teams.length : 0) : progress(T());
   $('#quarterTxt').textContent = role === 'prof' ? `Progrés mitjà dels equips: ${Math.round(pr * 100)}%` : `Projecte completat al ${Math.round(pr * 100)}%`;
   $('#quarterBar').innerHTML = `<span class="q done" style="flex:${Math.max(0.001, pr)}"></span><span class="q" style="flex:${Math.max(0.001, 1 - pr)}"></span>`;
@@ -1918,6 +1979,9 @@ function renderSide() {
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
   stuBtn();
 }
+// Selector «Professor/a | Alumne»: en passar a alumne, obre l'equip que s'estava mirant
+document.querySelector('.rseg').addEventListener('click', e => { const b = e.target.closest('[data-rs]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+  role = b.dataset.rs === 'prof' ? 'prof' : Math.max(0, Math.min(profTeam || 0, G.teams.length - 1)); tab = null; save(); render(); navPush(); });
 $('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); navPush(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) go(b.dataset.tab); });
 // Historial del navegador: cada canvi de pàgina dins del grup es desa, i «Enrere» torna a la pàgina anterior (no a la llista de grups)
@@ -1928,7 +1992,8 @@ window.addEventListener('popstate', e => { const s = e.state; if (!s || !s.nav |
   tab = s.tab; role = s.role; profTeam = s.team || 0; setNav(false); render(); window.scrollTo(0, 0); });
 function go(k) { const prev = tab; tab = k; setNav(false); if (k !== prev) { const st = history.state; if (!st || !st.nav) { try { const c = navState(); c.tab = prev; history.replaceState(c, ''); } catch (e) {} } navPush(); } render(); window.scrollTo(0, 0); }
 // Obre o tanca el menú lateral (calaix)
-function setNav(open) {
+const WIDE = matchMedia('(min-width:1100px)');
+function setNav(open) { if (WIDE.matches) open = false;
   const s = document.querySelector('.side'), b = $('#navBtn'), bk = document.querySelector('.side-back'); if (!s) return;
   const was = s.classList.contains('open'); s.classList.toggle('open', open); document.body.classList.toggle('navopen', open);
   if (bk) bk.classList.toggle('on', open);
@@ -2138,7 +2203,7 @@ function vInici(v) {
   // Estat de les revisions: quants apartats estan correctes, enviats, a millorar o en edició
   const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }; PROG.forEach(s => { const w = milPending(t, s) ? 'millorar' : okDone(t, s) ? 'correcte' : workState(t, s); if (w in wc) wc[w]++; });
   const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
-  const names = t.members.map(x => esc(x.name)).filter(Boolean).join(', ');
+  const names = t.members.map(x => esc(nomBo(x.name))).filter(Boolean).join(', ');
   const chips = [names || 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir'), t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'];
   const sub = filled(m.eslogan) ? m.eslogan : '';
   const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g, g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(([, ss]) => ss.length);
@@ -2168,7 +2233,7 @@ function vEquip(v) {
     <input type="text" placeholder="Nom i cognom" aria-label="Nom" data-member="name" data-idx="${i}" value="${esc(m.uid ? nomBo(m.name) : m.name)}" ${other(m) || (cs && m.uid) ? 'disabled title="És el nom del compte de Google de l\'institut"' : ''}>
     <div class="member3">${Object.entries(PE.ROLES).map(([k, r]) => `<select class="field-sel" aria-label="${r.label}" data-member="${k}" data-idx="${i}" data-rerender="1" ${other(m) ? 'disabled' : ''}><option value="">${r.label}</option>${r.opts.map(([o]) => `<option value="${o}" ${rolN(m[k]) === o ? 'selected' : ''} ${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? 'disabled' : ''}>${o}${t.members.some((x, j) => j !== i && rolN(x[k]) === o) ? ' (ja triat)' : ''}</option>`).join('')}</select>`).join('')}</div>
     <textarea rows="2" placeholder="Responsabilitats concretes d'aquesta persona en el projecte" aria-label="Responsabilitats" data-member="resp" data-idx="${i}" ${other(m) ? 'disabled' : ''}>${esc(m.resp)}</textarea></div>`).join('');
-  const dups = t.members.flatMap((m, i) => ROL_KEYS.filter(k => rolDup(t, i, k)).map(k => `${esc(m.name || 'Persona ' + (i + 1))}: ${esc(rolN(m[k]))}`));
+  const dups = t.members.flatMap((m, i) => ROL_KEYS.filter(k => rolDup(t, i, k)).map(k => `${esc(nomBo(m.name) || 'Persona ' + (i + 1))}: ${esc(rolN(m[k]))}`));
   page(v, 'equip', 'Creeu un equip d\'un màxim de tres persones. Cada persona tria un rol de cada tipus (acció, social i mental) i detalla les seves responsabilitats.' + (CLOUD && ME && !ME.isProf ? ' <b>Cadascú completa només la seva fila</b>: hi surt el vostre nom quan entreu a l\'equip.' : '') + ' <b>Dins de l\'equip no es poden repetir els rols</b>: cada rol només el pot tenir una persona.' + (dups.length ? `<div class="notice" style="margin-top:10px"><b>Hi ha rols repetits:</b> ${dups.join(' · ')}. Canvieu-los perquè cada persona tingui rols diferents.</div>` : ''),
     card('Membres de l\'equip', pad((rows || '<p class="muted">Encara no heu afegit cap persona.</p>') + (t.members.length < 3 ? '<button type="button" class="btn ghost small" id="addMember">+ Afegir una persona</button>' : '')), `${t.members.length} de 3`)
     + card('Els rols d\'equip', pad(`<div class="grid3" style="grid-template-columns:repeat(auto-fit,minmax(min(100%,220px),1fr))">${Object.values(PE.ROLES).map(r => `<div><b>${r.title}</b><ul class="plain">${r.opts.map(([o, d]) => `<li><b>${o}</b>: ${esc(d)}</li>`).join('')}</ul></div>`).join('')}</div>`)));
@@ -4517,7 +4582,7 @@ function dashBtn() {
   if (!b) { document.querySelector('.brand').insertAdjacentHTML('afterend', `<a id="dashBtn" class="dashbtn" href="#">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Els meus grups</span></a>`); }
   stuBtn();
 }
-function sideUser() { dashBtn(); accUpdate(); const el = $('#sideAction'); if (el && USER) el.innerHTML = `<div class="sideuser"><span title="${esc(USER.email)}">${esc(USER.email)}</span></div><button type="button" class="sideout" id="signOut">${ico('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h10"/>')}Tancar sessió</button>`; const so = $('#signOut'); if (so) so.onclick = () => signOutNow(so); }
+function sideUser() { dashBtn(); accUpdate(); const el = $('#sideAction'); if (el && USER) el.innerHTML = `<div class="sideuser"><span title="${esc(USER.email)}">${esc(USER.email)}</span></div><button type="button" class="sideout" id="signOut">${ico(IC_OUT)}Tancar sessió</button>`; const so = $('#signOut'); if (so) so.onclick = () => signOutNow(so); }
 // Botó del compte (a dalt a la dreta): qui ha entrat i tancar la sessió
 function accUpdate() {
   let b = $('#accBtn'); const on = CLOUD && !!USER;
@@ -4529,7 +4594,7 @@ function accUpdate() {
 function accToggle() {
   const old = $('#accPop'), b = $('#accBtn'); if (old) { old.remove(); b.setAttribute('aria-expanded', 'false'); return; }
   document.body.insertAdjacentHTML('beforeend', `<div class="accpop" id="accPop" role="dialog" aria-label="El teu compte"><b>${esc(nomBo(USER.name) || 'Compte de l\'institut')}</b><span class="small muted">${esc(USER.email)}</span>
-    <button type="button" class="btn ghost" id="accOut">${ico('<path d="M15 4h3a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-3"/><path d="M10 8l-4 4 4 4M6 12h10"/>')}Tancar sessió</button><p class="small muted" style="margin:0">Després podràs tornar a entrar amb el mateix compte o amb un altre.</p></div>`);
+    <button type="button" class="btn ghost" id="accOut">${ico(IC_OUT)}Tancar sessió</button><p class="small muted" style="margin:0">Després podràs tornar a entrar amb el mateix compte o amb un altre.</p></div>`);
   b.setAttribute('aria-expanded', 'true'); const o = $('#accOut'); o.onclick = () => signOutNow(o); o.focus();
 }
 document.addEventListener('click', e => { const p = $('#accPop'); if (p && !p.contains(e.target) && e.target.id !== 'accBtn') { p.remove(); $('#accBtn') && $('#accBtn').setAttribute('aria-expanded', 'false'); } });
@@ -5101,7 +5166,7 @@ function adminView() {
   bareView(); homeRole().then(() => homeNav('admin')); homeNav('admin');
   const v = $('#view'); let reqs = null, profs = null;
   v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
-  const who = x => `<span class="rostwho"><span><b>${esc(x.name || x.email)}</b></span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span>`;
+  const who = x => `<span class="rostwho"><span><b>${esc(nomBo(x.name) || x.email)}</b></span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span>`;
   const draw = () => {
     if (!reqs || !profs) return;
     const keep = { n: ($('#apName') || {}).value || '', m: ($('#apMail') || {}).value || '' };
@@ -5179,7 +5244,6 @@ async function homeView(msg, d) {
   }
   // Benvinguda, resum, accessos ràpids i guia de primers passos
   const first = String(USER.name || '').trim().split(/\s+/)[0], nTeams = gs.reduce((a, g) => a + (g.teamList || []).length, 0);
-  const hq = (tag, at, ic, t, s, n = '') => `<${tag} class="hq" ${at}><span class="hqi">${ico(ic)}</span><span style="min-width:0"><b>${t}</b><span class="s">${s}</span></span>${n}</${tag}>`;
   const hero = `<div class="hhero" data-g="prof"><div><h2>Hola${first ? ', ' + esc(first) : ''}!</h2><p>Des d'aquí gestiones les teves classes: crea grups, dona l'enllaç a l'alumnat i segueix el progrés dels equips.</p><p class="small" style="margin-top:6px">Si ets alumne, obre l'enllaç del grup que t'ha donat el professor.</p></div>
     <svg class="hill" viewBox="0 0 160 120" aria-hidden="true"><rect x="10" y="84" width="30" height="28" rx="6" fill="var(--gc)" opacity=".25"/><rect x="48" y="68" width="30" height="44" rx="6" fill="var(--gc)" opacity=".4"/><rect x="86" y="50" width="30" height="62" rx="6" fill="var(--gc)" opacity=".6"/>
       <circle cx="136" cy="40" r="17" fill="var(--gl)"/><rect x="128" y="57" width="16" height="7" rx="3" fill="var(--gc)"/>
@@ -5189,12 +5253,6 @@ async function homeView(msg, d) {
     <div class="stat"><span class="muted small">Equips</span><span class="v">${nTeams}</span></div>
     <div class="stat"><span class="muted small">Alumnes</span><span class="v" data-hs="alum">${d.tot ? d.tot.alum : '…'}</span></div>
     <div class="stat"><span class="muted small">Completat de mitjana</span><span class="v" data-hs="prog">${d.tot ? d.tot.p + ' %' : '…'}</span><div class="bar"><span data-hs="bar" style="width:${d.tot ? d.tot.p : 0}%"></span></div></div></div>` : '';
-  const quick = [
-    ok ? hq('button', 'type="button" data-hq="nou"', '<path d="M12 5v14M5 12h14"/>', 'Crear un grup nou', 'Nom, sector i nombre d\'equips') : '',
-    gs.length ? hq('a', `href="#g=${esc(gs[0].id)}"`, '<path d="M5 12h14M13 6l6 6-6 6"/>', 'Continuar amb l\'últim grup', esc(gs[0].name)) : '',
-    gs.length ? hq('button', 'type="button" data-hqcopy', '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>', 'Enllaç per a l\'alumnat', gs.length > 1 ? 'Tria per a quin grup' : 'Copia\'l per al Classroom') : '',
-    isAdmin() ? hq('a', 'href="#admin"', '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>', 'Panell d\'administrador', nReq ? nReq + (nReq === 1 ? ' sol·licitud pendent' : ' sol·licituds pendents') : 'Aprova el professorat', nReq ? `<span class="pill">${nReq}</span>` : '') : ''].filter(Boolean);
-  const quickHtml = quick.length ? `<div class="hquick" data-g="prof">${quick.join('')}</div>` + (gs.length > 1 ? '<div class="hqpick" id="hqPick" data-g="prof" hidden></div>' : '') : '';
   // Primers passos: estat real de l'últim grup (alumnes que hi han entrat, apartats oberts i feina per revisar)
   const g0 = gs[0], acc0 = g0 ? Object.values((P(g0.cfg) || {}).access || {}).filter(a => a && (a.state !== 'closed' || a.from)).length : 0;
   const guideHtml = () => {
@@ -5225,14 +5283,14 @@ async function homeView(msg, d) {
   };
   const guide = `<div data-g="prof" id="hGuide">${guideHtml()}</div><div data-g="prof" id="hPend">${pendHtml()}</div>`;
   v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
-    ${hero}${stats}${quickHtml}
+    ${hero}${stats}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length ? '<h3 class="hsec">Els teus grups</h3>' + `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
         <a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a>
         <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
-        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn ghost small" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">Enllaç per a l'alumnat</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
+        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
         <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
     ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
@@ -5254,7 +5312,7 @@ async function homeView(msg, d) {
   if (ok) { $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); } else bindReq();
   bkHome(v, ok || gs.length > 0);
   if (homeNew && $('#ngName')) { homeNew = false; const f = $('#ngName'); f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); }
-  v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); b.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
+  v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); (b.querySelector('span') || b).textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
   const nb = v.querySelector('[data-hq="nou"]'); if (nb) nb.onclick = () => { const f = $('#ngName'); if (!f) return; f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); };
   // «Enllaç per a l'alumnat»: amb un sol grup el copia; amb diversos, deixa triar el grup
   const cp = async (id, el) => { const link = location.origin + location.pathname + '#g=' + id; try { await navigator.clipboard.writeText(link); el.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } };
@@ -5614,8 +5672,8 @@ function vSeguiment(v) {
   const rows = G.teams.map((t, i) => { const m = t.data.marca, logo = logoSrc(m.logo), rev = wsN(t, 'sent'), mil = wsN(t, 'millorar');
     const ini = projName(t).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
-    const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<i class="x" title="${esc(gl)}: tancat"></i>`;
-      const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<i data-g="${gk}" style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>`; }).join('');
+    const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<span class="sb" data-g="${gk}"><i class="x" title="${esc(gl)}: tancat"></i>${ico(GICONS[gk])}</span>`;
+      const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<span class="sb" data-g="${gk}"><i style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>${ico(GICONS[gk])}</span>`; }).join('');
     return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
@@ -5623,9 +5681,10 @@ function vSeguiment(v) {
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
+    ${G.teams.length ? `<div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>` : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
     <div class="row"><button type="button" class="btn" id="sAdd">+ Afegir un equip</button></div>
-    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte i s'omple a mesura que l'equip avança; les ratllades encara estan tancades. Passa-hi el ratolí per veure'n el nom i el percentatge.</p>`;
+    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte (la icona de sota et diu quin) i s'omple a mesura que l'equip avança; les ratllades encara estan tancades.</p>`;
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { edTeam = edTeam === +b.dataset.ed ? -1 : +b.dataset.ed; rr(); });
@@ -5702,7 +5761,7 @@ function vRevisio(v) {
         <div class="rbadges">${whoChips(t, s.k)}<span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${rv.status && w !== rv.status ? `<span class="wsbadge rvb ${rv.status}">Revisió: ${rv.status === 'correcte' ? 'correcte' : 'a millorar'}</span>` : ''}${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
       <div class="rbody">${secHtml(t, s.k, true)}</div>
       <footer class="rrev">
-        <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">✓ Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">✎ A millorar</button></div>
+        <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">${ico('<path d="M20 6L9 17l-5-5"/>')}Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">${ico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>')}A millorar</button></div>
         <div class="rquick">${REV_QUICK.map(q => `<button type="button" data-q="${s.k}">${esc(q)}</button>`).join('')}</div>
         <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip (el veuran a la pàgina d'aquest apartat)">${esc(rv.comment || '')}</textarea>
       </footer></section>`;
