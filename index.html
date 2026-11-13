@@ -12,6 +12,7 @@ function applyTheme() { const p = themePref(); document.documentElement.classLis
   document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === p))); }
 function setTheme(p) { try { localStorage.setItem('ipoTema', p); } catch (e) {} applyTheme(); }
 THEME_MQ.addEventListener('change', applyTheme); applyTheme();
+try { if (localStorage.getItem('ipoMenu') !== 'obert') document.documentElement.classList.add('navmini'); } catch (e) { document.documentElement.classList.add('navmini'); }
 document.addEventListener('click', e => { const b = e.target.closest('[data-theme-set]'); if (b) setTheme(b.dataset.themeSet); });
 </script>
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -961,7 +962,7 @@ tbody tr{transition:background var(--t-fast)}
   --page:#F1F3F8; --tile:#ffffff; --hero:#0F1222; --hero-fg:#ffffff; --hero-mu:#B4BAD0;
   --side:#ffffff; --side-2:#EEF0F5; --side-3:#ffffff; --side-fg:#0F1222; --side-muted:#5C6378;
   --side-hover:rgba(15,18,34,.05); --side-ring:transparent; --side-border:#D3D7E2; --side-sel:#0F1222;
-  --bg:#ffffff; --canvas:#F1F3F8; --soft:#F4F5F9; --ink:#0F1222; --ink-2:#3A4052; --muted:#5C6378;
+  --bg:#ffffff; --canvas:#F1F3F8; --soft:#F4F5F9; --ink:#0F1222; --ink-2:#3A4052; --muted:#4B5163;
   --line:#E3E6EE; --line-2:#D3D7E2; --dash:#C0C6D6; --bit:rgba(255,255,255,.74); --track:#E6E8F1;
   --pri:#F5A00F; --pri-h:#E08E06; --pri-fg:#1B1303; --blue:#2458E6;
   --r-md:12px; --r-lg:14px; --r-xl:20px; --r-2xl:28px;
@@ -1468,6 +1469,69 @@ html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,11
   .iname{container-type:inline-size}.iname h1{font-size:clamp(44px,13cqi,104px);padding-right:80px}
   .stm{grid-template-columns:minmax(180px,1.35fr) minmax(140px,1.4fr) 76px minmax(120px,.9fr) minmax(130px,1fr);gap:10px 18px}
 }
+/* Peu del menú: sense el bloc de progrés (ja surt a la capçalera i a les targetes) */
+.side-foot > #gameName,.side-foot > #quarterTxt,.side-foot > #quarterBar{display:none}
+.nic{display:none}
+.sidecol{display:none}
+@media (min-width:1100px){
+  .side{position:sticky}
+  .sidecol{display:grid;place-items:center;position:absolute;top:24px;right:12px;width:32px;height:32px;border:1px solid var(--line);border-radius:10px;background:var(--side-3);color:var(--side-muted);cursor:pointer;transition:background var(--t-fast),color var(--t-fast),transform .3s var(--ease)}
+  .sidecol:hover{color:var(--side-fg);background:var(--side-2)}
+  .sidecol svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .brand{padding-right:44px}
+  /* Menú estret: només icones */
+  html.navmini .app{grid-template-columns:64px minmax(0,1fr)}
+  html.navmini .side{padding:18px 10px;overflow-x:hidden;gap:6px}
+  html.navmini .brand{font-size:0;gap:0;justify-content:center;padding:0 0 10px}
+  html.navmini .sidecol{position:static;margin:0 auto 8px;transform:rotate(180deg)}
+  html.navmini .dashbtn{justify-content:center;padding:10px 0;margin:0}
+  html.navmini .dashbtn > :not(svg){display:none}
+  html.navmini :is(.side-label,.role,.side-foot,#navLabel){display:none}
+  html.navmini .nav{gap:4px;margin-top:4px}
+  html.navmini .nav button{justify-content:center;padding:11px 0;gap:0}
+  html.navmini .nav button > :not(.nic){display:none}
+  html.navmini .nic{display:grid;place-items:center}
+  html.navmini .nic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+  html.navmini .ngroup.allic .ghead{display:none}
+  html.navmini .ngroup:not(.allic) > button{display:none}
+  html.navmini .ngroup:not(.allic) .ghead{justify-content:center;padding:11px 0;border-radius:12px;cursor:pointer}
+  html.navmini .ngroup:not(.allic) .ghead span{display:none}
+  html.navmini .ngroup:not(.allic) .ghead::before{display:none}
+  html.navmini .ngroup:not(.allic) .ghead svg{display:block;width:20px;height:20px;stroke:var(--gc,var(--ink))}
+  html.navmini .ngroup:not(.allic) .ghead:hover{background:var(--side-2)}
+  html.navmini .segbtn{left:78px}
+  html.navmini .ngroup:not(.allic):has(button[aria-selected="true"]) .ghead{background:var(--side-2)}
+}
+/* ---------- Seguiment, revisió i alumnat (novembre 2026) ---------- */
+/* Capçal de Seguiment més equilibrat: la targeta fosca, més estreta */
+.shead{grid-template-columns:minmax(0,.9fr) minmax(0,2fr)}
+@media (max-width:980px){.shead{grid-template-columns:minmax(0,1fr)}}
+/* Llegenda dels blocs i ordre dels equips */
+.stools{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px 20px}
+.ssort{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);white-space:nowrap}
+.ssort select{width:auto;padding:7px 12px;font-size:13.5px;border-radius:999px}
+/* Píndoles «per revisar» / «a millorar»: porten a l'apartat */
+.bst[data-pill]{cursor:pointer;transition:box-shadow var(--t-fast),transform .12s var(--ease)}
+.bst[data-pill]:hover{box-shadow:0 0 0 2px currentColor;text-decoration:underline;text-underline-offset:2px}
+/* Revisió: un apartat cada vegada */
+.rhide{display:flex;align-items:center;gap:8px;padding:2px 8px 10px;margin-bottom:2px;border-bottom:1px solid var(--line);font-size:13px;color:var(--muted);cursor:pointer}
+.rhide input{accent-color:var(--ink);width:15px;height:15px;margin:0}
+.rnav-i.on{background:var(--soft);font-weight:650;box-shadow:inset 3px 0 0 var(--gc,var(--ink))}
+.rcards{max-width:760px}
+.rpager{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px}
+.rpager > :first-child{justify-self:start}.rpager > :last-child{justify-self:end}
+.rpager .btn{max-width:100%;min-width:0}.rpager .btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rpos{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rsel{display:none}
+@media (max-width:900px){.rsel{display:block}}
+@media (max-width:620px){.rpager{grid-template-columns:1fr 1fr}.rpos{grid-column:1/-1;grid-row:1;justify-self:center}}
+/* Alumnat: avís en vermell si cal millorar algun apartat */
+.inx.mil small{color:var(--bad);font-weight:600}
+.inx.mil .btn{background:var(--bad);border-color:var(--bad);color:#fff}
+/* Xifres amb amplada fixa (no ballen en canviar) */
+.spc,.snums b,.istats b,.iring b,.rsum-i b,.stat .v,.bcnt,.bst,.gstats b,.rtab em,.ncount,.dcount,.wsbadge,.pill,.sseg,.rfill{font-variant-numeric:tabular-nums}
+/* Textos secundaris amb més contrast */
+.swho .smem,.sumempty i{color:var(--muted)}
 /* Títol «Seguiment»: la mida s'adapta a la seva targeta (amb el menú fix, la targeta és més estreta) */
 .sttl{container-type:inline-size}.sttl h1{font-size:clamp(36px,17cqi,68px)}
 /* Si la llista d'equips queda estreta (menú fix i pantalla no gaire ampla), cada equip passa a dues columnes */
@@ -1941,6 +2005,13 @@ const GICONS = {
 };
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const IC_OUT = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>';
+const NAVIC = { seguiment: '<path d="M3 12h4l3-8 4 16 3-8h4"/>', obertura: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
+  revisio: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', qualificacio: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>',
+  informe: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/>', guia: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
+  rubriques: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>', config: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+  grups: '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>', nou: '<path d="M12 5v14M5 12h14"/>',
+  copies: '<path d="M7 18a5 5 0 1 1 1-9.9A6 6 0 0 1 19.5 10 4 4 0 0 1 18 18z"/><path d="M12 16v-5M9.5 13.5L12 11l2.5 2.5"/>', admin: '<path d="M12 3l7 3v5c0 4.5-3 8-7 10-4-2-7-5.5-7-10V6z"/>' };
+const nic = k => NAVIC[k] ? `<span class="nic">${ico(NAVIC[k])}</span>` : '';
 const ico = d => `<svg viewBox="0 0 24 24" aria-hidden="true">${d}</svg>`;
 const head = (label, big, actions = '') => `<div class="head"><div><div class="label">${label}</div><div class="big">${big}</div></div>${actions ? `<div class="actions">${actions}</div>` : ''}</div>`;
 const card = (title, body, right = '') => `<div class="list"><div class="list-head"><span>${title}</span>${right ? `<span class="muted">${right}</span>` : ''}</div><div class="list-body">${body}</div></div>`;
@@ -1970,10 +2041,10 @@ function renderSide() {
   $('#quarterBar').innerHTML = `<span class="q done" style="flex:${Math.max(0.001, pr)}"></span><span class="q" style="flex:${Math.max(0.001, 1 - pr)}"></span>`;
   const groups = menu(), all = groups.flatMap(g => g[2]);
   if (!tab || !(all.find(x => x[0] === tab) || (role === 'prof' && tab === 'alumnes'))) tab = all[0][0];
-  $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup" data-g="${ic}"><div class="ghead">${ico(GICONS[ic])}<span>${g}</span></div>${items.map(([k, l]) => {
+  $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup${items.every(([k]) => NAVIC[k]) ? ' allic' : ''}" data-g="${ic}"><div class="ghead" title="${esc(g)}">${ico(GICONS[ic])}<span>${g}</span></div>${items.map(([k, l]) => {
     const st = role === 'prof' ? null : secState(T(), sec(k)); const rv = role !== 'prof' && T().review[k];
     const ac = role === 'prof' ? 'open' : access(k);
-    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}">${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
+    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
   const cur = all.find(x => x[0] === tab);
   $('#menuToggle').innerHTML = `<span>${cur ? cur[1] : tab === 'alumnes' ? 'Gestiona l\'alumnat' : 'Menú'}</span><span class="small">Menú ▾</span>`;
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
@@ -2202,7 +2273,8 @@ function vInici(v) {
   const t = T(), pr = progress(t), m = t.data.marca;
   // Estat de les revisions: quants apartats estan correctes, enviats, a millorar o en edició
   const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }; PROG.forEach(s => { const w = milPending(t, s) ? 'millorar' : okDone(t, s) ? 'correcte' : workState(t, s); if (w in wc) wc[w]++; });
-  const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
+  // Primer el que cal millorar; si no n'hi ha, el següent apartat per fer
+  const mil = PROG.find(s => access(s.k) === 'open' && milPending(t, s)), nx = mil || PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
   const names = t.members.map(x => esc(nomBo(x.name))).filter(Boolean).join(', ');
   const chips = [names || 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir'), t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'];
   const sub = filled(m.eslogan) ? m.eslogan : '';
@@ -2211,14 +2283,14 @@ function vInici(v) {
     const cl = ss.every(s => access(s.k) === 'closed'), from = cl ? openFrom(ss.map(s => s.k)) : '';
     const ok = ss.filter(s => workState(t, s) === 'correcte').length;
     const rows = ss.map(s => { const ac = access(s.k), w = workState(t, s), rv = t.review[s.k];
-      const meta = [s.act || s.ca, ac === 'readonly' ? 'Només lectura' : ''].filter(Boolean).join(' · ');
+      const meta = [s.act || s.ca, ac === 'readonly' ? (w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   v.innerHTML = `${flashHtml()}<section class="ihero">
     <div class="iname">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
       <div class="ichips">${chips.map(c => `<span>${c}</span>`).join('')}</div></div>
     <div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
-      <div class="inx"><small>Següent apartat</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">Continuar</button></div></div>
+      <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
     <div class="istats"><div><b style="color:var(--st-ok-f)">${wc.correcte}</b><small>correctes</small></div><div><b style="color:var(--st-sent-f)">${wc.sent}</b><small>enviats</small></div><div><b style="color:var(--st-mil-f)">${wc.millorar}</b><small>a millorar</small></div><div><b style="color:var(--st-edit-f)">${wc.edit}</b><small>en edició</small></div></div>
   </section>
   <section class="bento">${tiles}</section>
@@ -4582,7 +4654,7 @@ function dashBtn() {
   if (!b) { document.querySelector('.brand').insertAdjacentHTML('afterend', `<a id="dashBtn" class="dashbtn" href="#">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Els meus grups</span></a>`); }
   stuBtn();
 }
-function sideUser() { dashBtn(); accUpdate(); const el = $('#sideAction'); if (el && USER) el.innerHTML = `<div class="sideuser"><span title="${esc(USER.email)}">${esc(USER.email)}</span></div><button type="button" class="sideout" id="signOut">${ico(IC_OUT)}Tancar sessió</button>`; const so = $('#signOut'); if (so) so.onclick = () => signOutNow(so); }
+function sideUser() { dashBtn(); accUpdate(); }
 // Botó del compte (a dalt a la dreta): qui ha entrat i tancar la sessió
 function accUpdate() {
   let b = $('#accBtn'); const on = CLOUD && !!USER;
@@ -4717,7 +4789,7 @@ async function openProf() {
   if (nv) { role = Number.isInteger(nv.role) && nv.role >= 0 && nv.role < G.teams.length ? nv.role : 'prof'; tab = nv.tab; if (Number.isInteger(nv.team) && nv.team >= 0 && nv.team < G.teams.length) profTeam = nv.team; if (role === 'prof' && !PT.includes(tab)) tab = 'seguiment'; }
   else { role = 'prof'; if (lastGid !== GID || !tab || !PT.includes(tab)) tab = 'seguiment'; }
   let goK = null;
-  if (GOTAB && GOTAB.gid === GID && PT.includes(GOTAB.tab)) { role = 'prof'; tab = GOTAB.tab; if (Number.isInteger(GOTAB.team) && GOTAB.team >= 0 && GOTAB.team < G.teams.length) { profTeam = GOTAB.team; revFilter = 'tots'; goK = GOTAB.k; } } GOTAB = null;
+  if (GOTAB && GOTAB.gid === GID && PT.includes(GOTAB.tab)) { role = 'prof'; tab = GOTAB.tab; if (Number.isInteger(GOTAB.team) && GOTAB.team >= 0 && GOTAB.team < G.teams.length) { profTeam = GOTAB.team; revFilter = 'tots'; goK = GOTAB.k; revK = goK; } } GOTAB = null;
   if (goK) setTimeout(() => { const c = document.getElementById('rv-' + goK); if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'start' }); c.classList.add('flash'); setTimeout(() => c.classList.remove('flash'), 2200); } }, 350); // des dels «Primers passos» del tauler
   lastGid = GID;
   render(); sideUser();
@@ -4796,8 +4868,8 @@ async function homeRole() {
 }
 function homeNav(cur) {
   const h = HOME || {}, prof = h.ok || h.groups;
-  const it = (k, l, n) => `<button type="button" data-home="${k}" aria-selected="${cur === k}"><span class="bullet"></span><span>${l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
-  const gr = (t, g, items) => items.filter(Boolean).length ? `<div class="ngroup" data-g="${g}"><div class="ghead">${ico(GICONS[g])}<span>${t}</span></div>${items.join('')}</div>` : '';
+  const it = (k, l, n) => `<button type="button" data-home="${k}" aria-selected="${cur === k}" title="${esc(l)}">${nic(k)}<span class="bullet"></span><span>${l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
+  const gr = (t, g, items) => items.filter(Boolean).length ? `<div class="ngroup allic" data-g="${g}"><div class="ghead">${ico(GICONS[g])}<span>${t}</span></div>${items.join('')}</div>` : '';
   $('#tabs').innerHTML = gr(prof ? 'Professorat' : 'Inici', 'prof', [prof || cur === 'grups' ? it('grups', 'Els meus grups') : '', h.ok ? it('nou', 'Crear un grup nou') : ''])
     + (isAdmin() ? gr('Administració', 'admin', [it('admin', 'Panell d\'administrador', h.nReq)]) : '')
     + gr('Recursos', 'rec', [prof ? it('copies', 'Còpies de seguretat') : '', it('config', 'Configuració')]);
@@ -5665,28 +5737,37 @@ function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { pro
 // Noms de l'equip: els comptes que hi han entrat (nom de Google); al grup d'exemple, els de «Equip i rols»
 const teamNames = t => (CLOUD && ROSTER.length ? ROSTER.filter(m => m.team === t.id).map(m => nomBo(m.name) || m.email) : t.members.map(m => nomBo(m.name))).filter(Boolean).sort((a, b) => a.localeCompare(b, 'ca'));
 const SQ_COL = ['#FFD23F', '#FFB0D0', '#9BE7D9', '#C9BCFF', '#B9D0FF', '#FFC9A8', '#BDEBC9'];
+let sSort = 'ordre'; // ordre de la llista d'equips a Seguiment
 function vSeguiment(v) {
   const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g[0], g[1], g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(g => g[2].length);
   const nT = G.teams.length, nAl = G.teams.reduce((a, t) => a + t.members.length, 0), avg = nT ? G.teams.reduce((a, t) => a + progress(t), 0) / nT : 0;
   const wsN = (t, w) => PROG.filter(s => w === 'millorar' ? milPending(t, s) : workState(t, s) === w).length, nRev = G.teams.reduce((a, t) => a + wsN(t, 'sent'), 0);
-  const rows = G.teams.map((t, i) => { const m = t.data.marca, logo = logoSrc(m.logo), rev = wsN(t, 'sent'), mil = wsN(t, 'millorar');
+  const ord = G.teams.map((t, i) => i), TT = i => G.teams[i];
+  if (sSort === 'rev') ord.sort((a, b) => wsN(TT(b), 'sent') - wsN(TT(a), 'sent') || a - b);
+  else if (sSort === 'prog') ord.sort((a, b) => progress(TT(a)) - progress(TT(b)) || a - b);
+  else if (sSort === 'alfa') ord.sort((a, b) => projName(TT(a)).localeCompare(projName(TT(b)), 'ca'));
+  const rows = ord.map(i => { const t = G.teams[i], m = t.data.marca, logo = logoSrc(m.logo), rev = wsN(t, 'sent'), mil = wsN(t, 'millorar');
     const ini = projName(t).split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<span class="sb" data-g="${gk}"><i class="x" title="${esc(gl)}: tancat"></i>${ico(GICONS[gk])}</span>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<span class="sb" data-g="${gk}"><i style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>${ico(GICONS[gk])}</span>`; }).join('');
     return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
-      <span class="stg"><span class="bst ${rev ? 'rev' : ''}">${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}">${mil} a millorar</span></span>
+      <span class="stg"><span class="bst ${rev ? 'rev' : ''}"${rev ? ' data-pill="sent" title="Obrir el primer apartat per revisar"' : ''}>${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}"${mil ? ' data-pill="mil" title="Obrir el primer apartat a millorar"' : ''}>${mil} a millorar</span></span>
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
-    ${G.teams.length ? `<div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>` : ''}
+    ${G.teams.length ? `<div class="stools"><div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>
+      ${nT > 1 ? `<label class="ssort">Ordena per <select class="field-sel" id="sSort">${[['ordre', 'Ordre dels equips'], ['rev', 'Pendents de revisar'], ['prog', 'Menor progrés'], ['alfa', 'Alfabètic']].map(([k, l]) => `<option value="${k}" ${sSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</div>` : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
     <div class="row"><button type="button" class="btn" id="sAdd">+ Afegir un equip</button></div>
     <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte (la icona de sota et diu quin) i s'omple a mesura que l'equip avança; les ratllades encara estan tancades.</p>`;
-  v.querySelectorAll('[data-rev]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rev; go('revisio'); });
+  // Tocar «N per revisar» o «N a millorar» obre directament el primer d'aquests apartats
+  v.querySelectorAll('[data-rev]').forEach(b => b.onclick = e => { profTeam = +b.dataset.rev; const t = G.teams[profTeam], p = e.target.closest('[data-pill]');
+    const s = p && PROG.find(x => p.dataset.pill === 'mil' ? milPending(t, x) : workState(t, x) === 'sent'); revFilter = 'tots'; revK = s ? s.k : null; go('revisio'); const l = s && $('.rlayout'); if (l) l.scrollIntoView({ block: 'start' }); });
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  if ($('#sSort')) $('#sSort').onchange = e => { sSort = e.target.value; rr(); };
   v.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { edTeam = edTeam === +b.dataset.ed ? -1 : +b.dataset.ed; rr(); });
   $('#sAdd').onclick = () => { edTeam = addTeam(); render(); toast('Equip afegit. Ja el pots editar.'); const p = $('.sedpanel'); if (p) p.scrollIntoView({ block: 'center' }); };
   const P = $('.sedpanel'); if (!P) return; const t = G.teams[edTeam], i = edTeam;
@@ -5741,7 +5822,7 @@ function revLog(t, k) {
 // L'equip ha de millorar l'apartat i encara no l'ha tornat a enviar (encara que ja hi estigui fent canvis)
 const milPending = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'millorar' && workState(t, s) !== 'sent' && !(se && r.at && se.at > r.at); };
 const okDone = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'correcte' && !(se && r.at && se.at > r.at); };
-let revFilter = 'tots';
+let revFilter = 'tots', revK = null, revHide = true; // filtre, apartat que es mira i si s'amaguen els que estan sense fer
 const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'Reviseu l\'ortografia.', 'Connecteu-ho amb el vostre sector.'];
 function vRevisio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
@@ -5753,8 +5834,13 @@ function vRevisio(v) {
   const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
   const groups = SECS.filter(g => g[0] !== 'lliura');
   const dot = s => ws(s);
-  const nav = groups.map(([gk, gl, , items]) => { const ss = items.map(([k]) => sec(k)).filter(s => s.p); if (!ss.length) return ''; return `<div class="rnav-g" data-g="${gk}"><span>${esc(gl)}</span>${ss.map(s => `<button type="button" class="rnav-i ${show(s) ? '' : 'faded'}" data-jump="${s.k}"><i class="rdot ${dot(s)}"></i>${esc(s.l)}</button>`).join('')}</div>`; }).join('');
-  const cards = PROG.filter(show).map(s => {
+  const hideN = s => revHide && ws(s) === 'none' && !(t.review[s.k] || {}).status;
+  const list = PROG.filter(s => show(s) && !hideN(s));
+  if (!list.find(s => s.k === revK)) revK = list.length ? list[0].k : null;
+  const pos = list.findIndex(s => s.k === revK), prv = list[pos - 1], nxt = list[pos + 1];
+  const nav = groups.map(([gk, gl, , items]) => { const ss = items.map(([k]) => sec(k)).filter(s => s.p && list.includes(s)); if (!ss.length) return ''; return `<div class="rnav-g" data-g="${gk}"><span>${esc(gl)}</span>${ss.map(s => `<button type="button" class="rnav-i ${s.k === revK ? 'on' : ''}" data-jump="${s.k}" ${s.k === revK ? 'aria-current="true"' : ''}><i class="rdot ${dot(s)}"></i>${esc(s.l)}</button>`).join('')}</div>`; }).join('') || '<p class="small muted" style="padding:4px 8px;margin:0">Cap apartat amb aquest filtre.</p>';
+  const pager = list.length ? `<div class="rpager">${prv ? `<button type="button" class="btn ghost" data-jump="${prv.k}">← <span>${esc(prv.l)}</span></button>` : '<span></span>'}<span class="rpos">${pos + 1} de ${list.length}</span>${nxt ? `<button type="button" class="btn" data-jump="${nxt.k}"><span>${esc(nxt.l)}</span> →</button>` : '<span></span>'}</div>` : '';
+  const cards = list.filter(s => s.k === revK).map(s => {
     const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t), w = ws(s), se = sentOf(t, s.k);
     return `<section class="rcard st-${w}" id="rv-${s.k}" data-g="${s.g}">
       <header><div><span class="rblk">${esc(s.gl)}</span><h3>${esc(s.l)}</h3><span class="small muted">${esc([s.ca, s.act].filter(Boolean).join(' · '))}</span></div>
@@ -5765,7 +5851,7 @@ function vRevisio(v) {
         <div class="rquick">${REV_QUICK.map(q => `<button type="button" data-q="${s.k}">${esc(q)}</button>`).join('')}</div>
         <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip (el veuran a la pàgina d'aquest apartat)">${esc(rv.comment || '')}</textarea>
       </footer></section>`;
-  }).join('') || '<div class="notice info">No hi ha cap apartat amb aquest filtre.</div>';
+  }).join('') + pager || `<div class="notice info">No hi ha cap apartat amb aquest filtre.${revHide && PROG.some(s => show(s) && hideN(s)) ? ' Els apartats sense fer estan amagats.' : ''}</div>`;
   v.innerHTML = `${head(`Revisió dels projectes${teamNames(t).length ? ' · ' + teamNames(t).map(esc).join(', ') : ''}`, esc(projName(t)))}
     <div class="rtabs" role="tablist" aria-label="Equips">${tabs}</div>
     <div class="rsum">
@@ -5775,11 +5861,14 @@ function vRevisio(v) {
       <div class="rsum-i ok"><b>${cnt('correcte')}</b><span>correctes</span></div>
     </div>
     <div class="rfilters" role="group" aria-label="Filtre">${[['tots', 'Tots'], ['sent', 'Enviats'], ['edit', 'En edició'], ['millorar', 'A millorar'], ['correcte', 'Correctes']].map(([k, l]) => `<button type="button" class="${revFilter === k ? 'on' : ''}" data-rf="${k}">${l}</button>`).join('')}</div>
-    <div class="rlayout"><nav class="rnav" aria-label="Apartats">${nav}</nav><div class="rcards">${cards}</div></div>`;
+    ${list.length ? `<select class="field-sel rsel" id="rSel" aria-label="Apartat">${list.map(s => `<option value="${s.k}" ${s.k === revK ? 'selected' : ''}>${esc(s.gl)} · ${esc(s.l)}</option>`).join('')}</select>` : ''}
+    <div class="rlayout"><nav class="rnav" aria-label="Apartats"><label class="rhide"><input type="checkbox" id="rHide" ${revHide ? 'checked' : ''}><span>Amaga els apartats sense fer</span></label>${nav}</nav><div class="rcards">${cards}</div></div>`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); window.scrollTo(0, 0); });
   v.querySelectorAll('[data-rf]').forEach(b => b.onclick = () => { revFilter = b.dataset.rf; rr(); });
-  v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { const el = $('#rv-' + b.dataset.jump); if (!el) { revFilter = 'tots'; render(); } const e2 = $('#rv-' + b.dataset.jump); if (e2) e2.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+  v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { revK = b.dataset.jump; render(); const l = $('.rlayout'); if (l && l.getBoundingClientRect().top < 0) l.scrollIntoView({ block: 'start' }); });
+  $('#rHide').onchange = e => { revHide = e.target.checked; rr(); };
+  if ($('#rSel')) $('#rSel').onchange = e => { revK = e.target.value; rr(); };
   v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); revLog(t, k); save(); rr(); });
   v.querySelectorAll('[data-cm]').forEach(a => { a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); }; a.onchange = () => { revLog(t, a.dataset.cm); save(); }; });
   v.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, a = v.querySelector(`[data-cm="${k}"]`); a.value = (a.value.trim() ? a.value.trim() + ' ' : '') + b.textContent; a.dispatchEvent(new Event('input')); a.focus(); });
@@ -5872,6 +5961,14 @@ $('#tabs').insertAdjacentHTML('beforebegin', '<button class="menu-toggle" id="me
 document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>' + themeSw());
 $('#menuToggle').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side').id = 'sideNav';
+document.querySelector('.brand').insertAdjacentHTML('afterend', `<button type="button" class="sidecol" id="sideCol">${ico('<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>')}</button>`);
+const setMini = on => { document.documentElement.classList.toggle('navmini', on); try { localStorage.setItem('ipoMenu', on ? 'estret' : 'obert'); } catch (e) {} miniBtn(); };
+const miniBtn = () => { const b = $('#sideCol'), on = document.documentElement.classList.contains('navmini'); b.title = on ? 'Mostrar el menú' : 'Amagar el menú'; b.setAttribute('aria-label', b.title); b.setAttribute('aria-expanded', String(!on)); };
+miniBtn(); $('#sideCol').onclick = () => setMini(!document.documentElement.classList.contains('navmini'));
+// Amb el menú estret, tocar la icona d'un bloc l'obre per veure'n els apartats
+$('#tabs').addEventListener('click', e => { if (e.target.closest('.ghead') && WIDE.matches && document.documentElement.classList.contains('navmini')) setMini(false); });
+// Els botons de dalt (alumnat, tauler) també tenen nom en passar-hi el ratolí
+new MutationObserver(() => document.querySelectorAll('.side .dashbtn:not([title])').forEach(a => { a.title = a.textContent.trim(); })).observe(document.querySelector('.side'), { childList: true });
 document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navbtn" id="navBtn" aria-controls="sideNav" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><i></i><i></i><i></i></button><div class="side-back" aria-hidden="true"></div>');
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);
