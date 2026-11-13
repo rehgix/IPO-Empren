@@ -4245,6 +4245,14 @@ function merge3(b, l, r) {
   if (Array.isArray(b) && Array.isArray(l) && Array.isArray(r) && b.length === l.length && l.length === r.length) return l.map((x, i) => merge3(b[i], x, r[i]));
   return l;
 }
+// Com merge3, però només recupera el que la versió remota ha deixat igual que la base (b) i jo (l) havia canviat; en la resta mana la remota
+function restore3(b, l, r) {
+  if (J(r) === J(b)) return l === undefined ? r : l;
+  const obj = x => x && typeof x === 'object' && !Array.isArray(x);
+  if (obj(b) && obj(l) && obj(r)) { const o = {}; Object.keys(r).forEach(k => { o[k] = restore3(b[k], l[k], r[k]); }); return o; }
+  if (Array.isArray(b) && Array.isArray(l) && Array.isArray(r) && b.length === l.length && l.length === r.length) return r.map((x, i) => restore3(b[i], l[i], x));
+  return r;
+}
 const logoSrc = l => /^data:image\//.test(String(l || '')) ? String(l) : '';
 // Imatges i colors que venen de l'alumnat: protegits perquè no hi puguin colar codi a la pàgina
 const imgSrc = l => esc(logoSrc(l));
@@ -4410,7 +4418,8 @@ function groupToG(g) { const cfg = P(g.cfg) || {}; return Object.assign(cfg, { v
 function syncStatus(st) {
   let el = $('#syncPill'); if (!el) { el = document.createElement('div'); el.id = 'syncPill'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
   el.className = 'sp-' + st;
-  el.textContent = { pending: 'Desant...', saved: '✓ Desat', error: 'Sense connexió: es tornarà a provar', idle: '' }[st] || '';
+  el.className = 'sp-' + (st === 'denied' ? 'error' : st);
+  el.textContent = { pending: 'Desant...', saved: '✓ Desat', error: 'Sense connexió: es tornarà a provar', denied: 'Una part no s\'ha pogut desar', idle: '' }[st] || '';
 }
 // Avís quan es perd la connexió (abans no es deia res)
 window.addEventListener('offline', () => { if (CLOUD) toast('Sense connexió a internet. No tanquis la pàgina fins que torni, per no perdre canvis.'); });
@@ -4418,14 +4427,22 @@ window.addEventListener('online', () => { if (CLOUD) toast('Connexió recuperada
 // Taules que es desplacen de costat: ombra a la columna fixa quan hi ha contingut amagat sota
 document.addEventListener('scroll', e => { const b = e.target; if (b && b.classList && b.classList.contains('tablebox')) b.classList.toggle('scx', b.scrollLeft > 2); }, true);
 window.addEventListener('beforeunload', e => { if (CLOUD && (syncT || syncBusy)) { e.preventDefault(); e.returnValue = ''; } });
+// Si es canvia de pestanya, es bloqueja la tauleta o es tanca la pàgina, s'envia de seguida el que quedava per desar (sense esperar el segon de marge)
+const flushNow = () => { if (CLOUD && syncT && ME && G && GID) { clearTimeout(syncT); syncT = null; cloudPush(); } };
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
+window.addEventListener('pagehide', flushNow);
 
 /* ---------- Desar ---------- */
 function cloudSave() { if (!ME || !GID) return true; syncStatus('pending'); clearTimeout(syncT); syncT = setTimeout(() => { syncT = null; cloudPush(); }, 1000); return true; }
+let deniedT = false, TOUCH = null, SENT = null, PREV = {};
+const isDenied = e => !!(e && /permission/i.test(e.code || e.message || ''));
 async function cloudPush() {
   if (syncBusy) { syncAgain = true; return; }
   syncBusy = true;
-  try { if (ME.isProf) await profPush(); else await stuPush(); syncStatus('saved'); }
-  catch (e) { console.warn(e); syncStatus('error'); if (e && /permission/i.test(e.code || e.message || '')) toast('No tens permís per fer aquest canvi.'); clearTimeout(syncT); syncT = setTimeout(() => { syncT = null; cloudPush(); }, 8000); }
+  try { if (ME.isProf) await profPush(); else await stuPush(); deniedT = false; syncStatus('saved'); }
+  catch (e) { console.warn(e); const den = !!(e && /permission/i.test(e.code || e.message || ''));
+    syncStatus(den ? 'denied' : 'error'); if (den && !deniedT) toast(e.part ? 'No s\'ha pogut desar: ' + e.part + '. La resta sí que s\'ha desat. Aviseu ' + PR('el') + '.' : 'No tens permís per fer aquest canvi.'); deniedT = den;
+    clearTimeout(syncT); syncT = setTimeout(() => { syncT = null; cloudPush(); }, den ? 30000 : 8000); }
   finally { syncBusy = false; if (syncAgain) { syncAgain = false; cloudPush(); } if (pendRender) softRender(); }
 }
 async function stuPush() {
@@ -4441,10 +4458,25 @@ async function stuPush() {
   const refs = fileOk ? fileIdsOf({ data: { prototip: packSection(t, 'prototip'), marca: packSection(t, 'marca') } }) : s.files;
   s.files.filter(id => !refs.includes(id)).forEach(id => ops.push({ op: 'del', path: gpath('teams', t.id, 'files', id) }));
   if (!Object.keys(upd).length && !ops.length) return;
-  if (Object.keys(upd).length) { upd.updated = Date.now(); ops.push({ op: 'update', path: gpath('teams', t.id), data: upd }); }
+  const fileOps = ops.slice(), base = Object.assign({}, s.data), tp = gpath('teams', t.id);
+  if (Object.keys(upd).length) { upd.updated = Date.now(); ops.push({ op: 'update', path: tp, data: upd }); }
   ids.forEach(id => { FILES[t.id] = FILES[t.id] || {}; FILES[t.id][id] = fs[id].data; });
-  await FB.batch(ops);
-  Object.assign(s.data, sent.data); if (sent.members) s.members = sent.members; if (sent.delivered) s.delivered = sent.delivered; s.files = refs;
+  // El que arribi d'un company mentre s'envia no s'ha de trepitjar després amb el que s'ha enviat
+  SENT = sent; const touched = TOUCH = new Set(), done = (k, v) => { if (touched.has(k)) return; if (k === 'members') s.members = v; else if (k === 'delivered') s.delivered = v; else { PREV[k] = { b: base[k], at: Date.now() }; s.data[k] = v; } };
+  const all = () => { Object.keys(sent.data).forEach(k => done(k, sent.data[k])); if (sent.members) done('members', sent.members); if (sent.delivered) done('delivered', sent.delivered); s.files = refs; };
+  try { await FB.batch(ops); all(); }
+  catch (e) {
+    if (!isDenied(e) || ops.length + Object.keys(upd).length < 3) throw e;
+    // El servidor ha rebutjat el lot sencer: es desa peça a peça, perquè una sola cosa rebutjada no bloquegi la resta de la feina
+    const bad = [], one = async (name, data, ok) => { try { await FB.batch([{ op: 'update', path: tp, data: Object.assign({ updated: Date.now() }, data) }]); ok(); } catch (x) { if (!isDenied(x)) throw x; bad.push(name); } };
+    for (const k of Object.keys(sent.data)) if (k !== '_who' && k !== '_meta') await one((sec(k) || {}).l || k, { ['data.' + k]: sent.data[k] }, () => done(k, sent.data[k]));
+    for (const k of ['_who', '_meta']) if (sent.data[k]) await one(k, { ['data.' + k]: sent.data[k] }, () => done(k, sent.data[k]));
+    if (sent.members) await one('la fitxa de l\'equip', { members: sent.members }, () => done('members', sent.members));
+    if (sent.delivered) await one('el lliurament', { delivered: upd.delivered }, () => done('delivered', sent.delivered));
+    if (fileOps.length) { try { await FB.batch(fileOps); s.files = refs; } catch (x) { if (!isDenied(x)) throw x; bad.push('les imatges o arxius'); } }
+    if (bad.length) { const er = new Error('permission-denied'); er.code = 'permission-denied'; er.part = bad.filter(x => x[0] !== '_').join(', ') || 'una part'; throw er; }
+  }
+  finally { if (TOUCH === touched) { TOUCH = null; SENT = null; } }
 }
 async function profPush() {
   const ops = [], exp = GROUP.expiresAt, ids = new Set(G.teams.map(t => t.id)), tr = trashIds(), after = [];
@@ -4496,12 +4528,18 @@ function applyTeamDoc(d) {
   if (!t) { if (!ME.isProf || trashIds().has(d.id) || SNAP.teams[d.id]) return; t = teamFromDoc(d); G.teams.push(t); snapTeam(t); softRender(); fileIdsOf(d).length && needFiles(t, fileIdsOf(d)); return; }
   const s = SNAP.teams[t.id]; let ch = false;
   if (!s) return;
+  let redo = false;
   Object.keys(d.data || {}).forEach(k => { const sv = d.data[k]; if (sv === s.data[k]) return;
-    const lv = packSection(t, k);
-    if (lv === s.data[k]) unpackSection(t, k, sv);
+    if (SENT && SENT.data[k] === sv) return; // és l'eco del que estic enviant jo (Firebase l'ensenya abans de confirmar-lo): no es dona per desat fins que el servidor ho accepta
+    if (TOUCH) TOUCH.add(k);
+    const lv = packSection(t, k), pv = PREV[k]; delete PREV[k];
+    // Un company ha desat alhora sense haver rebut el meu últim canvi i l'ha trepitjat: es torna a posar allà on ell no ha tocat res
+    const back = !ME.isProf && lv === s.data[k] && pv && Date.now() - pv.at < 6000 && pv.b !== undefined ? J(restore3(P(pv.b), P(lv), P(sv))) : null;
+    if (back && back !== J(P(sv))) { keepLocalFiles(t); unpackSection(t, k, back); redo = true; }
+    else if (lv === s.data[k]) unpackSection(t, k, sv);
     else { keepLocalFiles(t); unpackSection(t, k, J(merge3(P(s.data[k]), P(lv), P(sv)))); } // l'equip ha canviat el mateix apartat alhora: es fusionen els canvis
     s.data[k] = sv; ch = true; });
-  if (d.members !== s.members) { t.members = J(t.members) === s.members ? (P(d.members) || []) : merge3(P(s.members), t.members, P(d.members)) || []; s.members = d.members; ch = true; }
+  if (d.members !== s.members && !(SENT && SENT.members === d.members)) { if (TOUCH) TOUCH.add('members'); t.members = J(t.members) === s.members ? (P(d.members) || []) : merge3(P(s.members), t.members, P(d.members)) || []; s.members = d.members; ch = true; }
   const dd = J(d.delivered || null); if (dd !== s.delivered && J(t.delivered || null) === s.delivered) { t.delivered = d.delivered || null; s.delivered = dd; ch = true; }
   if (d.name !== s.name && t.name === s.name) { t.name = d.name; s.name = d.name; ch = true; }
   t.updated = d.updated || t.updated;
@@ -4509,6 +4547,7 @@ function applyTeamDoc(d) {
   s.files = fileIdsOf(d);
   normTeam(t);
   if (ch) { softRender(); needFiles(t, s.files); }
+  if (redo) save();
 }
 function keepLocalFiles(t) { const fs = teamFiles(t); FILES[t.id] = FILES[t.id] || {}; Object.keys(fs).forEach(id => { FILES[t.id][id] = fs[id].data; }); }
 function fileIdsOf(d) { const pr = P((d.data || {}).prototip) || {}, mk = P((d.data || {}).marca) || {}; return (pr.fitxers || []).concat(mk.esbossos || []).map(f => f.id).filter(Boolean).concat(String(mk.logo || '').startsWith('file:') ? [mk.logo.slice(5)] : []); }
@@ -4646,7 +4685,7 @@ async function route(retry = 0) {
   GID = gid; GROUP = Object.assign({ id: gid }, g);
   const isProf = (g.profs || []).includes(USER.email);
   ME = { email: USER.email, uid: USER.uid, isProf };
-  SNAP = { group: '', teams: {} }; FILES = {};
+  SNAP = { group: '', teams: {} }; FILES = {}; PREV = {};
   G = groupToG(g);
   if (isProf) return guarded(openProf, seq, retry);
   const m = m0;

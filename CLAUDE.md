@@ -45,6 +45,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 ## Revisió automàtica
 - `tests/smoke.cjs` obre totes les pàgines (grup d'exemple i tauler amb un Firebase de mentida, `tests/mock-fb.js`) en ordinador i mòbil, i falla si hi ha errors de programa, pàgines que se surten de la pantalla, pàgines buides o peticions a servidors externs.
 - S'executa sola a GitHub abans de publicar: **si falla, la web no es publica**. Passa-la abans del push amb `node tests/smoke.cjs` i, després del push, comprova amb `gh run list -R rehgix/IPO-Empren` que tot ha anat bé.
+- `tests/desat.cjs` comprova el desat de l'alumnat (diversos alumnes del mateix equip alhora, talls de connexió, apartats tancats). **Passa-la sempre que toquis `cloudPush`, `stuPush`, `applyTeamDoc`, `claimRow` o les regles**: `node tests/desat.cjs`. La 4a (tancar la pestanya en menys d'un segon) i les marcades «informatiu» no fan fallar la prova.
 - Si afegeixes una pàgina o una ruta nova amb sessió, afegeix-la a la llista de `tests/smoke.cjs`.
 
 ## Git: sempre commit i push
