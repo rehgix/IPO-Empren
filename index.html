@@ -4940,10 +4940,10 @@ async function bkRestore(data, gids) {
 }
 const bkValid = d => d && d.app === 'IPO Emprèn' && (Array.isArray(d.groups) || (d.enc === 1 && typeof d.data === 'string'));
 // Finestra emergent
-function bkDialog(html, bind) {
+function bkDialog(html, bind, onClose) {
   const o = document.createElement('div'); o.className = 'qrbig bkdlg'; o.setAttribute('role', 'dialog');
   o.innerHTML = `<div class="bkbox">${html}</div>`;
-  const close = () => { o.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); };
+  const close = () => { if (!o.isConnected) return; o.remove(); document.removeEventListener('keydown', k); onClose && onClose(); }, k = e => { if (e.key === 'Escape') close(); };
   o.onclick = e => { if (e.target === o || e.target.closest('[data-bkclose]')) close(); }; document.addEventListener('keydown', k);
   document.body.appendChild(o); bind && bind(o, close); return close;
 }
@@ -4972,7 +4972,9 @@ function bkHome(v, prof) {
         o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); if (!pwOk()) return; b.disabled = true;
           try { await drvConnect(); bkSet({ seen: true, on: true }); b.innerHTML = '<span class="spin"></span> Fent la primera còpia...'; await bkRun(false); close(); toast('Fet! La primera còpia ja és al teu Google Drive.'); }
           catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Activar les còpies'; m.innerHTML = `<div class="notice">${esc(bkErr(err))}</div>`; } };
-      }));
+      },
+      // Es tanqui com es tanqui (fora de la finestra, Esc, després de descarregar...), l'avís ja no torna a sortir
+      () => { if (bkGet().seen === undefined) bkSet({ seen: true, on: false }); }));
     return;
   }
   // Còpies activades però encara sense contrasenya: es demana abans de fer-ne cap més
