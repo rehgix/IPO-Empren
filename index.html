@@ -3,17 +3,10 @@
 <link rel="preload" href="config.js?v=2" as="script"><link rel="preload" href="fbapi.js?v=2" as="script">
 <title>IPO Emprèn</title>
 <meta name="description" content="IPO Emprèn: eina per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut Miquel Biada.">
-<meta name="theme-color" content="#F1F3F8" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0B0C10" media="(prefers-color-scheme: dark)">
+<meta name="theme-color" content="#F1F3F8">
 <script>
-// Aparença: 'auto' (segons el sistema), 'light' o 'dark'. Es desa en aquest navegador i s'aplica abans de pintar.
-const THEME_MQ = matchMedia('(prefers-color-scheme: dark)');
-function themePref() { try { return localStorage.getItem('ipoTema') || 'light'; } catch (e) { return 'light'; } }
-function applyTheme() { const p = themePref(); document.documentElement.classList.toggle('dark', p === 'dark' || (p === 'auto' && THEME_MQ.matches));
-  document.querySelectorAll('[data-theme-set]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.themeSet === p))); }
-function setTheme(p) { try { localStorage.setItem('ipoTema', p); } catch (e) {} applyTheme(); }
-THEME_MQ.addEventListener('change', applyTheme); applyTheme();
-try { if (localStorage.getItem('ipoMenu') !== 'obert') document.documentElement.classList.add('navmini'); } catch (e) { document.documentElement.classList.add('navmini'); }
-document.addEventListener('click', e => { const b = e.target.closest('[data-theme-set]'); if (b) setTheme(b.dataset.themeSet); });
+// Només hi ha el tema clar: s'esborra la tria antiga d'aparença
+try { localStorage.removeItem('ipoTema'); localStorage.removeItem('ipoMenu'); } catch (e) {}
 </script>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preload" href="fonts/geist-latin.woff2" as="font" type="font/woff2" crossorigin>
@@ -21,8 +14,7 @@ document.addEventListener('click', e => { const b = e.target.closest('[data-them
 /* Lletra Geist servida des de la mateixa web (carpeta fonts/): no es demana res a Google Fonts */
 @font-face{font-family:"Geist";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/geist-latin-ext.woff2) format("woff2");unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
 @font-face{font-family:"Geist";font-style:normal;font-display:swap;font-weight:100 900;src:url(fonts/geist-latin.woff2) format("woff2");unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
-/* Disseny: menú lateral fosc + gran plafó blanc arrodonit; xifres grans, botons negres, llistes amb fileres i fletxes.
-   El tema fosc és al final de tot («TEMA FOSC»). */
+/* Disseny: gran plafó blanc arrodonit; xifres grans, botons negres, llistes amb fileres i fletxes. Només tema clar. */
 :root{
   --font:"Geist",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
   --c1:#22b06b; --c2:#2d5bea; --c3:#f08c1a; --c4:#e0457b; --c5:#8455e8; --c6:#1aa3b8;
@@ -127,13 +119,15 @@ textarea{font-size:13px;min-height:140px}
 <div class="app">
   <aside class="side">
     <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</div>
-    <div class="side-label">Veure com</div>
     <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Professor/a</button><button type="button" data-rs="stu">Alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
     <div class="side-label" id="navLabel">Secció</div>
     <nav class="nav" id="tabs" role="tablist" aria-label="Seccions"></nav>
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
   </aside>
-  <div class="panel"><main class="content" id="view"><div class="cloud-load"><span class="spin"></span> Carregant...</div></main></div>
+  <div class="panel"><div class="content tophead" id="topHead" hidden>
+    <div class="tbar"><a class="tbrand" href="#" id="tbBrand" title="Anar a l'inici"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</a><span id="tbBack"></span><span class="tsp"></span><span id="tbStu"></span><span id="tbRole"></span></div>
+    <div id="tbGrp"></div><nav class="ttabs" id="tbTabs" aria-label="Seccions"></nav><div id="tbSub"></div>
+  </div><main class="content" id="view"><div class="cloud-load"><span class="spin"></span> Carregant...</div></main></div>
 </div>
 
 <style>
@@ -159,7 +153,6 @@ ul.fb.good li::marker{color:var(--ws-ok,#26884f)} ul.fb.bad li::marker{color:var
 .guide{max-width:780px}
 .guide > * + *{margin-top:12px}
 .guide h2{margin-top:24px}
-
 
 /* Menú per departaments */
 #navLabel{display:none}
@@ -232,7 +225,6 @@ ul.fb.good li::marker{color:var(--ws-ok,#26884f)} ul.fb.bad li::marker{color:var
 .rcell:focus-within{outline:2px solid var(--blue);outline-offset:2px}
 .sug{font-style:normal;font-size:11px;font-weight:600;color:var(--accent-ink);display:flex;align-items:center;gap:5px}
 .sug::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
-
 
 .intro{max-width:76ch;margin:0;line-height:1.6}
 .nav button .nl{flex:1;min-width:0}
@@ -310,7 +302,6 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .field select{grid-row:1/span 2;grid-column:2;width:100%}
 @media (max-width:520px){.field{grid-template-columns:minmax(0,1fr)}.field select{grid-row:auto;grid-column:1}}
 
-
 .actcode{display:inline-block;color:var(--bg);padding:1px 7px;font-size:12px;font-weight:600;margin-right:4px}
 .gradebar{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin-top:12px}
 .lvls{display:flex;flex-wrap:wrap;gap:6px;flex:1;min-width:0}
@@ -383,12 +374,10 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .reportview .rempty{color:var(--muted);font-style:italic}
 @media (max-width:620px){.reportview{padding:18px}.reportview .rhead{padding-right:0}.reportview .rlogo{position:static;margin-top:10px}}
 
-
 #toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);color:var(--bg);padding:12px 18px;font-size:14px;opacity:0;pointer-events:none;z-index:50;max-width:calc(100% - 32px)}
 #toast.show{opacity:1;transform:translate(-50%,0)}
 .steps{margin:0 0 12px;padding-left:20px;display:grid;gap:4px;font-size:14px}
 #mPrompt,#mResp{width:100%;font:13px var(--font);padding:10px 12px;border-radius:12px;color:var(--ink)}
-
 
 /* Codi de colors per a les taules */
 :root{
@@ -461,7 +450,6 @@ table.fin.treso tr.sub td:first-child,table.fin.treso tr.tot td:first-child{back
 .reportview table.fin tr.rasum td{background:var(--tone-m)!important;font-weight:700}
 table.matrix thead input{min-width:130px}
 
-
 /* DAFO: el color queda dins de la capsa */
 .dafo .list-head{background:none!important}
 .dafo-f .list{background:#eef7f1}.dafo-d .list{background:#fdf5e7}.dafo-o .list{background:#eef3fb}.dafo-a .list{background:#fbefee}
@@ -500,7 +488,6 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .accdate{display:grid;gap:2px;font-size:12px;color:var(--muted)}
 .accdate input{font:13px var(--font);padding:6px 8px;border-radius:10px;color:var(--ink)}
 .accdate input:disabled{opacity:.4}
-
 
 /* ===== Color per blocs del projecte ===== */
 .nav .ncount{margin-left:auto;min-width:22px;padding:1px 7px;border-radius:99px;background:var(--accent);color:#1c1408;font-size:12px;font-weight:600;text-align:center}
@@ -574,7 +561,6 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 @media (max-width:600px){.pdoc{flex-wrap:wrap}.pgal{grid-template-columns:1fr}}
 .sumrow + .pgal,.pgal + .sumrow{margin-top:10px}
 
-
 /* Lean Canvas sostenible: dues caselles a sota de costos i ingressos */
 .leancanvas{grid-template-areas:"pr so pv av se" "pr me pv ca se" "co co co in in" "cs cs cs bs bs"}
 .lc-costamb{grid-area:cs}.lc-benamb{grid-area:bs}
@@ -594,16 +580,13 @@ table.fin th.h-a,table.fin th.h-p{background:var(--soft);color:var(--ink);font-s
 .vlink .bad,.vlink .small.bad{color:var(--bad,#b3261e)}
 #vmsg a{color:var(--gc,#111);font-weight:600}
 
-
 .aipick{background:#f1edfe;border:1px solid #e1d9fb;border-radius:18px;padding:16px 18px}
 .aipick-h{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
 .aipick-h:only-child{margin-bottom:0}
 
-
 .pdfbox{position:fixed;left:-30000px;top:0;width:720px;background:#fff;z-index:-1}
 .reportview.pdfrep{background:#fff!important;padding:0!important;margin:0!important;max-width:none!important;border:0!important;border-radius:0!important;box-shadow:none!important}
 .pdfbox .ract{break-inside:auto}
-
 
 /* Versió connectada */
 #syncPill{position:fixed;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:40;font:600 13px var(--font);padding:7px 12px;border-radius:999px;border:1px solid var(--line);color:var(--muted);transition:opacity .3s}
@@ -629,7 +612,6 @@ body.is-student .role,body.is-student .side-label:has(+ .role){display:none}
 .invform{display:grid;grid-template-columns:1fr 1fr;gap:0 14px}
 @media (max-width:620px){.invform{grid-template-columns:1fr}}
 @media (max-width:600px){.rostrow{grid-template-columns:1fr auto}.rostrow select{grid-column:1/-1;grid-row:2}}
-
 
 .sideuser{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:12px;font-size:12px;color:var(--side-fg,#bbb);opacity:.85}
 .sideuser span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
@@ -765,14 +747,12 @@ a.btn{text-decoration:none}
 .rrev textarea:focus{outline:none;border-color:#e08a0b;box-shadow:0 0 0 3px rgba(224,138,11,.14)}
 @media (max-width:900px){.rlayout{grid-template-columns:1fr}.rnav{display:none}.rsum{grid-template-columns:1fr 1fr}.rbody .sumrow{grid-template-columns:1fr;gap:2px}}
 
-
 /* Subapartats dins d'un apartat */
 .subsec + .subsec{margin-top:14px}
 .subh{display:flex;align-items:center;gap:8px;margin:14px 0 2px;font-weight:700;color:var(--gc,#26884f)}
 .subh::after{content:"";flex:1;height:1px;background:color-mix(in srgb,var(--gc,#26884f) 25%,transparent)}
 .subsec:first-child .subh{margin-top:6px}
 .reportview .rsub{margin:12px 0 4px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
-
 
 /* Estat de la feina: vermell en edició, blau enviat, verd correcte, taronja a millorar */
 .rdot.edit,.wsdot.edit{background:var(--ws-edit)}.rdot.sent,.wsdot.sent{background:var(--ws-sent)}.rdot.correcte,.wsdot.correcte{background:var(--ws-ok)}.rdot.millorar,.wsdot.millorar{background:var(--ws-warn)}.rdot.none,.wsdot.none{background:#e5e7eb;border:1px solid var(--ws-none)}
@@ -941,18 +921,6 @@ tbody tr{transition:background var(--t-fast)}
   .head:has(.hlogo) > .actions{grid-column:1/-1;grid-row:2}
   #view[data-g] > .head .label{border-radius:10px}
 }
-/* Interruptor d'aparença (automàtic, clar, fosc) */
-.themesw{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:2px;padding:3px;background:var(--side-2);margin-top:6px}
-.themesw button{display:flex;align-items:center;justify-content:center;gap:6px;border:0;background:none;color:var(--side-muted);font:500 12.5px var(--font);padding:7px 4px;cursor:pointer;transition:background var(--t-fast),color var(--t-fast),transform .12s var(--ease)}
-.themesw button:hover{color:var(--side-fg)}
-.themesw button[aria-pressed="true"]{background:var(--side-3);color:var(--side-fg);box-shadow:var(--sh-xs)}
-.themesw button:active{transform:scale(.96)}
-.themesw svg{width:14px;height:14px;flex:none;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.list-pad .themesw{max-width:440px;background:#ececef;border-radius:var(--r-lg)}
-.list-pad .themesw button{font-size:14px;padding:10px 8px;color:var(--muted)}
-.list-pad .themesw button:hover{color:var(--ink)}
-.list-pad .themesw button[aria-pressed="true"]{background:var(--bg);color:var(--ink);box-shadow:var(--sh-sm)}
-.list-pad .themesw svg{width:16px;height:16px}
 @media (max-width:860px){.side.open .side-foot{display:grid;margin-top:12px}}
 
 /* ================= TEMA BLOCS =================
@@ -971,7 +939,7 @@ tbody tr{transition:background var(--t-fast)}
   --st-ok-b:#CDF0DA; --st-ok-f:#0F6234; --st-sent-b:#D6E3FF; --st-sent-f:#1A47C2; --st-edit-b:#FFE9B8; --st-edit-f:#7A4B00;
   --st-mil-b:#FFD4CF; --st-mil-f:#A8201A; --st-none-b:#E6E8EE; --st-none-f:#464C5E; --fb-b:#FFE7E3; --fb-f:#7A1710; --hot:#FFD23F; --hot-f:#3D3000;
 }
-/* Colors dels blocs: to fort (--gc), fons pastel (--gs) i to clar per al tema fosc (--gl) */
+/* Colors dels blocs: to fort (--gc), fons pastel (--gs) i to clar (--gl) */
 [data-g],[data-g="proj"]{--gc:#2B3350;--gs:#E3E7F1;--gl:#9AA5CC}
 [data-g="ident"]{--gc:#D81E6C;--gs:#FFE0EC;--gl:#FF6FA8}
 [data-g="idea"]{--gc:#C75300;--gs:#FFE8D4;--gl:#FF9A4D}
@@ -985,9 +953,9 @@ tbody tr{transition:background var(--t-fast)}
 [data-g="admin"]{--gc:#6D3FC0;--gs:#EEE6FB;--gl:#B08CF5}
 body,body::before{background:var(--page)}
 /* Fons «paper» (només mode clar): gris càlid amb un gra molt fi; les targetes blanques porten una ombra suau */
-html:not(.dark) body{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") fixed,linear-gradient(180deg,#F3F1EC 0,#ECECEE 100%) fixed}
-html:not(.dark) body::before{background:#F3F1EC}
-html:not(.dark) :is(.grpbar,.sheet,.list,.stat,.iprog,.istats,.snums div,.stm,.hq,.hqpick,.gcard,.rnav,.notice){box-shadow:0 1px 2px rgba(41,37,36,.05),0 10px 28px -10px rgba(41,37,36,.16)}
+body{background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") fixed,linear-gradient(180deg,#F3F1EC 0,#ECECEE 100%) fixed}
+body::before{background:#F3F1EC}
+:is(.grpbar,.sheet,.list,.stat,.iprog,.istats,.snums div,.stm,.hq,.hqpick,.gcard,.rnav,.notice){box-shadow:0 1px 2px rgba(41,37,36,.05),0 10px 28px -10px rgba(41,37,36,.16)}
 /* Menú lateral (calaix) */
 .brand{border-color:var(--side-2)}
 .logo{background:var(--ink);box-shadow:none;border-radius:11px}
@@ -1000,7 +968,6 @@ html:not(.dark) :is(.grpbar,.sheet,.list,.stat,.iprog,.istats,.snums div,.stm,.h
 .nav button[aria-selected="true"],.ngroup[data-g] button[aria-selected="true"]{background:var(--side-sel);color:var(--bg);box-shadow:none!important;font-weight:600}
 .nav button.locked{opacity:.5}
 .role select{border-radius:999px;padding:10px 14px}
-.themesw{border-radius:999px}.themesw button{border-radius:999px}
 .quarter .q.done{background:var(--pri)}
 .dashbtn{border-radius:999px;background:var(--pri);color:var(--pri-fg)}
 .dashbtn:hover{background:var(--pri-h)}
@@ -1192,149 +1159,18 @@ table.fin{box-shadow:none}
   .snums{gap:12px}.snums div{border-radius:24px;padding:16px 18px}
   .hhero{padding:22px 20px;border-radius:28px}
 }
-/* Tema fosc dels blocs (:root.dark mana sobre html.dark) */
-:root.dark{--page:#0B0C10;--tile:#16171D;--hero:#22243A;--hero-mu:#A9AFC6;--track:#2A2C36;--dash:#3A3D4A;--bit:rgba(255,255,255,.06);
-  --pri:#F7A21B;--pri-h:#FFB43D;--pri-fg:#1B1303;--side-sel:#f4f4f5;--bg:#16171D;
-  --st-ok-b:rgba(74,222,128,.14);--st-ok-f:#4ade80;--st-sent-b:rgba(96,165,250,.15);--st-sent-f:#93c5fd;--st-edit-b:rgba(251,191,36,.14);--st-edit-f:#fbbf24;
-  --st-mil-b:rgba(248,113,113,.15);--st-mil-f:#fca5a5;--st-none-b:#27272a;--st-none-f:#a1a1aa;--fb-b:rgba(248,113,113,.12);--fb-f:#fecaca;--hot:#E8BC1E;--hot-f:#2a2100;
-  --ws-edit:#fbbf24;--ws-edit-s:rgba(251,191,36,.11);--ws-warn:#f87171;--ws-warn-s:rgba(248,113,113,.12)}
-html.dark .iname .d{color:#D6DAEA}
-:root.dark .btn:not(.ghost),:root.dark .sendbar.ws-edit .btn{background:var(--pri);border-color:var(--pri);color:var(--pri-fg);box-shadow:none}
-:root.dark .btn:not(.ghost):hover{background:var(--pri-h);border-color:var(--pri-h);box-shadow:none}
-:root.dark #view[data-g] > .head{background:var(--gs)}
-:root.dark .app .panel{border:0;box-shadow:none}
-:root.dark .sendbar.ws-edit{border-color:rgba(251,191,36,.3);color:#fde68a}
-:root.dark .sendbar.ws-millorar{border-color:rgba(248,113,113,.3);color:#fecaca}
-:root.dark .wsbadge.millorar,:root.dark .pill.ws-millorar,:root.dark .wsbadge.rvb.millorar,:root.dark .rsum-i.warn b{color:var(--st-mil-f)}
-
-/* ================= TEMA FOSC =================
-   S'activa amb la classe html.dark (interruptor d'Aparença: automàtic, clar o fosc). Els PDF es generen sempre en clar (.pdfbox). */
-  html.dark{
-    color-scheme:dark;
-    --side:#09090b; --side-2:#1c1c20; --side-3:#27272a; --side-fg:#f4f4f5; --side-muted:#8b8b94;
-    --side-hover:rgba(255,255,255,.05); --side-ring:rgba(255,255,255,.05); --side-border:#3f3f46; --side-sel:#1c1c20;
-    --bg:#18181b; --canvas:#111113; --soft:#202024; --ink:#f4f4f5; --ink-2:#d4d4d8; --muted:#a1a1aa;
-    --line:rgba(63,63,70,.7); --line-2:#3f3f46;
-    --accent:#fbab24; --accent-ink:#fcc14d; --accent-soft:rgba(251,171,36,.13);
-    --blue:#60a5fa; --blue-soft:rgba(59,130,246,.14);
-    --warn:#fbbf24; --warn-soft:rgba(245,158,11,.12); --bad:#f87171; --bad-soft:rgba(239,68,68,.12);
-    --sh-xs:0 1px 2px rgba(0,0,0,.35);
-    --sh-sm:0 1px 2px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.2);
-    --sh-md:0 2px 4px rgba(0,0,0,.3),0 10px 24px -4px rgba(0,0,0,.5);
-    --sh-lg:0 4px 8px rgba(0,0,0,.3),0 20px 40px -8px rgba(0,0,0,.6);
-    --ring:0 0 0 3px rgba(96,165,250,.28);
-    --tn-a:#7aa2e3; --tn-pn:#5fbf8a; --tn-pas:#d6a05a; --tn-in:#5fbf8a; --tn-out:#e07a6e; --tn-res:#9d93e0; --tn-ra4:#6b9bff; --tn-ra5:#b48ae8;
-    --tn-a-s:color-mix(in srgb,var(--tn-a) 8%,#18181b); --tn-a-m:color-mix(in srgb,var(--tn-a) 16%,#18181b);
-    --tn-pn-s:color-mix(in srgb,var(--tn-pn) 8%,#18181b); --tn-pn-m:color-mix(in srgb,var(--tn-pn) 16%,#18181b);
-    --tn-pas-s:color-mix(in srgb,var(--tn-pas) 8%,#18181b); --tn-pas-m:color-mix(in srgb,var(--tn-pas) 16%,#18181b);
-    --tn-in-s:color-mix(in srgb,var(--tn-in) 8%,#18181b); --tn-in-m:color-mix(in srgb,var(--tn-in) 16%,#18181b);
-    --tn-out-s:color-mix(in srgb,var(--tn-out) 8%,#18181b); --tn-out-m:color-mix(in srgb,var(--tn-out) 16%,#18181b);
-    --tn-res-s:color-mix(in srgb,var(--tn-res) 8%,#18181b); --tn-res-m:color-mix(in srgb,var(--tn-res) 16%,#18181b);
-    --ws-edit:#f87171; --ws-edit-s:rgba(248,113,113,.12); --ws-sent:#60a5fa; --ws-sent-s:rgba(96,165,250,.12);
-    --ws-ok:#4ade80; --ws-ok-s:rgba(74,222,128,.11); --ws-warn:#fbbf24; --ws-warn-s:rgba(251,191,36,.11); --ws-none:#52525b;
-  }
-  /* Colors de bloc: el to clar fa de color principal i el fons és una tinta fosca */
-  html.dark [data-g]{--gc:var(--gl);--gs:color-mix(in srgb,var(--gl) 11%,#18181b)}
-  html.dark *{scrollbar-color:#3f3f46 transparent}
-  html.dark .t-ra4{--tone-s:color-mix(in srgb,var(--tn-ra4) 8%,#18181b);--tone-m:color-mix(in srgb,var(--tn-ra4) 16%,#18181b)}
-  html.dark .t-ra5{--tone-s:color-mix(in srgb,var(--tn-ra5) 8%,#18181b);--tone-m:color-mix(in srgb,var(--tn-ra5) 16%,#18181b)}
-
-  html.dark .panel{border-color:rgba(255,255,255,.06);box-shadow:0 0 0 1px rgba(0,0,0,.6),0 24px 48px -12px rgba(0,0,0,.7)}
-  html.dark #view[data-g] > .head{background:radial-gradient(120% 140% at 0% 0%,color-mix(in srgb,var(--gl) 13%,var(--bg)) 0%,var(--bg) 62%)}
-  html.dark #view[data-g] > .head .label{background:var(--soft)}
-  html.dark #view[data-g] .list:not(.dafo .list) > .list-head{color:var(--gc)!important}
-  html.dark td.ind{color:var(--ink-2)}
 
   /* Botons: el principal passa a ser clar (invertit) */
-  html.dark .btn{color:#18181b;border-color:#e4e4e7;background:linear-gradient(180deg,#fafafa,#e4e4e7);box-shadow:inset 0 1px 0 #fff,0 1px 2px rgba(0,0,0,.4)}
-  html.dark .btn:hover{background:linear-gradient(180deg,#fff,#f4f4f5);box-shadow:inset 0 1px 0 #fff,0 2px 4px rgba(0,0,0,.4),0 8px 18px -4px rgba(0,0,0,.6)}
-  html.dark .btn.ghost{background:var(--bg);color:var(--ink);border-color:var(--line-2);box-shadow:var(--sh-xs)}
-  html.dark .btn.ghost:hover{background:#27272a;border-color:#52525b}
-  html.dark .sendbar.ws-edit .btn{background:#dc2626;border-color:#dc2626;color:#fff}
-  html.dark .lvl:not(.on):hover,html.dark .rrev{background:var(--soft)}
-  html.dark input[type=text]:hover,html.dark input[type=number]:hover,html.dark textarea:hover,html.dark select.field-sel:hover{border-color:#52525b}
-  html.dark input[type=color],html.dark #dosTxt:not(.sr-only){background:var(--bg);color:var(--ink)}
 
   /* Taules */
-  html.dark .app table.fin thead th{background:var(--soft)}
-  html.dark .app table.fin.zebra tbody tr:nth-child(even) td{background:rgba(255,255,255,.02)}
-  html.dark .app table.fin tbody tr:hover td{background:color-mix(in srgb,var(--tone-s,var(--bg)) 70%,#2a2a2f)}
-  html.dark .app table.fin .zero{color:#52525b}
-  html.dark .app table.fin td.negc{background:rgba(239,68,68,.16)!important}
-  html.dark .app .tagauto{background:rgba(255,255,255,.08)}
-  html.dark .sc-1{background:rgba(239,68,68,.2)!important}html.dark .sc-2{background:rgba(249,115,22,.18)!important}html.dark .sc-3{background:rgba(234,179,8,.16)!important}html.dark .sc-4{background:rgba(132,204,22,.16)!important}html.dark .sc-5{background:rgba(34,197,94,.22)!important}
-  html.dark .app .g-hi{background:rgba(74,222,128,.14);color:#4ade80}html.dark .app .g-ok{background:rgba(45,212,191,.14);color:#2dd4bf}html.dark .app .g-mid{background:rgba(251,191,36,.14);color:#fbbf24}html.dark .app .g-low{background:rgba(248,113,113,.14);color:#f87171}html.dark .app .g-none{background:#27272a;color:#a1a1aa}
-  html.dark .app .reportview .rnote.g-hi,html.dark .app .reportview .rgrades b.g-hi{color:#4ade80}html.dark .app .reportview .rnote.g-ok,html.dark .app .reportview .rgrades b.g-ok{color:#2dd4bf}html.dark .app .reportview .rnote.g-mid,html.dark .app .reportview .rgrades b.g-mid{color:#fbbf24}html.dark .app .reportview .rnote.g-low,html.dark .app .reportview .rgrades b.g-low{color:#f87171}
 
   /* DAFO, Golden Circle, Lean Canvas */
-  html.dark .dafo-f .list{background:rgba(74,222,128,.07)}html.dark .dafo-d .list{background:rgba(251,191,36,.07)}html.dark .dafo-o .list{background:rgba(96,165,250,.07)}html.dark .dafo-a .list{background:rgba(248,113,113,.07)}
-  html.dark .gc-why{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.2)}html.dark .gc-why label{color:#4ade80}
-  html.dark .gc-how{background:rgba(242,166,90,.08);border-color:rgba(242,166,90,.2)}html.dark .gc-how label{color:#f2a65a}
-  html.dark .gc-what{background:rgba(122,167,245,.08);border-color:rgba(122,167,245,.2)}html.dark .gc-what label{color:#7aa7f5}
-  html.dark .gc-f textarea,html.dark .lc-sost .pfield textarea{background:var(--bg)!important}
-  html.dark .gc-svg .c-what{fill:#1b2333;stroke:#34507f}html.dark .gc-svg .c-how{fill:#2c2216;stroke:#7a5428}
-  html.dark .gc-svg .tw{fill:#7aa7f5}html.dark .gc-svg .th{fill:#f2a65a}
-  html.dark .leancanvas .lc-sost{background:rgba(74,222,128,.07)}
-  html.dark .sosttag{color:#4ade80}html.dark .sosttag::before{background:#4ade80}
 
   /* Fitxers, enllaços i IA */
-  html.dark .upl,html.dark .pimg,html.dark .pdoc,html.dark .vlink,html.dark .gcard,html.dark .rtab,html.dark .rcard,html.dark .rb,html.dark .rquick button,html.dark .rrev textarea,html.dark .wsbadge.rvb,html.dark .rfill{background:var(--bg)}
-  html.dark .upl:hover{background:color-mix(in srgb,var(--gc,#fff) 8%,var(--bg))}
-  html.dark .vlink input[type=url]:focus{background:var(--bg)}
-  html.dark .aipick{background:rgba(139,92,246,.09);border-color:rgba(139,92,246,.25)}
 
   /* Seguiment i revisió */
-  html.dark .gbar,html.dark .rtab i,html.dark .bar{background:#27272a}
-  html.dark .gcard:hover{border-color:rgba(251,171,36,.45)}
-  html.dark .rtab.on{background:rgba(251,171,36,.08);border-color:#fbab24;box-shadow:0 0 0 2px #fbab24 inset,var(--sh-md)}
-  html.dark .rtab em{color:#fcc14d}
-  html.dark .rsum-i.ok{background:var(--ws-ok-s)}html.dark .rsum-i.ok b{color:#4ade80}
-  html.dark .rsum-i.warn{background:var(--ws-warn-s)}html.dark .rsum-i.warn b{color:#fbbf24}
-  html.dark .rsum-i.pend{background:var(--ws-sent-s)}html.dark .rsum-i.pend b{color:#60a5fa}
-  html.dark .rfilters{background:#27272a}
-  html.dark .rfilters button.on{background:#3f3f46;color:var(--ink)}
-  html.dark .rdot.none,html.dark .rdot.none.wsdot,html.dark .wsdot.none{background:#3f3f46;border-color:#52525b}
-  html.dark .rfill.done{color:#4ade80;border-color:rgba(74,222,128,.3)}html.dark .rfill.none{color:#f87171}
-  html.dark .rb{color:var(--ink)}
-  html.dark .rb.ok:hover,html.dark .rb.ok.on{border-color:#4ade80;color:#4ade80}html.dark .rb.ok.on{background:rgba(74,222,128,.12)}
-  html.dark .rb.warn:hover,html.dark .rb.warn.on{border-color:#fbbf24;color:#fbbf24}html.dark .rb.warn.on{background:rgba(251,191,36,.12)}
-  html.dark .rquick button{border-color:#3f3f46}
-  html.dark .rquick button:hover{border-color:#fbab24;color:#fcc14d}
-  html.dark .rrev textarea:focus{border-color:#fbab24}
 
   /* Estats de la feina */
-  html.dark .wsbadge.correcte,html.dark .pill.ws-correcte,html.dark .wsbadge.rvb.correcte{color:#4ade80}
-  html.dark .wsbadge.millorar,html.dark .pill.ws-millorar,html.dark .wsbadge.rvb.millorar{color:#fbbf24}
-  html.dark .pill.grey,html.dark .wsbadge.none,html.dark .pill.ws-none{background:#27272a;color:#a1a1aa}
-  html.dark .sendbar.ws-edit{border-color:rgba(248,113,113,.3);color:#fecaca}
-  html.dark .sendbar.ws-sent{border-color:rgba(96,165,250,.3);color:#bfdbfe}
-  html.dark .sendbar.ws-correcte{border-color:rgba(74,222,128,.3);color:#bbf7d0}
-  html.dark .sendbar.ws-millorar{border-color:rgba(251,191,36,.3);color:#fde68a}
-  html.dark .sendbar.ws-none{background:var(--soft);border-color:var(--line);color:var(--muted)}
-
-  /* Avisos i altres */
-  html.dark .notice{color:#fde68a}
-  html.dark .notice.info{color:var(--ink)}
-  html.dark .notice.expwarn{background:rgba(242,166,90,.1);border-color:rgba(242,166,90,.25);color:#fcd9a8}
-  html.dark .whochip{background:color-mix(in srgb,var(--wc) 18%,var(--bg))}
-  html.dark #toast{background:rgba(39,39,42,.95);color:var(--ink);box-shadow:var(--sh-lg),inset 0 0 0 1px rgba(255,255,255,.06)}
-  html.dark #syncPill{background:rgba(24,24,27,.85)}
-  html.dark #syncPill.sp-saved{color:#4ade80}
-
-  /* El PDF s'ha de veure en clar encara que la pantalla sigui fosca */
-  html.dark .list-pad .themesw{background:#27272a}
-  html.dark .list-pad .themesw button[aria-pressed="true"]{background:#3f3f46}
-  html.dark .btn:disabled:hover{box-shadow:none}
-
-  html.dark .pdfbox{color-scheme:light;color:#18181b;
-    --bg:#ffffff; --soft:#f4f4f5; --ink:#18181b; --ink-2:#3f3f46; --muted:#71717a; --line:#e4e4e7; --line-2:#d4d4d8;
-    --accent:#f59e0b; --accent-ink:#b45309; --accent-soft:#fff6e6; --blue:#2563eb; --blue-soft:#eff4ff;
-    --warn:#b45309; --warn-soft:#fff7e6; --bad:#dc2626; --bad-soft:#fef2f2;
-    --tn-a:#3a5a8c; --tn-a-s:#f5f8fc; --tn-a-m:#e9eff7; --tn-pn:#3f7a5c; --tn-pn-s:#f4f9f6; --tn-pn-m:#e6f1eb;
-    --tn-pas:#9a6a2f; --tn-pas-s:#fbf7f1; --tn-pas-m:#f4eadc; --tn-in:#3f7a5c; --tn-in-s:#f4f9f6; --tn-in-m:#e6f1eb;
-    --tn-out:#a54a3f; --tn-out-s:#fcf5f4; --tn-out-m:#f6e6e3; --tn-res:#5a5390; --tn-res-s:#f6f5fb; --tn-res-m:#ebe9f5;
-    --tn-ra4:#2d5bea; --tn-ra5:#7a4fb0}
-  html.dark .pdfbox .t-ra4{--tone-s:#eef3ff;--tone-m:#dce6ff}html.dark .pdfbox .t-ra5{--tone-s:#f4eeff;--tone-m:#e8dcfa}
 
 @media (prefers-reduced-motion:reduce){#view.vin > *,#view.vin .bar span,#view.vin .gbar span{animation:none}.btn:hover,.stat:hover,.gcard:hover,.rtab:hover{transform:none}}
 /* Menú amagat: s'obre com un calaix des de l'esquerra amb el botó de dalt */
@@ -1444,7 +1280,7 @@ body:has(#accBtn:not([hidden])) .bellbtn{right:calc(max(14px,env(safe-area-inset
 .hi-i{display:flex;align-items:center;justify-content:space-between;gap:10px;font:inherit;font-size:14.5px;font-weight:600;color:inherit;background:none;border:0;border-radius:10px;padding:7px 10px;cursor:pointer;text-align:left}
 .hi-chips{display:flex;flex-wrap:wrap;gap:6px}.hi-chips button{font:inherit;font-size:13px;color:inherit;background:var(--soft);border:1px solid var(--line);border-radius:999px;padding:5px 11px;cursor:pointer}.hi-chips button:hover{border-color:var(--ink)}
 .hi-i:hover{background:var(--soft)}.hi-i em{font-style:normal;font-size:13px;color:var(--muted);white-space:nowrap}
-html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,113,.35)}
+
 /* ---------- Retocs de la revisió general ---------- */
 /* Xifres del capçal de Seguiment: s'encongeixen si no caben a la targeta (abans «100 %» sortia de la seva) */
 .snums div{container-type:inline-size}.snums b{font-size:clamp(24px,32cqi,46px)}
@@ -1472,35 +1308,6 @@ html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,11
 /* Peu del menú: sense el bloc de progrés (ja surt a la capçalera i a les targetes) */
 .side-foot > #gameName,.side-foot > #quarterTxt,.side-foot > #quarterBar{display:none}
 .nic{display:none}
-.sidecol{display:none}
-@media (min-width:1100px){
-  .side{position:sticky}
-  .sidecol{display:grid;place-items:center;position:absolute;top:24px;right:12px;width:32px;height:32px;border:1px solid var(--line);border-radius:10px;background:var(--side-3);color:var(--side-muted);cursor:pointer;transition:background var(--t-fast),color var(--t-fast),transform .3s var(--ease)}
-  .sidecol:hover{color:var(--side-fg);background:var(--side-2)}
-  .sidecol svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  .brand{padding-right:44px}
-  /* Menú estret: només icones */
-  html.navmini .app{grid-template-columns:64px minmax(0,1fr)}
-  html.navmini .side{padding:18px 10px;overflow-x:hidden;gap:6px}
-  html.navmini .brand{font-size:0;gap:0;justify-content:center;padding:0 0 10px}
-  html.navmini .sidecol{position:static;margin:0 auto 8px;transform:rotate(180deg)}
-  html.navmini .dashbtn{justify-content:center;padding:10px 0;margin:0}
-  html.navmini .dashbtn > :not(svg){display:none}
-  html.navmini :is(.side-label,.role,.side-foot,#navLabel){display:none}
-  html.navmini .nav{gap:4px;margin-top:4px}
-  html.navmini .nav button{justify-content:center;padding:11px 0;gap:0}
-  html.navmini .nav button > :not(.nic){display:none}
-  html.navmini .nic{display:grid;place-items:center}
-  html.navmini .nic svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-  html.navmini .ngroup.allic .ghead{display:none}
-  html.navmini .ngroup:not(.allic) > button{display:none}
-  html.navmini .ngroup:not(.allic) .ghead{justify-content:center;padding:11px 0;border-radius:12px;cursor:pointer}
-  html.navmini .ngroup:not(.allic) .ghead span{display:none}
-  html.navmini .ngroup:not(.allic) .ghead::before{display:none}
-  html.navmini .ngroup:not(.allic) .ghead svg{display:block;width:20px;height:20px;stroke:var(--gc,var(--ink))}
-  html.navmini .ngroup:not(.allic) .ghead:hover{background:var(--side-2)}
-  html.navmini .segbtn{left:78px}
-  html.navmini .ngroup:not(.allic):has(button[aria-selected="true"]) .ghead{background:var(--side-2)}
 }
 /* ---------- Seguiment, revisió i alumnat (novembre 2026) ---------- */
 /* Capçal de Seguiment més equilibrat: la targeta fosca, més estreta */
@@ -1532,6 +1339,47 @@ html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,11
 .spc,.snums b,.istats b,.iring b,.rsum-i b,.stat .v,.bcnt,.bst,.gstats b,.rtab em,.ncount,.dcount,.wsbadge,.pill,.sseg,.rfill{font-variant-numeric:tabular-nums}
 /* Textos secundaris amb més contrast */
 .swho .smem,.sumempty i{color:var(--muted)}
+/* ---------- Capçalera amb pestanyes (professorat i tauler) ---------- */
+body.noside .side,body.noside .navbtn,body.noside .side-back{display:none!important}
+body.noside .app{grid-template-columns:minmax(0,1fr)}
+.tophead{padding-bottom:0!important;padding-top:22px!important;gap:12px}
+body:not(.noside) .tbrand{display:none}
+@media (max-width:860px){body:not(.noside) .tbar{padding-left:56px}}
+body.has-top #view{padding-top:18px}
+@media (max-width:860px){body.noside .content.tophead{padding-top:16px}body.noside #view{padding-top:14px}}
+.tbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;min-height:46px;padding-right:58px}
+.tbrand{display:inline-flex;align-items:center;gap:9px;font-weight:650;font-size:15.5px;color:var(--ink);text-decoration:none;margin-right:6px}
+.tbrand .logo{width:32px;height:32px;border-radius:10px;background:var(--accent);display:grid;place-items:center}
+.tbrand .logo svg{width:18px;height:18px}
+.tsp{flex:1}
+.tback,.tchip{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13.5px var(--font);text-decoration:none;cursor:pointer;box-shadow:var(--sh-xs);transition:background var(--t-fast),border-color var(--t-fast)}
+.tback:hover,.tchip:hover{border-color:var(--line-2,#cfd3dd);background:var(--soft)}
+.tchip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tback svg,.tchip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tchip .dcount{min-width:22px;padding:1px 7px;border-radius:99px;font-size:12px;text-align:center;background:var(--accent-soft,#fff6e6);color:var(--accent-ink,#b45309);font-variant-numeric:tabular-nums}
+#tbRole .role{display:flex;align-items:center;gap:8px}
+#tbRole .rseg{background:#E6E8EF;min-width:220px}
+#tbRole .rseg button{color:var(--muted)}#tbRole .rseg button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+#tbRole select{width:auto;max-width:200px;padding:8px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13.5px}
+.ttabs{display:flex;gap:4px;padding:5px;background:var(--bg);border:1px solid rgba(15,18,34,.07);border-radius:999px;box-shadow:var(--sh-sm);overflow-x:auto;scrollbar-width:none}
+.ttabs::-webkit-scrollbar{display:none}
+.ttabs:empty{display:none}
+.ttabs button{flex:none;display:inline-flex;align-items:center;gap:8px;border:0;background:none;border-radius:999px;padding:9px 16px;font:500 14.5px var(--font);color:var(--muted);cursor:pointer;white-space:nowrap;transition:background var(--t-fast),color var(--t-fast)}
+.ttabs button:hover{background:var(--soft);color:var(--ink)}
+.ttabs button[aria-selected="true"]{background:var(--ink);color:#fff;font-weight:600}
+.ttabs .nic{display:grid}.ttabs .nic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ttabs .ncount{min-width:20px;padding:0 6px;border-radius:99px;background:var(--bad);color:#fff;font-size:12px;font-weight:600;text-align:center}
+.tsub{display:inline-flex;gap:3px;padding:3px;border-radius:999px;background:#E6E8EF}
+.tsub button{border:0;background:none;border-radius:999px;padding:7px 14px;font:500 13.5px var(--font);color:var(--muted);cursor:pointer}
+.tsub button[aria-pressed="true"]{background:#fff;color:var(--ink);font-weight:600;box-shadow:var(--sh-xs)}
+#tbSub:empty{display:none}
+@media (max-width:1180px){.ttabs .nic{display:none}.ttabs button{padding:9px 13px}}
+.tbar{}
+@media (max-width:620px){#tbRole{flex:1 1 100%;min-width:0}#tbRole .role{flex-wrap:wrap}#tbRole .rseg{flex:1 1 180px}#tbRole select{flex:1 1 140px;max-width:none;min-width:0}.ttabs{flex-wrap:wrap;overflow:visible;border-radius:20px}.ttabs button{padding:8px 12px;font-size:13.5px}.tbar{padding-right:52px}.tbrand{font-size:0;gap:0;margin-right:0}#tbRole .rseg{min-width:0}.tback span{display:none}.tback{padding:8px 10px}}
+/* Filtre d'activitats (Qualificació i Informes) i pestanyes de Configuració */
+.actf{flex-wrap:wrap;border-radius:20px}
+.actf-h{margin:8px 0 -6px;font-size:15px;font-weight:650;color:var(--muted)}
+.cfgtabs button.danger{color:var(--bad)}.cfgtabs button.danger.on{color:var(--bad)}
 /* Títol «Seguiment»: la mida s'adapta a la seva targeta (amb el menú fix, la targeta és més estreta) */
 .sttl{container-type:inline-size}.sttl h1{font-size:clamp(36px,17cqi,68px)}
 /* Si la llista d'equips queda estreta (menú fix i pantalla no gaire ampla), cada equip passa a dues columnes */
@@ -1552,11 +1400,11 @@ html.dark .hi-g.warn{background:rgba(220,38,38,.12);border-color:rgba(248,113,11
 .role{display:grid;gap:8px}.role select[hidden]{display:none}
 /* Targetes blanques amb una vora fina: es veuen més nítides al projector */
 .grpbar,.stm,.list,.stat,.iprog,.istats,.gcard,.sheet,.rtab,.rcard,.notice.info{border:1px solid rgba(15,18,34,.07)}
-html.dark :is(.grpbar,.stm,.list,.stat,.iprog,.istats,.gcard,.sheet,.rtab,.rcard,.notice.info){border-color:rgba(255,255,255,.07)}
+
 /* Comentaris ràpids: botons de debò (fons gris suau i vora sòlida) */
 .rquick button{border:1px solid var(--line);background:var(--soft);color:var(--ink);padding:5px 12px}
 .rquick button:hover{border-color:#e08a0b;background:var(--accent-soft,#fff6e6);color:#a85a00}
-html.dark .rquick button{background:var(--soft);border-color:#3f3f46}
+
 /* Correcte / A millorar: color propi des del principi, més intens quan està triat */
 .rb{display:inline-flex;align-items:center;gap:7px}
 .rb svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
@@ -1564,10 +1412,7 @@ html.dark .rquick button{background:var(--soft);border-color:#3f3f46}
 .rb.warn{background:#fdf6ec;border-color:#f3d4a6;color:#9a5513}
 .rb.ok.on{background:#26884f;border-color:#26884f;color:#fff}
 .rb.warn.on{background:#d97706;border-color:#d97706;color:#fff}
-html.dark .rb.ok{background:rgba(74,222,128,.08);border-color:rgba(74,222,128,.3);color:#4ade80}
-html.dark .rb.warn{background:rgba(251,191,36,.08);border-color:rgba(251,191,36,.3);color:#fbbf24}
-html.dark .rb.ok.on{background:#16a34a;border-color:#16a34a;color:#fff}
-html.dark .rb.warn.on{background:#d97706;border-color:#d97706;color:#fff}
+
 /* Seguiment: icona del bloc sota cada franja, i llegenda a dalt */
 .sseg{align-items:start}
 .sseg .sb{flex:1;display:grid;justify-items:center;gap:5px;min-width:0}
@@ -1577,7 +1422,7 @@ html.dark .rb.warn.on{background:#d97706;border-color:#d97706;color:#fff}
 /* Tauler: botó de l'enllaç per a l'alumnat, ben visible a cada grup */
 .btn.glink{background:var(--accent-soft,#fff6e6);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--accent-ink,#b45309)}
 .btn.glink svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-html.dark .btn.glink{background:rgba(245,158,11,.12);color:#fbbf24}
+
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -2055,6 +1900,16 @@ document.querySelector('.rseg').addEventListener('click', e => { const b = e.tar
   role = b.dataset.rs === 'prof' ? 'prof' : Math.max(0, Math.min(profTeam || 0, G.teams.length - 1)); tab = null; save(); render(); navPush(); });
 $('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); navPush(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) go(b.dataset.tab); });
+$('#topHead').addEventListener('click', e => {
+  const g = e.target.closest('#tbGrp [data-go]'); if (g) { role = 'prof'; go(g.dataset.go); return; }
+  const b = e.target.closest('[data-ptab]'); if (!b) return; const k = b.dataset.ptab;
+  if (!G || !GID && CLOUD) { // tauler
+    if (k === 'nou') { homeNew = true; if (location.hash && location.hash !== '#') location.hash = ''; else homeView(); return; }
+    const want = { grups: '', admin: '#admin', config: '#config', copies: '#copies' }[k];
+    if ((location.hash || '') === want || (want === '' && location.hash === '#')) route(); else location.hash = want; return; }
+  if (role !== 'prof') { role = 'prof'; save(); } go(k); });
+$('#tbBrand').onclick = e => { e.preventDefault(); goHome(); };
+$('#tbRole').appendChild(document.querySelector('.role'));
 // Historial del navegador: cada canvi de pàgina dins del grup es desa, i «Enrere» torna a la pàgina anterior (no a la llista de grups)
 const navState = () => ({ nav: 1, gid: typeof GID === 'undefined' ? '' : GID || '', tab, role, team: profTeam });
 function navPush() { try { if (!history.state || !history.state.nav) { const c = navState(); history.replaceState(c, ''); } history.pushState(navState(), ''); } catch (e) {} }
@@ -2130,7 +1985,7 @@ function render() {
   const vk = `${role}|${tab}|${profTeam}`; v.classList.toggle('vin', vk !== render.k); render.k = vk;
   if (role !== 'prof' && sec(tab) && sec(tab).p && access(tab) === 'closed') lockedPage(v, tab);
   else (VIEWS[tab] || (() => { v.innerHTML = ''; }))(v);
-  if (role === 'prof' && G) v.insertAdjacentHTML('afterbegin', grpBar());
+  topGroup();
   updateTeamBanner();
   if (CLOUD) cloudAfterRender(v);
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
@@ -2138,10 +1993,31 @@ function render() {
 }
 // Botó «Seguiment» a dalt de tot, al costat del menú: torna a la vista de tots els equips des de qualsevol pàgina del professor
 function segBtnUpdate() {
-  let b = $('#segBtn'); const show = G && role === 'prof' && tab !== 'seguiment';
+  let b = $('#segBtn'); const show = false; // ara hi ha les pestanyes de dalt
   if (!show) { if (b) b.hidden = true; return; }
   if (!b) { document.body.insertAdjacentHTML('beforeend', `<button type="button" class="segbtn" id="segBtn" title="Tornar al seguiment dels equips">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Seguiment</span></button>`); b = $('#segBtn'); b.onclick = () => { tab = 'seguiment'; render(); scrollTo(0, 0); }; }
   b.hidden = false;
+}
+/* ---------- Capçalera del professorat: pestanyes de dalt (substitueixen el menú lateral) ---------- */
+const isProfUser = () => !CLOUD || !!(ME && ME.isProf);
+const PTABS = [['seguiment', 'Seguiment'], ['obertura', 'Obertura d\'apartats'], ['revisio', 'Revisió'], ['qualificacio', 'Qualificació'], ['informe', 'Informes'], ['guia', 'Guia i rúbriques'], ['config', 'Configuració']];
+const tabBtn = (k, l, on, n) => `<button type="button" data-ptab="${k}" aria-selected="${on}">${nic(k)}<span>${l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
+function topOff() { const h = $('#topHead'); h.hidden = true; document.body.classList.remove('has-top'); $('#tbTabs').innerHTML = $('#tbGrp').innerHTML = $('#tbSub').innerHTML = ''; }
+function topGroup() {
+  document.body.classList.toggle('noside', role === 'prof');
+  if (!G || !isProfUser()) { topOff(); return; }
+  $('#topHead').hidden = false; document.body.classList.add('has-top'); $('#tbRole').hidden = false;
+  const cur = tab === 'rubriques' ? 'guia' : tab, pr = role === 'prof';
+  $('#tbGrp').innerHTML = grpBar();
+  $('#tbTabs').innerHTML = PTABS.map(([k, l]) => tabBtn(k, l, pr && cur === k)).join('');
+  $('#tbSub').innerHTML = pr && cur === 'guia' ? `<div class="tsub" role="group" aria-label="Guia i rúbriques">${[['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques']].map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>` : '';
+  const sel = $('#tbTabs [aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+}
+// Pestanyes del tauler (fora d'un grup)
+function topHome(cur) {
+  const h = HOME || {}, prof = h.ok || h.groups;
+  document.body.classList.add('noside', 'has-top'); $('#topHead').hidden = false; $('#tbRole').hidden = true; $('#tbGrp').innerHTML = $('#tbSub').innerHTML = '';
+  $('#tbTabs').innerHTML = [tabBtn('grups', 'Els meus grups', cur === 'grups'), isAdmin() ? tabBtn('admin', 'Panell d\'administrador', cur === 'admin', h.nReq) : '', prof ? tabBtn('copies', 'Còpies de seguretat', cur === 'copies') : '', tabBtn('config', 'Configuració', cur === 'config')].join('');
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
@@ -3995,7 +3871,10 @@ function vQualificacio(v) {
   const C = aiCfg(), manual = true;
   const mScope = manualScope && manualScope.team === t.name ? manualScope : null;
   const mActs = mScope ? G.acts.filter(a => mScope.codes.includes(a.c)) : [];
-  v.innerHTML = `${head(`Qualificació · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`, teamSel())}
+  if (qAct !== 'tot' && !G.acts.some(a => a.c === qAct)) qAct = G.acts.length ? G.acts[0].c : 'tot';
+  const qShow = a => qAct === 'tot' || a.c === qAct, qi = G.acts.findIndex(a => a.c === qAct), qPrev = G.acts[qi - 1], qNext = G.acts[qi + 1];
+  v.innerHTML = `${head(`Qualificació · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`)}
+    ${teamTabs()}
     <div class="aipick">${C.enabled ? `<div class="aipick-h"><span><b>Correcció amb IA</b> <span class="muted small">Funciona amb la IA que facis servir habitualment (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="linkbtn small muted" id="aiOff">Desactivar la IA</button></div><p class="small muted" style="margin:0">Prem «Corregir amb IA» i l'eina et prepararà una petició amb la feina de l'equip i els criteris de cada activitat. La copies a la IA, enganxes aquí la resposta i decideixes quines propostes aplicar.</p>` : `<div class="aipick-h"><span><b>La correcció amb IA està desactivada.</b> <span class="muted small">Funciona amb la IA que facis servir (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="btn small" id="aiOn2">Activar la IA</button></div>`}</div>
     <div class="row">${C.enabled ? `<button class="btn" id="aiAll" ${busyAll && busyAll.busy ? 'disabled' : ''}>${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/>')}${busyAll && busyAll.busy ? 'Corregint...' : `Corregir amb IA les ${aiActs.length} activitats`}</button>
       <button class="btn ghost" id="aiApplyAll">Aplicar totes les propostes de la IA</button>` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div>
@@ -4006,8 +3885,11 @@ function vQualificacio(v) {
       <div id="mMsg"></div><div class="row"><button type="button" class="btn small" id="mRead">Llegir la resposta</button><button type="button" class="btn ghost small" id="mClose">Tancar</button></div>`)) : ''}
     <div class="notice info">Tens ${C.enabled ? 'dues ajudes' : 'una ajuda'}. La <b>proposta automàtica</b> es calcula amb el grau de compleció i les teves revisions.${C.enabled ? ` La <b>correcció amb IA</b> llegeix la feina de l'equip amb el criteri de cada activitat i et proposa un nivell, una nota i un comentari. La petició no inclou els noms de l'alumnat.` : ' La correcció amb IA està desactivada: la pots activar a «Configuració».'} La nota final sempre la decideixes tu.</div>
     <div class="grid2">${['RA4', 'RA5'].map(ra => { const r = ra === 'RA4' ? r4 : r5; return `<div class="stat"><span class="muted small">${ra} · mitjana ponderada</span><span class="v">${f1(r.nota)}</span><span class="small muted">${r.done} de ${r.total} activitats qualificades</span></div>`; }).join('')}</div>
-    ${['RA4', 'RA5'].map(ra => `<h2>${ra} · ${esc(RA_TEXT[ra])}</h2>` + G.acts.filter(a => a.ra === ra).map(a => gradeCard(t, a)).join('')).join('')}`;
-  bindTeamSel();
+    <h2 class="actf-h">Activitat</h2>${actPills(qAct, [['tot', 'Totes']])}
+    ${['RA4', 'RA5'].map(ra => { const l = G.acts.filter(a => a.ra === ra && qShow(a)); return l.length ? `<h2>${ra} · ${esc(RA_TEXT[ra])}</h2>` + l.map(a => gradeCard(t, a)).join('') : ''; }).join('')}
+    ${qAct !== 'tot' ? `<div class="rpager">${qPrev ? `<button type="button" class="btn ghost" data-af="${esc(qPrev.c)}">← <span>${esc(qPrev.c)} · ${esc(qPrev.n)}</span></button>` : '<span></span>'}<span class="rpos">${qi + 1} de ${G.acts.length}</span>${qNext ? `<button type="button" class="btn" data-af="${esc(qNext.c)}"><span>${esc(qNext.c)} · ${esc(qNext.n)}</span> →</button>` : '<span></span>'}</div>` : ''}`;
+  bindTeamTabs(v);
+  v.querySelectorAll('[data-af]').forEach(b => b.onclick = () => { qAct = b.dataset.af; render(); const f = $('.actf-h'); if (f && f.getBoundingClientRect().top < 0) f.scrollIntoView({ block: 'start' }); });
   const aoff = $('#aiOff'), aon = $('#aiOn2');
   if (aoff) aoff.onclick = () => { aiCfg().enabled = false; manualScope = null; save(); render(); };
   if (aon) aon.onclick = () => { aiCfg().enabled = true; save(); render(); };
@@ -4044,7 +3926,7 @@ function reportBody(t, forStudents) {
   const roles = t.members.map(m => `<tr><td>${esc(nomBo(m.name))}</td><td>${esc([m.accio, m.social, m.mental].filter(Boolean).map(rolN).join(' · '))}</td><td>${esc(m.resp || '')}</td></tr>`).join('');
   const summary = ['RA4', 'RA5'].map(ra => { const r = ra === 'RA4' ? r4 : r5; return `<tr class="rasec t-${ra.toLowerCase()}"><td colspan="6">${ra} · ${esc(RA_TEXT[ra])}</td></tr>` + G.acts.filter(a => a.ra === ra).map(a => { const g = t.grades[a.c] || {}; return `<tr class="t-${ra.toLowerCase()}"><td><span class="rcode">${esc(a.c)}</span></td><td>${esc(a.n)}${a.ext ? ' <span class="tagauto">externa</span>' : ''}</td><td>${ra}</td><td class="n">${f1(a.w)}%</td><td>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : '—'}</td><td class="n"><span class="gchip ${gcls(g.nota)}">${f1(g.nota)}</span></td></tr>`; }).join('') + `<tr class="rasum t-${ra.toLowerCase()}"><td colspan="5">Mitjana ponderada de l'${ra} (${r.done} de ${r.total} activitats)</td><td class="n"><span class="gchip ${gcls(r.nota)}">${f1(r.nota)}</span></td></tr>`; }).join('');
   const acts = G.acts.map(a => { const g = t.grades[a.c] || {}, ev = actEvidence(t, a);
-    return `<section class="ract ra-${a.ra.toLowerCase()}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
+    return `<section class="ract ra-${a.ra.toLowerCase()}" data-ac="${esc(a.c)}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
       ${rubRep(g)}${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
       ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${imgSrc(f.data)}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
@@ -4131,12 +4013,18 @@ async function savePdf(teams, btn) {
 function vInforme(v) {
   ensureEval();
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
-  v.innerHTML = `${head('Informe de l\'equip', esc(projName(t)), teamSel())}
+  v.innerHTML = `${head('Informe de l\'equip', esc(projName(t)))}
+    ${teamTabs()}
     <div class="row"><button class="btn" id="pdfOne">${ico('<path d="M12 3v12M7 10l5 5 5-5M5 21h14"/>')}Descarregar en PDF</button><button class="btn ghost" id="pdfAll">PDF de tots els equips</button><button class="btn ghost" id="cpOne">Copiar el text</button><button class="btn ghost" data-go="qualificacio">Editar les notes</button></div>
     <p class="small muted">El PDF està llest per imprimir o enviar. Amb tots els equips, cada equip comença en una pàgina nova.</p>
     <textarea id="repTxt" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>
+    <h2 class="actf-h">Què vols veure</h2>${actPills(infAct, [['resum', 'Resum i notes'], ['tot', 'Tot l\'informe']])}
     <div class="reportview">${reportBody(t)}</div>`;
-  bindTeamSel();
+  bindTeamTabs(v);
+  // Filtre de la vista (el PDF i el text sempre porten l'informe sencer)
+  const rv = $('.reportview'), only = infAct !== 'tot';
+  if (only) [...rv.children].forEach(el => { const keep = el.matches('header.rhead, .rgrades') || (infAct === 'resum' ? !el.matches('section.ract') && !/^Feina i qualificació/.test(el.textContent) : el.matches(`section.ract[data-ac="${CSS.escape(infAct)}"]`)); el.style.display = keep ? '' : 'none'; });
+  v.querySelectorAll('[data-af]').forEach(b => b.onclick = () => { infAct = b.dataset.af; render(); });
   $('#pdfOne').onclick = e => savePdf([t], e.currentTarget);
   $('#pdfAll').onclick = e => savePdf(G.teams, e.currentTarget);
   $('#cpOne').onclick = async () => { const x = reportText(t); try { await navigator.clipboard.writeText(x); $('#cpOne').textContent = 'Copiat'; } catch (e) { const ta = $('#repTxt'); ta.classList.remove('sr-only'); ta.removeAttribute('aria-hidden'); ta.value = x; ta.rows = 12; ta.select(); $('#cpOne').textContent = 'Text a sota: prem Ctrl+C'; } };
@@ -4303,9 +4191,10 @@ function actsConfigHtml() {
     <h3 style="margin-top:18px">Correcció amb IA</h3>
     <label class="choice"><input type="checkbox" id="aiOn" ${aiCfg().enabled ? 'checked' : ''}><span><b>Fer servir la IA per proposar notes</b><span class="small muted">Si la desactives, només tindràs la proposta automàtica i la teva correcció.</span></span></label>
     <p class="small muted">La correcció funciona amb la IA que facis servir (ChatGPT, Gemini, Copilot...): l'eina et prepara la petició i tu enganxes la resposta.</p>
-    <h3 style="margin-top:18px">Alumnat</h3>
-    <label class="choice"><input type="checkbox" id="allowPaste" ${G.allowPaste ? 'checked' : ''}><span><b>Permetre que l'alumnat enganxi text</b><span class="small muted">Desactivat per defecte: l'alumnat ha de redactar les respostes. No es pot enganxar ni arrossegar text a les caselles.</span></span></label>
-    <label class="choice" style="margin-top:12px"><input type="checkbox" id="showGrades" ${G.showGrades ? 'checked' : ''}><span><b>Mostrar l'informe i les notes als equips</b><span class="small muted">Apareixerà la pàgina «Les vostres notes» al menú de cada equip.</span></span></label>`));
+`)) + card('Què veu i què pot fer l\'alumnat', pad(`<label class="choice"><input type="checkbox" id="allowPaste" ${G.allowPaste ? 'checked' : ''}><span><b>Permetre que l'alumnat enganxi text</b><span class="small muted">Desactivat per defecte: l'alumnat ha de redactar les respostes. No es pot enganxar ni arrossegar text a les caselles.</span></span></label>
+    <label class="choice" style="margin-top:12px"><input type="checkbox" id="showGrades" ${G.showGrades ? 'checked' : ''}><span><b>Mostrar l'informe i les notes als equips</b><span class="small muted">Apareixerà la pàgina «Les vostres notes» al menú de cada equip.</span></span></label>
+    <label class="choice" style="margin-top:12px"><input type="checkbox" id="cfgRub" ${G.rubHide ? '' : 'checked'}><span><b>Mostrar les rúbriques a l'alumnat</b><span class="small muted">L'alumnat veurà com s'avaluarà el projecte (pàgina «Com s'avaluarà el projecte»).</span></span></label>
+    <h3 style="margin-top:18px">Calendari</h3><p class="small muted">Quan s'obre i fins quan es pot editar cada apartat es tria a «Obertura d'apartats».</p><div class="row"><button type="button" class="btn ghost small" data-go="obertura">Anar a «Obertura d'apartats»</button></div>`));
 }
 function bindActsConfig(v) {
   const sums = () => { const s = ra => G.acts.filter(a => a.ra === ra).reduce((x, a) => x + (Number(a.w) || 0), 0); const el = $('#actSums'); if (el) el.innerHTML = `Suma RA4: <b>${s('RA4')}%</b> · Suma RA5: <b>${s('RA5')}%</b>`; };
@@ -4316,6 +4205,7 @@ function bindActsConfig(v) {
   $('#showGrades').onchange = e => { G.showGrades = e.target.checked; save(); renderSide(); };
   $('#aiOn').onchange = e => { aiCfg().enabled = e.target.checked; save(); const y = window.scrollY; render(); window.scrollTo(0, y); };
   $('#allowPaste').onchange = e => { G.allowPaste = e.target.checked; save(); };
+  $('#cfgRub').onchange = e => { G.rubHide = !e.target.checked; save(); renderSide(); };
 }
 /* ================= Versió web amb Firebase ================= */
 // Inici de sessió amb el compte de Google de l'institut i dades a Firestore.
@@ -4639,19 +4529,18 @@ function listenGrades() {
 }
 
 /* ---------- Pantalles d'entrada ---------- */
-function cloudMsg(title, text, extra = '') { document.body.classList.add('cloud-msg'); $('#view').innerHTML = `${head('IPO Emprèn · Projecte emprenedor', esc(title))}<div class="notice info" style="max-width:70ch">${text}</div>${extra}${USER ? `<p class="small muted" style="margin-top:18px">Has entrat com a <b>${esc(USER.email)}</b>. <button type="button" class="linkbtn" id="msgOut">Entrar amb un altre compte</button></p>` : ''}`; const mo = $('#msgOut'); if (mo) mo.onclick = () => signOutNow(mo); }
+function cloudMsg(title, text, extra = '') { topOff(); document.body.classList.add('cloud-msg', 'noside'); $('#view').innerHTML = `${head('IPO Emprèn · Projecte emprenedor', esc(title))}<div class="notice info" style="max-width:70ch">${text}</div>${extra}${USER ? `<p class="small muted" style="margin-top:18px">Has entrat com a <b>${esc(USER.email)}</b>. <button type="button" class="linkbtn" id="msgOut">Entrar amb un altre compte</button></p>` : ''}`; const mo = $('#msgOut'); if (mo) mo.onclick = () => signOutNow(mo); }
 // Botó «Gestiona l'alumnat» (enllaç per al Classroom i llista d'alumnes), sota «Els meus grups»
 function stuBtn() {
-  let b = $('#stuBtn'); const want = G && (CLOUD ? ME && ME.isProf && GID : true);
-  if (!want) { if (b) b.remove(); return; }
-  if (!b) { ($('#dashBtn') || document.querySelector('.brand')).insertAdjacentHTML('afterend', `<a id="stuBtn" class="dashbtn alt" href="#" title="Enllaç per al Classroom i alumnes que han entrat">${ico('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>')}<span>Gestiona l'alumnat</span><span class="dcount"></span></a>`); b = $('#stuBtn'); b.onclick = e => { e.preventDefault(); role = 'prof'; go('alumnes'); }; }
-  b.classList.toggle('on', tab === 'alumnes');
-  b.querySelector('.dcount').textContent = CLOUD ? ROSTER.length : '';
+  const box = $('#tbStu'), want = G && (CLOUD ? ME && ME.isProf && GID : true);
+  if (!want) { box.innerHTML = ''; return; }
+  const n = CLOUD ? ROSTER.length : G.teams.reduce((a, t) => a + t.members.filter(m => m.name).length, 0);
+  box.innerHTML = `<button type="button" id="stuBtn" class="tchip ${role === 'prof' && tab === 'alumnes' ? 'on' : ''}" title="Enllaç per al Classroom i alumnes que han entrat">${ico('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>')}<span>Alumnat</span><span class="dcount">${n}</span></button>`;
+  $('#stuBtn').onclick = () => { role = 'prof'; go('alumnes'); };
 }
 function dashBtn() {
-  let b = $('#dashBtn'); const want = CLOUD && ME && ME.isProf && GID;
-  if (!want) { if (b) b.remove(); stuBtn(); return; }
-  if (!b) { document.querySelector('.brand').insertAdjacentHTML('afterend', `<a id="dashBtn" class="dashbtn" href="#">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Els meus grups</span></a>`); }
+  const box = $('#tbBack'), want = CLOUD && ME && ME.isProf && GID;
+  box.innerHTML = want ? `<a class="tback" href="#">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Els meus grups</span></a>` : '';
   stuBtn();
 }
 function sideUser() { dashBtn(); accUpdate(); }
@@ -4717,7 +4606,7 @@ function navLoad() { try { const n = JSON.parse(localStorage.getItem('empren-nav
 async function route(retry = 0) {
   const seq = ++ROUTE_SEQ;
   if (syncT) { clearTimeout(syncT); syncT = null; if (ME && G && GID) cloudPush(); } // abans de recarregar res, s'envia el que quedava per desar
-  stopListen(); syncStatus('idle');
+  stopListen(); syncStatus('idle'); topOff();
   if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
   if (location.hash === '#config') return homeConfig();
   if (location.hash === '#copies') return bkView();
@@ -4852,6 +4741,7 @@ function joinView(g, m) {
 const ADMIN = () => String(window.FB_ADMIN || 'solivares@biada.net').toLowerCase(); // per si el navegador té un config.js antic
 const isAdmin = () => !!USER && !!ADMIN() && USER.email === ADMIN();
 function bareView() {
+  topOff(); document.body.classList.add('noside');
   stopListen(); G = null; GID = null; ME = null; dashBtn();
   document.body.classList.add('cloud-msg'); document.body.classList.remove('is-prof', 'is-student');
   $('#tabs').innerHTML = ''; $('#gameName').textContent = ''; $('#quarterTxt').textContent = ''; $('#quarterBar').innerHTML = ''; sideUser();
@@ -4866,18 +4756,7 @@ async function homeRole() {
   try { groups = (await FB.list('groups', ['profs', 'array-contains', USER.email])).length > 0; } catch (e) {}
   return (HOME = { email: USER.email, ok, nReq, groups });
 }
-function homeNav(cur) {
-  const h = HOME || {}, prof = h.ok || h.groups;
-  const it = (k, l, n) => `<button type="button" data-home="${k}" aria-selected="${cur === k}" title="${esc(l)}">${nic(k)}<span class="bullet"></span><span>${l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
-  const gr = (t, g, items) => items.filter(Boolean).length ? `<div class="ngroup allic" data-g="${g}"><div class="ghead">${ico(GICONS[g])}<span>${t}</span></div>${items.join('')}</div>` : '';
-  $('#tabs').innerHTML = gr(prof ? 'Professorat' : 'Inici', 'prof', [prof || cur === 'grups' ? it('grups', 'Els meus grups') : '', h.ok ? it('nou', 'Crear un grup nou') : ''])
-    + (isAdmin() ? gr('Administració', 'admin', [it('admin', 'Panell d\'administrador', h.nReq)]) : '')
-    + gr('Recursos', 'rec', [prof ? it('copies', 'Còpies de seguretat') : '', it('config', 'Configuració')]);
-  $('#tabs').querySelectorAll('[data-home]').forEach(b => b.onclick = () => { const k = b.dataset.home; setNav(false);
-    if (k === 'nou') { homeNew = true; if (location.hash && location.hash !== '#') location.hash = ''; else homeView(); return; }
-    const want = { grups: '', admin: '#admin', config: '#config', copies: '#copies' }[k];
-    if ((location.hash || '') === want || (want === '' && location.hash === '#')) route(); else location.hash = want; });
-}
+function homeNav(cur) { $('#tabs').innerHTML = ''; topHome(cur); }
 // Configuració general (fora d'un grup): aparença, compte i dades
 async function homeConfig() {
   bareView(); const v = $('#view');
@@ -4885,7 +4764,6 @@ async function homeConfig() {
   const h = await homeRole(); homeNav('config');
   const perm = isAdmin() ? 'Administrador: pots crear grups i aprovar el professorat.' : h.ok ? 'Professor autoritzat: pots crear grups.' : h.groups ? 'Ets professor d\'algun grup, però encara no en pots crear de nous.' : 'Encara no pots crear grups. Si ets professor, demana-ho a «Els meus grups».';
   v.innerHTML = `${head('IPO Emprèn', 'Configuració')}
-    ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador.</p>${themeSw()}`))}
     ${card('El teu compte', pad(`<div class="sumrow"><span class="muted small">Correu</span><div><b>${esc(USER.email)}</b></div></div>${USER.name ? `<div class="sumrow"><span class="muted small">Nom</span><div>${esc(USER.name)}</div></div>` : ''}<div class="sumrow"><span class="muted small">Permisos</span><div>${esc(perm)}</div></div>
       <div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="cfgOut">Tancar la sessió</button>${isAdmin() ? '<a class="btn ghost small" href="#admin">Anar al panell d\'administrador</a>' : ''}</div>`))}
     ${card('Les dades', pad(`<p class="small" style="margin:0">Les dades de tots els grups s'esborren automàticament cada 15 de juliol. El proper esborrat serà el <b>${fmtDay(nextExpiry())}</b>. Abans, descarrega els informes dels equips des de cada grup.</p>
@@ -5477,7 +5355,7 @@ function cloudAfterRender(v) {
 /* ---------- Configuració del grup ---------- */
 function cloudConfigHtml() {
   if (!CLOUD || !ME || !ME.isProf) return '';
-  return card('Alumnat del grup', pad(`<p class="small muted">L'enllaç per al Classroom i la llista d'alumnes són a «Gestiona l'alumnat», el botó verd de dalt del menú.</p><div class="row"><button type="button" class="btn ghost small" data-go="alumnes">Anar a «Gestiona l'alumnat»</button></div>`))
+  return card('Alumnat del grup', pad(`<p class="small muted">L'enllaç per al Classroom i la llista d'alumnes són a «Alumnat», el botó de dalt.</p><div class="row"><button type="button" class="btn ghost small" data-go="alumnes">Anar a «Alumnat»</button></div>`))
     + card('Altres professors del grup', pad(`<div class="pfield"><label for="profsTa">Correus dels professors que també poden gestionar aquest grup</label><div class="help">${groupOwner() ? 'Un correu per línia. Podran gestionar el grup com tu, però només tu pots canviar aquesta llista i esborrar el grup.' : 'Només el professor que ha creat el grup pot canviar aquesta llista.'}</div><textarea id="profsTa" rows="3" placeholder="nom.cognom@institut.cat" ${groupOwner() ? '' : 'disabled'}>${esc((G.profs || []).join('\n'))}</textarea></div>`))
     + card('Esborrar el grup', pad(`<p class="small muted">Esborra ara mateix el grup i tota la feina dels equips. No es pot desfer.</p><div id="gDelBox"></div>${groupOwner() ? '<button type="button" class="btn ghost small" id="gDel">Esborrar aquest grup</button>' : '<p class="small muted">Només el professor que ha creat el grup el pot esborrar.</p>'}`));
 }
@@ -5731,6 +5609,11 @@ function suggest(t, r) {
 }
 function raGrade(t, ra) { const rows = RUBRIC.filter(r => r.ra === ra), ls = rows.map(r => t.evals.levels[r.id]); if (ls.some(x => x === undefined)) return null; return ls.reduce((a, b) => a + b, 0) / rows.length / 4 * 10; }
 const fmt1 = x => x === null ? '—' : x.toLocaleString('ca-ES', { maximumFractionDigits: 1 });
+// Pestanyes d'equips (com a Revisió) i filtre d'activitats, per mirar-ho d'un en un
+function teamTabs() { return `<div class="rtabs" role="tablist" aria-label="Equips">${G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('')}</div>`; }
+function bindTeamTabs(v) { v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); }); }
+const actPills = (cur, extra) => `<div class="rfilters actf" role="group" aria-label="Activitat">${extra.concat(G.acts.map(a => [a.c, a.c, a.n])).map(([k, l, ti]) => `<button type="button" class="${cur === k ? 'on' : ''}" data-af="${esc(k)}"${ti ? ` title="${esc(ti)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
+let qAct = null, infAct = 'resum'; // activitat que es mira a Qualificació i a Informes
 function teamSel() { return `<select class="field-sel" id="teamSel" style="width:auto" aria-label="Equip">${G.teams.map((t, i) => `<option value="${i}" ${i === profTeam ? 'selected' : ''}>${esc(projName(t))}</option>`).join('')}</select>`; }
 function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { profTeam = Number(e.target.value); render(); }; }
 
@@ -5757,7 +5640,7 @@ function vSeguiment(v) {
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
-    ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Canvia a la vista d\'un equip al menú «Veure com» per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
+    ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Alumne» a dalt per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     ${G.teams.length ? `<div class="stools"><div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>
       ${nT > 1 ? `<label class="ssort">Ordena per <select class="field-sel" id="sSort">${[['ordre', 'Ordre dels equips'], ['rev', 'Pendents de revisar'], ['prog', 'Menor progrés'], ['alfa', 'Alfabètic']].map(([k, l]) => `<option value="${k}" ${sSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</div>` : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
@@ -5905,14 +5788,22 @@ function vGuia(v) {
     ${card('Activitats de la programació', pad(`<div class="tablebox"><table class="fin zebra"><thead><tr><th>Activitat</th><th>Contingut</th><th>Pàgines de l'eina</th></tr></thead><tbody>${acts.map(a => `<tr><td><b>${a[0]}</b></td><td>${esc(a[1])}</td><td>${esc(where(a[2]))}</td></tr>`).join('')}</tbody></table></div>`))}
     ${card('Consells d\'ús', pad(`<ul class="fb tip"><li>A «Obertura dels apartats» decideixes què pot fer l'alumnat a cada moment: obre els apartats a mesura que els treballeu, programa'n l'obertura per data o deixa'ls en «Només lectura» quan acabi el termini.</li><li>El menú de l'alumnat mostra quins apartats tenen fets, a mitges, per fer o encara tancats.</li><li>A «Revisió dels projectes» pots deixar comentaris a cada apartat i marcar-los com a correctes o a millorar.</li><li>A «Qualificació per activitats» poses la nota de cada activitat de la programació. Tens una proposta automàtica i la correcció amb IA: l'eina prepara una petició amb la feina i la rúbrica de l'activitat, l'enganxes a la IA que facis servir (ChatGPT, Gemini, Copilot...) i et proposa nivell, nota i comentari, que tu revises.</li><li>A «Informes dels equips» descarregues l'informe de cada equip amb la feina i la nota de cada activitat.</li><li>Les eines de càlcul (préstec, tresoreria i viabilitat) estan connectades: el que posen a «Inversió i finançament» apareix automàticament a la tresoreria.</li><li>El dossier es pot copiar per publicar-lo a la carpeta del projecte.</li>${CLOUD ? '<li>Les dades es desen soles al núvol i s\'esborren cada 15 de juliol. Abans, descarrega els informes que vulguis conservar.</li>' : '<li>Aquesta versió desa les dades al navegador d\'aquest ordinador. Fes una còpia de seguretat des de «Configuració».</li>'}</ul>`))}`;
 }
-// Interruptor d'aparença: el mateix al menú lateral i a Configuració
-const themeSw = () => `<div class="themesw" role="group" aria-label="Aparença">${[['auto', 'Automàtic', '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>'], ['light', 'Clar', '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'], ['dark', 'Fosc', '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>']]
-  .map(([k, l, p]) => `<button type="button" data-theme-set="${k}" aria-pressed="${themePref() === k}">${ico(p)}${l}</button>`).join('')}</div>`;
 // Opcions de sector (tipus d'empresa) per als desplegables del professor
 const secOptsAll = (cur, blank) => (blank ? `<option value="" ${!cur ? 'selected' : ''}>Sense triar</option>` : '') + secGroups(cur);
+// Configuració en pestanyes: cada targeta va a la seva pestanya segons el títol
+let cfgTab = 'gen';
+const CFG_TABS = [['gen', 'General i equips'], ['vis', 'Visibilitat i calendari'], ['aval', 'Rúbriques i avaluació'], ['perill', 'Zona de perill']];
+const CFG_WHERE = { 'Què veu i què pot fer l\'alumnat': 'vis', 'Activitats, qualificació i correcció': 'aval', 'Esborrar el grup': 'perill', 'Començar un grup nou': 'perill', 'Còpia de seguretat': 'perill' };
+function cfgTabs(v) {
+  const kids = [...v.children].filter(el => el.matches('.list, .grid2'));
+  kids.forEach(el => { const h = el.querySelector('.list-head > span'); el.dataset.ctab = CFG_WHERE[h ? h.textContent.trim() : ''] || 'gen'; });
+  const have = CFG_TABS.filter(([k]) => kids.some(el => el.dataset.ctab === k)); if (!have.some(([k]) => k === cfgTab)) cfgTab = 'gen';
+  kids[0] && kids[0].insertAdjacentHTML('beforebegin', `<div class="rfilters cfgtabs" role="tablist" aria-label="Apartats de la configuració">${have.map(([k, l]) => `<button type="button" role="tab" class="${k === cfgTab ? 'on' : ''}${k === 'perill' ? ' danger' : ''}" data-ct="${k}">${l}</button>`).join('')}</div>`);
+  kids.forEach(el => { el.style.display = el.dataset.ctab === cfgTab ? '' : 'none'; });
+  v.querySelectorAll('[data-ct]').forEach(b => b.onclick = () => { cfgTab = b.dataset.ct; render(); });
+}
 function vConfig(v) {
   v.innerHTML = `${flashHtml()}${head('Configuració', esc(G.name))}
-    ${card('Aparença', pad(`<p class="muted small">Tria com vols veure la web. «Automàtic» segueix el mode clar o fosc de l'ordinador o el mòbil. Es desa en aquest navegador: cada persona pot triar el seu.</p>${themeSw()}`))}
     ${card('Grup classe', pad(`<div class="pfield"><label for="gName">Nom del grup</label><input type="text" id="gName" value="${esc(G.name)}"></div>
       <div class="pfield"><label for="gFem">Com us anomena l'eina davant l'alumnat</label><div class="help">Als missatges per a l'alumnat («Enviar al professor», «La professora us demana millores»...).${G.profName ? ` Amb «Automàtic» es tria segons el nom de qui ha creat el grup (${esc(G.profName)}): ara diu «${PR('n')}».` : ''}</div><select class="field-sel" id="gFem"><option value="">Automàtic</option><option value="m" ${G.profFem === 'm' ? 'selected' : ''}>Professor</option><option value="f" ${G.profFem === 'f' ? 'selected' : ''}>Professora</option></select></div>
       <div class="pfield"><label for="gSector">Cicle del grup</label><div class="help">Les pistes, els costos i els préstecs s'adapten al cicle. Si el canvies, també canvia als equips que tenien l'anterior; els que en tenen un altre el conserven. Sota pots canviar el de cada equip.</div><select class="field-sel" id="gSector">${secOptsAll(G.sector)}</select></div>
@@ -5928,7 +5819,7 @@ function vConfig(v) {
       ${card('Còpia de seguretat', pad(`<p class="muted small">Copia aquest text i desa'l en un document. Serveix per recuperar les dades o per obrir-les en un altre ordinador.</p><textarea id="expTxt" readonly rows="5" aria-label="Text de la còpia de seguretat"></textarea><button class="btn ghost small" id="expCopy">Copiar el text</button>`))}
       ${card('Recuperar una còpia', pad(`<textarea id="impTxt" rows="5" aria-label="Text de la còpia per recuperar" placeholder="Enganxa aquí el text de la còpia"></textarea><input type="file" id="impFile" accept=".json,.txt"><div id="impMsg"></div><button class="btn small" id="impBtn">Recuperar</button>`))}
     </div>`}`;
-  bindActsConfig(v); bindCloudConfig(v);
+  bindActsConfig(v); bindCloudConfig(v); cfgTabs(v);
   $('#gName').oninput = e => { G.name = e.target.value; save(); renderSide(); };
   $('#gFem').onchange = e => { if (e.target.value) G.profFem = e.target.value; else delete G.profFem; save(); render(); };
   $('#gSector').onchange = e => { const old = G.sector, n = G.teams.filter(t => !t.data.idea.sector || t.data.idea.sector === old); G.sector = e.target.value; n.forEach(t => { t.data.idea.sector = G.sector; }); save(); const y = window.scrollY; render(); window.scrollTo(0, y); toast(n.length ? `Sector canviat al grup i a ${n.length === 1 ? '1 equip' : n.length + ' equips'}.` : 'Sector del grup canviat.'); };
@@ -5958,17 +5849,9 @@ const VIEWS = { inici: vInici, equip: vEquip, idea: vIdea, empatia: vEmpatia, en
   lean: vLean, sost: vSost, ebc: vEbc, agents: vAgents, juridica: vJuridica, fiscal: vFiscal, inversio: vInversio, prestec: vPrestec, treso: vTreso, viab: vViab, marca: vMarca, p7: vP7, pitch: vPitch, dossier: vDossier,
   seguiment: vSeguiment, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, rubriques: vRubriques, config: vConfig, alumnes: vAlumnes, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, criteris: vCriteris, grups: () => { location.hash = ''; } };
 $('#tabs').insertAdjacentHTML('beforebegin', '<button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false"></button>');
-document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>' + themeSw());
+document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>');
 $('#menuToggle').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side').id = 'sideNav';
-document.querySelector('.brand').insertAdjacentHTML('afterend', `<button type="button" class="sidecol" id="sideCol">${ico('<path d="M11 17l-5-5 5-5M18 17l-5-5 5-5"/>')}</button>`);
-const setMini = on => { document.documentElement.classList.toggle('navmini', on); try { localStorage.setItem('ipoMenu', on ? 'estret' : 'obert'); } catch (e) {} miniBtn(); };
-const miniBtn = () => { const b = $('#sideCol'), on = document.documentElement.classList.contains('navmini'); b.title = on ? 'Mostrar el menú' : 'Amagar el menú'; b.setAttribute('aria-label', b.title); b.setAttribute('aria-expanded', String(!on)); };
-miniBtn(); $('#sideCol').onclick = () => setMini(!document.documentElement.classList.contains('navmini'));
-// Amb el menú estret, tocar la icona d'un bloc l'obre per veure'n els apartats
-$('#tabs').addEventListener('click', e => { if (e.target.closest('.ghead') && WIDE.matches && document.documentElement.classList.contains('navmini')) setMini(false); });
-// Els botons de dalt (alumnat, tauler) també tenen nom en passar-hi el ratolí
-new MutationObserver(() => document.querySelectorAll('.side .dashbtn:not([title])').forEach(a => { a.title = a.textContent.trim(); })).observe(document.querySelector('.side'), { childList: true });
 document.body.insertAdjacentHTML('beforeend', '<button type="button" class="navbtn" id="navBtn" aria-controls="sideNav" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><i></i><i></i><i></i></button><div class="side-back" aria-hidden="true"></div>');
 $('#navBtn').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));
 document.querySelector('.side-back').onclick = () => setNav(false);

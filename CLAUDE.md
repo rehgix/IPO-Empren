@@ -21,6 +21,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `GICONS` i les regles `[data-g="..."]`: icona i colors de cada bloc. Un bloc nou necessita totes dues coses.
 - `VIEWS`: quina funció dibuixa cada pàgina. `render()` és el punt central que redibuixa la pantalla.
 - `projName(t)`: el nom que es mostra de cada equip (el del projecte; si no n'hi ha, «Equip N»). Fes-lo servir en lloc de `t.name` als títols i llistes.
+- Navegació del professorat: pestanyes de dalt (`#topHead`, `topGroup()` dins d'un grup, `topHome()` al tauler, llista `PTABS`); no hi ha menú lateral. El menú lateral només el fa servir l'alumnat (classe `noside` al `body` quan no n'hi ha). Només hi ha tema clar.
 - `role`: `'prof'` o el número de l'equip. `profTeam`: l'equip que el professor està mirant.
 - `RUBRIC` i `G.acts`: rúbrica i activitats per a la nota. Si es mouen apartats, cal revisar que la nota continuï comptant bé.
 
@@ -63,4 +64,4 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - No repeteixis el que ja hem decidit en aquesta sessió.
 - Si canviem de tasca, proposa /compact o una sessió nova.
 - Respostes curtes por defecte.
-- Sessió: botó del compte a dalt a la dreta (`accUpdate`, `accToggle`) i a la barra lateral; tot passa per `signOutNow()`, que manté l'enllaç del grup per tornar-hi en entrar de nou.
+- Sessió: botó del compte a dalt a la dreta (`accUpdate`, `accToggle`); tot passa per `signOutNow()`, que manté l'enllaç del grup per tornar-hi en entrar de nou.

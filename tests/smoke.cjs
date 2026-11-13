@@ -55,8 +55,6 @@ async function check(page, width, where) {
         await check(page, width, st.where); pages++;
       }
     }
-    // Mode fosc: que no peti en canviar de tema
-    st.where = 'mode fosc'; await page.evaluate(() => setTheme('dark')); await page.waitForTimeout(100); await check(page, width, st.where);
     await page.close();
     // 2) Amb sessió (Firebase de mentida): tauler, configuració i còpies de seguretat
     const c = await open(browser, width, true);
