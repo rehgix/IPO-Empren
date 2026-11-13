@@ -125,8 +125,8 @@ textarea{font-size:13px;min-height:140px}
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
   </aside>
   <div class="panel"><div class="content tophead" id="topHead" hidden>
-    <div class="tbar"><a class="tbrand" href="#" id="tbBrand" title="Anar a l'inici"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</a><span id="tbBack"></span><span class="tsp"></span><span id="tbStu"></span><span id="tbRole"></span></div>
-    <div id="tbGrp"></div><nav class="ttabs" id="tbTabs" aria-label="Seccions"></nav><div id="tbSub"></div>
+    <div class="tbar"><button type="button" class="railbtn" id="railBtn" aria-controls="tbTabs" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><a class="tbrand" href="#" id="tbBrand" title="Anar a l'inici"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</a><span id="tbBack"></span><span class="tsp"></span><span id="tbStu"></span><span id="tbRole"></span></div>
+    <div id="tbGrp"></div><nav class="ttabs" id="tbTabs" aria-label="Seccions"></nav><div class="rail-back" id="railBack"></div><div id="tbSub"></div>
   </div><main class="content" id="view"><div class="cloud-load"><span class="spin"></span> Carregant...</div></main></div>
 </div>
 
@@ -1361,21 +1361,33 @@ body.has-top #view{padding-top:18px}
 #tbRole .rseg{background:#E6E8EF;min-width:220px}
 #tbRole .rseg button{color:var(--muted)}#tbRole .rseg button[aria-pressed="true"]{background:#fff;color:var(--ink)}
 #tbRole select{width:auto;max-width:200px;padding:8px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13.5px}
-.ttabs{display:flex;gap:4px;padding:5px;background:var(--bg);border:1px solid rgba(15,18,34,.07);border-radius:999px;box-shadow:var(--sh-sm);overflow-x:auto;scrollbar-width:none}
+/* Barra lateral del professorat: 88 px, icona a dalt i una paraula a sota */
+.ttabs{display:none}
+body.has-rail .ttabs{position:fixed;top:0;bottom:0;left:0;z-index:70;width:88px;display:flex;flex-direction:column;gap:4px;padding:16px 6px;background:#fff;border-right:1px solid var(--line);overflow-y:auto;scrollbar-width:none}
 .ttabs::-webkit-scrollbar{display:none}
-.ttabs:empty{display:none}
-.ttabs button{flex:none;display:inline-flex;align-items:center;gap:8px;border:0;background:none;border-radius:999px;padding:9px 16px;font:500 14.5px var(--font);color:var(--muted);cursor:pointer;white-space:nowrap;transition:background var(--t-fast),color var(--t-fast)}
+.ttabs button{position:relative;flex:none;display:flex;flex-direction:column;align-items:center;gap:5px;border:0;background:none;border-radius:14px;padding:11px 0 9px;font:500 11px/1.15 var(--font);letter-spacing:-.01em;color:var(--muted);cursor:pointer;text-align:center;transition:background var(--t-fast),color var(--t-fast)}
 .ttabs button:hover{background:var(--soft);color:var(--ink)}
 .ttabs button[aria-selected="true"]{background:var(--ink);color:#fff;font-weight:600}
-.ttabs .nic{display:grid}.ttabs .nic svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.ttabs .ncount{min-width:20px;padding:0 6px;border-radius:99px;background:var(--bad);color:#fff;font-size:12px;font-weight:600;text-align:center}
+.ttabs .tl{max-width:100%;white-space:nowrap}
+.ttabs .nic{display:grid}.ttabs .nic svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.ttabs .ncount{position:absolute;top:5px;right:10px;min-width:18px;padding:0 5px;border-radius:99px;background:var(--bad);color:#fff;font-size:11px;font-weight:600;text-align:center}
+body.has-rail .panel{margin-left:88px}
+.railbtn{display:none;width:42px;height:42px;place-items:center;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);cursor:pointer;box-shadow:var(--sh-xs)}
+.railbtn svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rail-back{display:none}
+@media (max-width:860px){
+  body.has-rail .panel{margin-left:0}
+  body.has-rail .railbtn{display:grid}
+  body.has-rail .ttabs{transform:translateX(-100%);visibility:hidden;transition:transform .3s var(--ease),visibility 0s .3s;box-shadow:none}
+  body.has-rail.railopen .ttabs{transform:none;visibility:visible;transition:transform .3s var(--ease);box-shadow:16px 0 40px -12px rgba(0,0,0,.35)}
+  body.has-rail.railopen .rail-back{display:block;position:fixed;inset:0;z-index:65;background:rgba(10,10,12,.35)}
+}
 .tsub{display:inline-flex;gap:3px;padding:3px;border-radius:999px;background:#E6E8EF}
 .tsub button{border:0;background:none;border-radius:999px;padding:7px 14px;font:500 13.5px var(--font);color:var(--muted);cursor:pointer}
 .tsub button[aria-pressed="true"]{background:#fff;color:var(--ink);font-weight:600;box-shadow:var(--sh-xs)}
 #tbSub:empty{display:none}
-@media (max-width:1180px){.ttabs .nic{display:none}.ttabs button{padding:9px 13px}}
 .tbar{}
-@media (max-width:620px){#tbRole{flex:1 1 100%;min-width:0}#tbRole .role{flex-wrap:wrap}#tbRole .rseg{flex:1 1 180px}#tbRole select{flex:1 1 140px;max-width:none;min-width:0}.ttabs{flex-wrap:wrap;overflow:visible;border-radius:20px}.ttabs button{padding:8px 12px;font-size:13.5px}.tbar{padding-right:52px}.tbrand{font-size:0;gap:0;margin-right:0}#tbRole .rseg{min-width:0}.tback span{display:none}.tback{padding:8px 10px}}
+@media (max-width:620px){#tbRole{flex:1 1 100%;min-width:0}#tbRole .role{flex-wrap:wrap}#tbRole .rseg{flex:1 1 180px}#tbRole select{flex:1 1 140px;max-width:none;min-width:0}.tbar{padding-right:52px}.tbrand{font-size:0;gap:0;margin-right:0}#tbRole .rseg{min-width:0}.tback span{display:none}.tback{padding:8px 10px}}
 /* Filtre d'activitats (Qualificació i Informes) i pestanyes de Configuració */
 .actf{flex-wrap:wrap;border-radius:20px}
 .actf-h{margin:8px 0 -6px;font-size:15px;font-weight:650;color:var(--muted)}
@@ -1909,6 +1921,10 @@ $('#topHead').addEventListener('click', e => {
     if ((location.hash || '') === want || (want === '' && location.hash === '#')) route(); else location.hash = want; return; }
   if (role !== 'prof') { role = 'prof'; save(); } go(k); });
 $('#tbBrand').onclick = e => { e.preventDefault(); goHome(); };
+$('#railBtn').onclick = () => railSet(!document.body.classList.contains('railopen'));
+$('#railBack').onclick = () => railSet(false);
+$('#tbTabs').addEventListener('click', e => { if (e.target.closest('[data-ptab]')) railSet(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('railopen')) railSet(false); });
 $('#tbRole').appendChild(document.querySelector('.role'));
 // Historial del navegador: cada canvi de pàgina dins del grup es desa, i «Enrere» torna a la pàgina anterior (no a la llista de grups)
 const navState = () => ({ nav: 1, gid: typeof GID === 'undefined' ? '' : GID || '', tab, role, team: profTeam });
@@ -2000,24 +2016,25 @@ function segBtnUpdate() {
 }
 /* ---------- Capçalera del professorat: pestanyes de dalt (substitueixen el menú lateral) ---------- */
 const isProfUser = () => !CLOUD || !!(ME && ME.isProf);
-const PTABS = [['seguiment', 'Seguiment'], ['obertura', 'Obertura d\'apartats'], ['revisio', 'Revisió'], ['qualificacio', 'Qualificació'], ['informe', 'Informes'], ['guia', 'Guia i rúbriques'], ['config', 'Configuració']];
-const tabBtn = (k, l, on, n) => `<button type="button" data-ptab="${k}" aria-selected="${on}">${nic(k)}<span>${l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
-function topOff() { const h = $('#topHead'); h.hidden = true; document.body.classList.remove('has-top'); $('#tbTabs').innerHTML = $('#tbGrp').innerHTML = $('#tbSub').innerHTML = ''; }
+const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Notes'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
+const tabBtn = (k, l, on, n, sh) => `<button type="button" data-ptab="${k}" aria-selected="${on}" title="${esc(l)}" aria-label="${esc(l)}">${nic(k)}<span class="tl">${sh || l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
+// Menú lateral (barra d'icones amb nom): en pantalles petites s'obre amb el botó de dalt a l'esquerra
+const railSet = on => { document.body.classList.toggle('railopen', on); const b = $('#railBtn'); b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', on ? 'Tancar el menú' : 'Obrir el menú'); };
+function topOff() { const h = $('#topHead'); h.hidden = true; document.body.classList.remove('has-top', 'has-rail'); railSet(false); $('#tbTabs').innerHTML = $('#tbGrp').innerHTML = $('#tbSub').innerHTML = ''; }
 function topGroup() {
   document.body.classList.toggle('noside', role === 'prof');
   if (!G || !isProfUser()) { topOff(); return; }
-  $('#topHead').hidden = false; document.body.classList.add('has-top'); $('#tbRole').hidden = false;
+  $('#topHead').hidden = false; document.body.classList.add('has-top'); document.body.classList.toggle('has-rail', role === 'prof'); $('#tbRole').hidden = false;
   const cur = tab === 'rubriques' ? 'guia' : tab, pr = role === 'prof';
   $('#tbGrp').innerHTML = grpBar();
-  $('#tbTabs').innerHTML = PTABS.map(([k, l]) => tabBtn(k, l, pr && cur === k)).join('');
+  $('#tbTabs').innerHTML = PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
   $('#tbSub').innerHTML = pr && cur === 'guia' ? `<div class="tsub" role="group" aria-label="Guia i rúbriques">${[['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques']].map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>` : '';
-  const sel = $('#tbTabs [aria-selected="true"]'); if (sel) sel.scrollIntoView({ block: 'nearest', inline: 'nearest' });
 }
 // Pestanyes del tauler (fora d'un grup)
 function topHome(cur) {
   const h = HOME || {}, prof = h.ok || h.groups;
-  document.body.classList.add('noside', 'has-top'); $('#topHead').hidden = false; $('#tbRole').hidden = true; $('#tbGrp').innerHTML = $('#tbSub').innerHTML = '';
-  $('#tbTabs').innerHTML = [tabBtn('grups', 'Els meus grups', cur === 'grups'), isAdmin() ? tabBtn('admin', 'Panell d\'administrador', cur === 'admin', h.nReq) : '', prof ? tabBtn('copies', 'Còpies de seguretat', cur === 'copies') : '', tabBtn('config', 'Configuració', cur === 'config')].join('');
+  document.body.classList.add('noside', 'has-top', 'has-rail'); $('#topHead').hidden = false; $('#tbRole').hidden = true; $('#tbGrp').innerHTML = $('#tbSub').innerHTML = '';
+  $('#tbTabs').innerHTML = [tabBtn('grups', 'Els meus grups', cur === 'grups', 0, 'Grups'), isAdmin() ? tabBtn('admin', 'Panell d\'administrador', cur === 'admin', h.nReq, 'Admin') : '', prof ? tabBtn('copies', 'Còpies de seguretat', cur === 'copies', 0, 'Còpies') : '', tabBtn('config', 'Configuració', cur === 'config', 0, 'Configuració')].join('');
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {

@@ -21,7 +21,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `GICONS` i les regles `[data-g="..."]`: icona i colors de cada bloc. Un bloc nou necessita totes dues coses.
 - `VIEWS`: quina funció dibuixa cada pàgina. `render()` és el punt central que redibuixa la pantalla.
 - `projName(t)`: el nom que es mostra de cada equip (el del projecte; si no n'hi ha, «Equip N»). Fes-lo servir en lloc de `t.name` als títols i llistes.
-- Navegació del professorat: pestanyes de dalt (`#topHead`, `topGroup()` dins d'un grup, `topHome()` al tauler, llista `PTABS`); no hi ha menú lateral. El menú lateral només el fa servir l'alumnat (classe `noside` al `body` quan no n'hi ha). Només hi ha tema clar.
+- Navegació del professorat: barra lateral de 88 px amb icona i una paraula (`#tbTabs`, llista `PTABS` amb el nom curt; classe `has-rail`), i a dalt només la capçalera (`#topHead`: «Els meus grups», «Alumnat», «Professor/a | Alumne» i la franja del grup). `topGroup()` dins d'un grup, `topHome()` al tauler. En pantalles petites la barra s'amaga i s'obre amb el botó del costat del logo (`railSet`). El menú lateral ample només és per a l'alumnat (classe `noside` al `body` quan no hi és). Només hi ha tema clar.
 - `role`: `'prof'` o el número de l'equip. `profTeam`: l'equip que el professor està mirant.
 - `RUBRIC` i `G.acts`: rúbrica i activitats per a la nota. Si es mouen apartats, cal revisar que la nota continuï comptant bé.
 
