@@ -328,6 +328,9 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .rrow{display:grid;grid-template-columns:minmax(110px,1fr) repeat(5,minmax(0,1.2fr));gap:6px}
 .rct{display:grid;align-content:start;gap:2px;font-size:13px;padding:6px 2px}
 .rcell .rl{font-size:11px;font-weight:600;color:var(--muted)}
+.rrow.rdesc .rcell{cursor:default;background:none}.rrow.rdesc .rcell:hover{background:none}
+.rrow.rind .rcell{padding:7px 10px}.rrow.rind .rct{padding:7px 2px 7px 12px;align-content:center}
+.rindn{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 0;font-size:13px}
 .rcell.sel .rl{color:var(--ink)}
 .rcell .aisug{position:absolute;top:-8px;right:8px;font:700 9px var(--font);font-style:normal;background:var(--blue);color:#ffffff;border-radius:6px;padding:1px 5px}
 .rubai{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:13px}
@@ -1059,8 +1062,9 @@ table.fin{box-shadow:none}
 .istats div{display:grid;gap:2px}
 .istats b{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
 .istats small{font-size:13.5px;color:var(--muted)}
-.bento{display:grid;grid-template-columns:repeat(12,minmax(0,1fr));gap:16px}
-.bento .s5{grid-column:span 5}.bento .s7{grid-column:span 7}
+/* Dues columnes on cada bloc fa l'alçada del seu contingut (sense forats) */
+.bento{columns:2;column-gap:16px}
+.bento .bl{break-inside:avoid;margin:0 0 16px}
 .bl{border-radius:28px;padding:22px;background:var(--gs);display:flex;flex-direction:column;gap:10px;min-width:0}
 .bh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
 .bh h2{margin:0;font:650 21px/1.15 var(--font);letter-spacing:-.02em}
@@ -1143,7 +1147,7 @@ table.fin{box-shadow:none}
   .iname{grid-row:auto;min-height:250px;padding:26px 24px}
   .iname h1{font-size:clamp(40px,13vw,64px)}
   .istats,.snums{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .bento .s5,.bento .s7{grid-column:1/-1}
+  .bento{columns:1}
 }
 @media (max-width:620px){
   #view[data-g] > .head{padding:22px 20px;border-radius:26px}
@@ -3668,7 +3672,8 @@ const ACTS_DEFAULT = [
 const R0 = 'No ho ha fet o no té relació amb l\'activitat.';
 const rb = (id, n, cs) => ({ id, n, crit: cs.map(([k, t, ...d]) => ({ k, t, w: 1, d: d.concat(R0) })) });
 // Rúbrica amb pesos: [codi, criteri, pes, Expert, Avançat, Aprenent, Novell, (Sense fer)]
-const rbw = (id, n, cs) => ({ id, n, crit: cs.map(([k, t, w, ...d]) => ({ k, t, w, d: d.length > 4 ? d : d.concat(R0) })) });
+// «ind»: codis dels criteris que es marquen alumne per alumne (la resta és de tot l'equip)
+const rbw = (id, n, cs, ind = []) => ({ id, n, crit: cs.map(([k, t, w, ...d]) => Object.assign({ k, t, w, d: d.length > 4 ? d : d.concat(R0) }, ind.includes(k) ? { ind: true } : {})) });
 const RUBS_DEFAULT = [
   rb('r_gen', 'Rúbrica general (un sol criteri)', [['gen', 'Qualitat global de la feina', 'Compleix tots els criteris amb qualitat, concreció, coherència entre apartats i aportacions pròpies ben argumentades.', 'Compleix tots els criteris, però algun apartat és poc concret o poc argumentat.', 'Compleix una part dels criteris; hi ha apartats incomplets, genèrics o poc coherents.', 'Feina molt incompleta o superficial.']]),
   rbw('r2_Pt3', 'Pt3 · Design Thinking intercicles (dossier, exposició i document individual)', [
@@ -3681,7 +3686,7 @@ const RUBS_DEFAULT = [
     ['inn', 'Innovació i creativitat', 10, 'La proposta és molt original.', 'La proposta introdueix elements creatius.', 'La proposta té alguns elements originals, però la idea ja s\'ha vist en contextos semblants.', 'La proposta és una idea que ja existeix i no aporta res original.'],
     ['sos', 'Sostenibilitat', 5, 'La sostenibilitat forma part de la proposta i la relaciona amb els ODS del repte.', 'Té en compte la sostenibilitat.', 'Poc sostenible.', 'Gens sostenible.'],
     ['ind', 'Document individual', 10, 'Document individual complet: cinc necessitats detectades, sis idees al Crazy 6\'s i les tres preguntes de la valoració respostes amb reflexió pròpia.', 'Document complet, amb alguna resposta de la valoració poc argumentada.', 'Document incomplet: falten necessitats, idees o alguna pregunta de la valoració.', 'Document gairebé buit o amb respostes d\'una sola paraula.', 'No ha lliurat el document individual.'],
-    ['par', 'Participació en el treball d\'equip', 10, 'Participa activament en totes les fases, compleix el seu rol i ajuda els companys.', 'Participa en la majoria de fases i compleix el seu rol.', 'Participa poc o només quan se li demana.', 'Gairebé no participa o dificulta la feina de l\'equip.', 'No ha participat en el treball.']]),
+    ['par', 'Participació en el treball d\'equip', 10, 'Participa activament en totes les fases, compleix el seu rol i ajuda els companys.', 'Participa en la majoria de fases i compleix el seu rol.', 'Participa poc o només quan se li demana.', 'Gairebé no participa o dificulta la feina de l\'equip.', 'No ha participat en el treball.']], ['ind', 'par']),
   rbw('r2_Pt4', 'Pt4 · Presentació de la idea de negoci (pitch de 3 minuts)', [
     ['act', 'Activitat i sector', 20, 'Expliquen amb claredat quin producte o servei ofereixen, a qui va dirigit i la relació amb el seu cicle.', 'L\'activitat s\'entén, amb algun aspecte poc concret.', 'Activitat explicada de manera general.', 'No queda clar què fa l\'empresa.'],
     ['dif', 'Element diferenciador', 20, 'Diferència clara i creïble respecte a la competència, explicada amb exemples.', 'Element diferenciador correcte però poc argumentat.', 'Element diferenciador genèric («més bo», «més barat»).', 'No es diferencia de la competència.'],
@@ -3768,9 +3773,21 @@ const rubOf = a => a && a.rub && !a.ext ? (G.rubs || []).find(r => r.id === a.ru
 const rubRec = a => a.ext ? null : (G.rubs || []).find(r => r.id === 'r2_' + a.c) || (G.rubs || []).find(r => r.id === 'r_' + a.c) || (/^Act\d+$/.test(a.c) && (G.rubs || []).find(r => r.id === 'r_acts')) || null;
 const rubNeed = a => !a.ext && !a.rub; // cal triar-ne una per corregir
 // Nota amb la rúbrica: mitjana ponderada dels nivells dels criteris, sobre 10 (només si tots estan avaluats)
-function rubGrade(r, rl) {
-  const cs = r ? r.crit : [], fet = cs.filter(c => rl && typeof rl[c.k] === 'number'), W = cs.reduce((s, c) => s + (Number(c.w) || 0), 0);
-  return { done: fet.length, total: cs.length, nota: cs.length && fet.length === cs.length && W ? Math.round(cs.reduce((s, c) => s + (Number(c.w) || 0) * rl[c.k], 0) / W / 4 * 100) / 10 : null };
+// Amb criteris individuals (c.ind) i alumnes a l'equip: cada alumne té la seva nota (part de l'equip + part seva) i la de l'equip és la mitjana
+function rubGrade(r, rl, ri, ms) {
+  const cs = r ? r.crit : [], W = cs.reduce((s, c) => s + (Number(c.w) || 0), 0), ok = x => typeof x === 'number';
+  const indOn = !!(ms && ms.length) && cs.some(c => c.ind), lv = (c, m) => c.ind && indOn ? ((ri || {})[m.k] || {})[c.k] : (rl || {})[c.k];
+  const who = indOn ? ms : [{}];
+  const done = cs.reduce((s, c) => s + (c.ind && indOn ? ms.filter(m => ok(lv(c, m))).length : ok(lv(c)) ? 1 : 0), 0), total = cs.reduce((s, c) => s + (c.ind && indOn ? ms.length : 1), 0);
+  const per = who.map(m => ({ k: m.k, n: m.n, nota: cs.length && W && cs.every(c => ok(lv(c, m))) ? Math.round(cs.reduce((s, c) => s + (Number(c.w) || 0) * lv(c, m), 0) / W / 4 * 100) / 10 : null }));
+  const all = total > 0 && done === total && per.every(x => x.nota !== null);
+  return { done, total, nota: all ? Math.round(per.reduce((s, x) => s + x.nota, 0) / per.length * 10) / 10 : null, per: indOn ? per : null };
+}
+// Alumnes d'un equip per a la part individual: els inscrits al grup o, si no n'hi ha, els de la fitxa «Equip i rols»
+function teamStudents(t) {
+  const l = typeof CLOUD !== 'undefined' && CLOUD && ROSTER.length ? ROSTER.filter(m => m.team === t.id).map(m => ({ k: m.id, n: nomBo(m.name) || m.email }))
+    : (t.members || []).filter(m => filled(m.name)).map(m => ({ k: m.uid || 'n:' + normNom(m.name), n: nomBo(m.name) }));
+  return l.sort((a, b) => String(a.n).localeCompare(String(b.n), 'ca'));
 }
 const AI_PROVIDERS = {
   haiku: { label: 'Claude Haiku', desc: 'La més ràpida. Correccions breus i senzilles.', model: 'claude-haiku-5-5', tier: 'quick' },
@@ -3786,20 +3803,24 @@ const gcls = x => x === null || x === undefined || x === '' || isNaN(x) ? 'g-non
 const f1 = x => x === null || x === undefined || x === '' || isNaN(x) ? '—' : Number(x).toLocaleString('ca-ES', { maximumFractionDigits: 2 });
 function ensureEval() {
   aiCfg();
-  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 3; }
+  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 4; }
   if (!Array.isArray(G.rubs)) G.rubs = JSON.parse(JSON.stringify(RUBS_DEFAULT));
-  if (G.evalV !== 3) evalMigrate();
+  if (G.evalV !== 4) evalMigrate();
   G.teams.forEach(t => { t.grades = t.grades || {}; t.ai = t.ai || {}; });
 }
 // Grups creats amb la versió anterior: passen a les activitats i rúbriques noves (es respecten els pesos, les activitats afegides i les rúbriques pròpies)
 function evalMigrate() {
-  const old = RUBS_OLD.map(r => r.id);
-  G.rubs = G.rubs.filter(r => !old.includes(r.id) && !(G.evalV === 2 && r.id === 'r2_Pt6')); // la de Pt6 de la versió 2 parlava de l'anàlisi de l'entorn
-  RUBS_DEFAULT.forEach((r, i) => { if (!G.rubs.some(x => x.id === r.id)) G.rubs.splice(Math.min(i, G.rubs.length), 0, JSON.parse(JSON.stringify(r))); });
-  ACTS_DEFAULT.forEach(d => { const a = G.acts.find(x => x.c === d.c); if (!a) return;
-    Object.assign(a, JSON.parse(JSON.stringify({ n: d.n, ext: d.ext, ev: d.ev, lock: !!d.lock, crit: d.crit || '' })));
-    a.rub = d.rub && (!a.rub || a.rub === '__none' || old.includes(a.rub)) ? d.rub : d.rub ? a.rub : undefined; });
-  G.evalV = 3;
+  if (G.evalV !== 3) {
+    const old = RUBS_OLD.map(r => r.id);
+    G.rubs = G.rubs.filter(r => !old.includes(r.id) && !(G.evalV === 2 && r.id === 'r2_Pt6')); // la de Pt6 de la versió 2 parlava de l'anàlisi de l'entorn
+    RUBS_DEFAULT.forEach((r, i) => { if (!G.rubs.some(x => x.id === r.id)) G.rubs.splice(Math.min(i, G.rubs.length), 0, JSON.parse(JSON.stringify(r))); });
+    ACTS_DEFAULT.forEach(d => { const a = G.acts.find(x => x.c === d.c); if (!a) return;
+      Object.assign(a, JSON.parse(JSON.stringify({ n: d.n, ext: d.ext, ev: d.ev, lock: !!d.lock, crit: d.crit || '' })));
+      a.rub = d.rub && (!a.rub || a.rub === '__none' || old.includes(a.rub)) ? d.rub : d.rub ? a.rub : undefined; });
+  }
+  // v4: a Pt3, el document individual i la participació es marquen alumne per alumne
+  const p3 = G.rubs.find(r => r.id === 'r2_Pt3'); if (p3) p3.crit.forEach(c => { if (c.k === 'ind' || c.k === 'par') c.ind = true; });
+  G.evalV = 4;
 }
 // Feina de l'equip per a una activitat: [{title, pairs:[[label, text]]}]
 function actEvidence(t, a) {
@@ -3913,21 +3934,26 @@ function rubSel(a, attr) {
   return `<select class="field-sel" ${attr} aria-label="Rúbrica de ${esc(a.c)}"><option value="">— Tria una rúbrica —</option>${G.rubs.map(r => `<option value="${esc(r.id)}" ${a.rub === r.id ? 'selected' : ''}>${esc(r.n)}${rec && rec.id === r.id ? ' (recomanada)' : ''}</option>`).join('')}<option value="__none" ${a.rub === '__none' ? 'selected' : ''}>Sense rúbrica (només el nivell general)</option></select>`;
 }
 // Rúbrica per corregir: una fila per criteri i una casella per nivell
-function rubGrid(a, r, rl, airl) {
-  const pes = r.crit.some(c => Number(c.w) !== 1);
-  return `<div class="rgrid">${r.crit.map(c => `<div class="rrow"><div class="rct"><b>${esc(c.t)}</b>${pes ? `<span class="small muted">pes ${f1(c.w)}</span>` : ''}</div>${[4, 3, 2, 1, 0].map(n => `<label class="rcell ${rl[c.k] === n ? 'sel' : ''}"><input type="radio" name="rb_${esc(a.c)}_${esc(c.k)}" data-rbl="${esc(a.c)}" data-ck="${esc(c.k)}" value="${n}" ${rl[c.k] === n ? 'checked' : ''}><span class="rl">${LVL_NAMES[n]} · ${n}</span><span>${esc((c.d || [])[4 - n] || '')}</span>${airl && airl[c.k] === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</label>`).join('')}</div>`).join('')}</div>`;
+function rubGrid(a, r, rl, airl, ri, ms) {
+  const pes = r.crit.some(c => Number(c.w) !== 1), indOn = !!(ms && ms.length);
+  const cell = (c, n, cur, nm, mk, full) => `<label class="rcell ${cur === n ? 'sel' : ''}"><input type="radio" name="${esc(nm)}" data-rbl="${esc(a.c)}" data-ck="${esc(c.k)}" ${mk !== undefined ? `data-mk="${esc(mk)}"` : ''} value="${n}" ${cur === n ? 'checked' : ''}><span class="rl">${LVL_NAMES[n]} · ${n}</span>${full ? `<span>${esc((c.d || [])[4 - n] || '')}</span>` : ''}${full && airl && airl[c.k] === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</label>`;
+  return `<div class="rgrid">${r.crit.map(c => { const head = `<div class="rct"><b>${esc(c.t)}</b>${c.ind ? '<span class="pill grey">individual</span>' : ''}${pes ? `<span class="small muted">pes ${f1(c.w)}</span>` : ''}</div>`;
+    if (!c.ind || !indOn) return `<div class="rrow">${head}${[4, 3, 2, 1, 0].map(n => cell(c, n, rl[c.k], `rb_${a.c}_${c.k}`, undefined, true)).join('')}</div>`;
+    // Criteri individual: la descripció dels nivells una vegada i una fila per alumne
+    return `<div class="rrow rdesc">${head}${[4, 3, 2, 1, 0].map(n => `<div class="rcell"><span class="rl">${LVL_NAMES[n]} · ${n}</span><span>${esc((c.d || [])[4 - n] || '')}</span></div>`).join('')}</div>`
+      + ms.map((m, j) => `<div class="rrow rind"><div class="rct">${esc(m.n)}</div>${[4, 3, 2, 1, 0].map(n => cell(c, n, ((ri || {})[m.k] || {})[c.k], `rb_${a.c}_${c.k}_${j}`, m.k, false)).join('')}</div>`).join(''); }).join('')}</div>`;
 }
 const aiPatch = (a, ai) => { const r = rubOf(a); return Object.assign({ nivell: ai.nivell, nota: ai.nota, font: 'ia' }, r && ai.rub === r.id ? { rub: r.id, rl: Object.assign({}, ai.rl) } : {}); };
 function gradeCard(t, a) {
   const g = t.grades[a.c] || {}, ai = t.ai[a.c], al = autoLevel(t, a), ev = actEvidence(t, a), st = aiState[t.name + a.c] || {};
   const lvl = g.nivell ?? (g.nota !== undefined && g.nota !== '' ? noteToLvl(Number(g.nota)) : null);
-  const r = rubOf(a), rl = r && g.rub === r.id ? g.rl || {} : {}, rg = r && rubGrade(r, rl), airl = ai && r && ai.rub === r.id ? ai.rl : null;
+  const r = rubOf(a), rl = r && g.rub === r.id ? g.rl || {} : {}, ri = r && g.rub === r.id ? g.ri || {} : {}, ms = r && r.crit.some(c => c.ind) ? teamStudents(t) : [], rg = r && rubGrade(r, rl, ri, ms), airl = ai && r && ai.rub === r.id ? ai.rl : null;
   const noteIn = `<label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label>`;
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="small muted" style="font-weight:400">· ${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
     ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Nota externa: escriu la nota que han tret.' : 'Aquesta activitat es fa fora de l\'eina (en paper o a classe): corregeix-la amb la rúbrica.'}</p>`}
     ${a.ext ? '' : `<div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>`}
-    ${r ? rubGrid(a, r, rl, aiCfg().enabled ? airl : null) + `<div class="gradebar"><p class="small" style="margin:0;flex:1;min-width:200px">Nota segons la rúbrica: <b>${rg.nota === null ? `falten ${rg.total - rg.done} de ${rg.total} criteris` : f1(rg.nota) + ' · ' + LVL_NAMES[noteToLvl(rg.nota)]}</b><span class="muted"> · Si cal, pots canviar la nota a mà.</span></p>${noteIn}</div>`
+    ${r ? (r.crit.some(c => c.ind) && !ms.length ? '<div class="notice info" style="margin-top:10px">Aquesta rúbrica té criteris individuals, però l\'equip encara no té alumnes: de moment es marquen per a tot l\'equip.</div>' : '') + rubGrid(a, r, rl, aiCfg().enabled ? airl : null, ri, ms) + (rg.per ? `<p class="rindn"><b>Nota de cada alumne:</b>${rg.per.map(x => `<span>${esc(x.n)}: <b>${f1(x.nota)}</b></span>`).join('')}</p>` : '') + `<div class="gradebar"><p class="small" style="margin:0;flex:1;min-width:200px">${rg.per ? 'Nota de l\'equip (mitjana dels alumnes)' : 'Nota segons la rúbrica'}: <b>${rg.nota === null ? `falten ${rg.total - rg.done} de ${rg.total} criteris` : f1(rg.nota) + ' · ' + LVL_NAMES[noteToLvl(rg.nota)]}</b><span class="muted"> · Si cal, pots canviar la nota a mà.</span></p>${noteIn}</div>`
       : a.ext ? `<div class="gradebar"><span style="flex:1"></span>${noteIn}</div>`
       : rubNeed(a) ? `<div class="gradebar"><div class="notice info" style="margin:0;flex:1">Tria la rúbrica amb què vols corregir aquesta activitat. També pots escriure la nota directament.</div>${noteIn}</div>`
       : `<div class="gradebar"><div class="lvls" role="group" aria-label="Nivell">${[4, 3, 2, 1, 0].map(n => `<button type="button" class="lvl ${lvl === n ? 'on' : ''}" data-lvl="${a.c}" data-v="${n}">${LVL_NAMES[n]}<small>${n}</small>${al === n ? '<em class="sug" title="Proposta automàtica"></em>' : ''}${aiCfg().enabled && ai && ai.nivell === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</button>`).join('')}</div>${noteIn}</div>`}
@@ -3984,8 +4010,11 @@ function vQualificacio(v) {
   v.querySelectorAll('[data-aiapply]').forEach(b => b.onclick = () => { const c = b.dataset.aiapply, ai = t.ai[c]; setG(c, Object.assign(aiPatch(G.acts.find(x => x.c === c), ai), { comentari: ai.comentari })); rerender(); });
   v.querySelectorAll('[data-rubsel]').forEach(s => s.onchange = () => { const a = G.acts.find(x => x.c === s.dataset.rubsel); if (a) { a.rub = s.value || undefined; save(); rerender(); } });
   v.querySelectorAll('[data-rbl]').forEach(i => i.onchange = () => { const a = G.acts.find(x => x.c === i.dataset.rbl), r = rubOf(a); if (!r) return;
-    const g = t.grades[a.c] || {}, rl = Object.assign({}, g.rub === r.id ? g.rl : {}, { [i.dataset.ck]: +i.value }), rg = rubGrade(r, rl);
-    setG(a.c, Object.assign({ rub: r.id, rl }, rg.nota !== null ? { nota: rg.nota, nivell: noteToLvl(rg.nota) } : {})); rerender(); });
+    const g = t.grades[a.c] || {}, mk = i.dataset.mk, same = g.rub === r.id, rl = Object.assign({}, same ? g.rl : {}), ri = JSON.parse(JSON.stringify((same && g.ri) || {}));
+    if (mk !== undefined) (ri[mk] = ri[mk] || {})[i.dataset.ck] = +i.value; else rl[i.dataset.ck] = +i.value;
+    const rg = rubGrade(r, rl, ri, r.crit.some(c => c.ind) ? teamStudents(t) : []);
+    // «ind»: nota i nivells de cada alumne (amb el nom, per a l'informe)
+    setG(a.c, Object.assign({ rub: r.id, rl, ri, ind: rg.per ? rg.per.map(x => ({ k: x.k, n: x.n, nota: x.nota })) : undefined }, rg.nota !== null ? { nota: rg.nota, nivell: noteToLvl(rg.nota) } : {})); rerender(); });
   const openManual = codes => { manualScope = { team: t.name, codes }; render(); window.scrollTo(0, 0); };
   v.querySelectorAll('[data-aigo]').forEach(b => b.onclick = () => { const a = G.acts.find(x => x.c === b.dataset.aigo), key = t.name + a.c; if (manual) return openManual([a.c]); aiCorrect(t, [a], s => { aiState[key] = s.done ? {} : s; if (tab === 'qualificacio') rerender(); }); });
   if (!C.enabled) { /* sense IA */ } else {
@@ -4049,7 +4078,12 @@ dl{margin:0}dt{font-size:12px;color:var(--muted);margin-top:8px}dd{margin:2px 0 
 function reportDoc(teams) { return `<!doctype html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Informe · ${esc(teams.length === 1 ? projName(teams[0]) : G.name)}</title><style>${REPORT_CSS}</style></head><body>${teams.map(t => `<div class="rep">${reportBody(t)}</div>`).join('')}</body></html>`; }
 // Nivells de la rúbrica d'una activitat qualificada (per a l'informe)
 const rubUsed = g => g && g.rub && g.rl ? (G.rubs || []).find(r => r.id === g.rub) || RUBS_OLD.find(r => r.id === g.rub) : null;
-function rubRep(g) { const r = rubUsed(g); if (!r) return ''; return `<table class="rtab rrub"><tbody>${r.crit.map(c => `<tr><td>${esc(c.t)}</td><td>${typeof g.rl[c.k] === 'number' ? LVL_NAMES[g.rl[c.k]] + ' (' + g.rl[c.k] + ')' : '—'}</td></tr>`).join('')}</tbody></table>`; }
+function rubRep(g) { const r = rubUsed(g); if (!r) return '';
+  // Part individual: el professor veu tots els alumnes; cada alumne, només la seva
+  const stu = typeof CLOUD !== 'undefined' && CLOUD && ME && !ME.isProf, per = (Array.isArray(g.ind) ? g.ind : []).filter(x => !stu || x.k === ME.uid), ic = r.crit.filter(c => c.ind);
+  const lv = x => typeof x === 'number' ? LVL_NAMES[x] + ' (' + x + ')' : '—';
+  return `<table class="rtab rrub"><tbody>${r.crit.map(c => `<tr><td>${esc(c.t)}</td><td>${c.ind && Array.isArray(g.ind) ? 'individual' : lv(g.rl[c.k])}</td></tr>`).join('')}</tbody></table>`
+    + (per.length && ic.length ? `<table class="rtab rrub"><tbody>${per.map(x => `<tr><td><b>${esc(x.n)}</b>${ic.map(c => `<br><span class="small">${esc(c.t)}: ${lv(((g.ri || {})[x.k] || {})[c.k])}</span>`).join('')}</td><td>Nota individual: <b>${f1(x.nota)}</b></td></tr>`).join('')}</tbody></table>` : ''); }
 function reportText(t) {
   const r4 = raGradeAct(t, 'RA4'), r5 = raGradeAct(t, 'RA5');
   let x = `INFORME · ${projName(t)}\nRA4: ${f1(r4.nota)} · RA5: ${f1(r5.nota)}\n`;
@@ -4126,7 +4160,7 @@ function vCriteris(v) {
   const lv = [[4, 'Expert'], [3, 'Avançat'], [2, 'Aprenent'], [1, 'Novell']];
   const card1 = a => { const r = rubOf(a), pg = (a.ev || []).map(e => e[0]).filter((k, i, l) => sec(k) && l.indexOf(k) === i);
     const wts = r ? r.crit.map(c => Number(c.w) || 0) : [], showW = wts.some(w => w !== wts[0]), W = wts.reduce((x, y) => x + y, 0);
-    const body = r ? r.crit.map(c => `<div class="rv-c"><h4>${esc(c.t)}${showW && W ? ` <span class="pill grey">pes ${Math.round((Number(c.w) || 0) / W * 100)} %</span>` : ''}</h4><div class="rv-l">${lv.map(([n, nm], i) => `<div><b>${nm} · ${n}</b>${esc((c.d || [])[i] || '—')}</div>`).join('')}</div></div>`).join('') + '<p class="small muted">Si no es fa l\'activitat, la nota és 0 (Sense fer).</p>'
+    const body = r ? r.crit.map(c => `<div class="rv-c"><h4>${esc(c.t)}${c.ind ? ' <span class="pill grey">individual</span>' : ''}${showW && W ? ` <span class="pill grey">pes ${Math.round((Number(c.w) || 0) / W * 100)} %</span>` : ''}</h4><div class="rv-l">${lv.map(([n, nm], i) => `<div><b>${nm} · ${n}</b>${esc((c.d || [])[i] || '—')}</div>`).join('')}</div></div>`).join('') + '<p class="small muted">Si no es fa l\'activitat, la nota és 0 (Sense fer).</p>'
       : a.crit ? `<p class="small"><b>Què es valora:</b> ${esc(a.crit)}</p>` : a.ext ? '<p class="small muted">Es fa fora de l\'eina: hi constarà la nota que tragueu.</p>' : '<p class="small muted">Encara no hi ha criteris publicats per a aquesta activitat.</p>';
     return `<details class="rubed rv-a" ${r ? '' : 'open'}><summary><b><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</b><span class="small muted">${f1(a.w)} % del ${esc(a.ra)}${a.ext ? ' · es qualifica fora de l\'eina' : ''}${r ? ' · rúbrica: ' + esc(r.n) : ''}</span></summary>
       <div class="rubed-b">${pg.length ? `<div class="row" style="margin-bottom:6px"><span class="small muted">On es treballa:</span>${pg.map(k => `<button type="button" class="btn ghost small" data-go="${k}">${esc(sec(k).l)}</button>`).join('')}</div>` : ''}${body}</div></details>`; };
@@ -4220,15 +4254,16 @@ function vRubriques(v) {
     <div id="rubImpBox">${rubImpHtml()}</div>
     ${G.rubs.map((r, i) => { const u = used(r.id); return `<details class="rubed" data-rid="${esc(r.id)}" ${rubOpen === r.id ? 'open' : ''}><summary><b data-rname="${i}">${esc(r.n)}</b><span class="small muted">${r.crit.length} ${r.crit.length === 1 ? 'criteri' : 'criteris'}${u.length ? ' · ' + u.map(a => esc(a.c)).join(', ') : ' · cap activitat'}</span></summary>
       <div class="rubed-b"><div class="pfield"><label for="rn${i}">Nom de la rúbrica</label><input type="text" id="rn${i}" data-rb="${i}" value="${esc(r.n)}"></div>
-      ${r.crit.map((c, j) => `<div class="rcrit"><div class="rcrit-h"><input type="text" data-rb="${i}" data-rc="${j}" data-ck="t" value="${esc(c.t)}" aria-label="Criteri ${j + 1}" placeholder="Nom del criteri"><label class="notein">Pes<input type="number" min="0" step="1" data-rb="${i}" data-rc="${j}" data-ck="w" value="${esc(c.w)}" inputmode="decimal"></label><button type="button" class="btn ghost small" data-rcdel="${i}:${j}" ${r.crit.length < 2 ? 'disabled title="Una rúbrica necessita com a mínim un criteri"' : ''}>Treure</button></div>
+      ${r.crit.map((c, j) => `<div class="rcrit"><div class="rcrit-h"><input type="text" data-rb="${i}" data-rc="${j}" data-ck="t" value="${esc(c.t)}" aria-label="Criteri ${j + 1}" placeholder="Nom del criteri"><label class="notein">Pes<input type="number" min="0" step="1" data-rb="${i}" data-rc="${j}" data-ck="w" value="${esc(c.w)}" inputmode="decimal"></label><label class="small" style="display:flex;align-items:center;gap:5px;white-space:nowrap" title="Es marca alumne per alumne, no per a tot l'equip"><input type="checkbox" data-rbind="${i}:${j}" ${c.ind ? 'checked' : ''}>Individual</label><button type="button" class="btn ghost small" data-rcdel="${i}:${j}" ${r.crit.length < 2 ? 'disabled title="Una rúbrica necessita com a mínim un criteri"' : ''}>Treure</button></div>
         <div class="rcrit-d">${[4, 3, 2, 1, 0].map(n => `<label><span class="small muted">${LVL_NAMES[n]} · ${n}</span><textarea rows="3" data-rb="${i}" data-rc="${j}" data-ck="d${4 - n}">${esc((c.d || [])[4 - n] || '')}</textarea></label>`).join('')}</div></div>`).join('')}
-      <p class="small muted">La nota és la mitjana dels nivells dels criteris, tenint en compte el pes de cadascun. Expert (4) val un 10.</p>
+      <p class="small muted">La nota és la mitjana dels nivells dels criteris, tenint en compte el pes de cadascun. Expert (4) val un 10. Els criteris marcats com a «Individual» es puntuen alumne per alumne: cada alumne té la seva nota i la de l'equip és la mitjana.</p>
       <div class="row"><button type="button" class="btn ghost small" data-rcadd="${i}">+ Afegir un criteri</button><button type="button" class="btn ghost small" data-rbdup="${i}">Duplicar</button><button type="button" class="btn ghost small" data-rbxls="${i}">Baixar en Excel</button><button type="button" class="btn ghost small" data-rbdel="${i}">Esborrar la rúbrica</button></div></div></details>`; }).join('')}`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   $('#rubShow').onchange = e => { G.rubHide = !e.target.checked; save(); toast(e.target.checked ? 'Les rúbriques són visibles per a l\'alumnat.' : 'Les rúbriques s\'han amagat a l\'alumnat.'); };
   v.querySelectorAll('details.rubed').forEach(d => d.ontoggle = () => { if (d.open) rubOpen = d.dataset.rid; else if (rubOpen === d.dataset.rid) rubOpen = null; });
   v.querySelectorAll('[data-rubact]').forEach(s => s.onchange = () => { G.acts[+s.dataset.rubact].rub = s.value || undefined; save(); rr(); });
   $('#rubRec').onclick = () => { G.acts.forEach(a => { const r = rubRec(a); if (!a.rub && r) a.rub = r.id; }); save(); rr(); };
+  v.querySelectorAll('[data-rbind]').forEach(el => el.onchange = () => { const [i, j] = el.dataset.rbind.split(':').map(Number), c = G.rubs[i].crit[j]; if (el.checked) c.ind = true; else delete c.ind; save(); });
   v.querySelectorAll('[data-rb]').forEach(el => el.oninput = () => { const r = G.rubs[+el.dataset.rb], k = el.dataset.ck;
     if (el.dataset.rc === undefined) { r.n = el.value; const b = v.querySelector(`[data-rname="${el.dataset.rb}"]`); if (b) b.textContent = el.value; }
     else { const c = r.crit[+el.dataset.rc]; if (k === 'w') c.w = Math.max(0, Number(el.value) || 0); else if (k === 't') c.t = el.value; else { c.d = c.d || []; c.d[+k.slice(1)] = el.value; } }
