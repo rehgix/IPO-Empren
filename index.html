@@ -1833,14 +1833,9 @@ const SECS = [
     ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['idea', 'La idea', 'idea', [
     ['idea', 'Idea de negoci i Golden Circle', 'CA 4.2 · 5.1', 'Act4 · Pt4', t => { const d = t.data.idea; return [cnt(d, ['activitat', 'diferenciador', 'benefici', 'why', 'how', 'what']) + (cnt(d, ['motExt', 'motInt', 'motTrans']) ? 1 : 0), 7]; }]]],
-  ['entorn', 'L\'entorn', 'entorn', [
-    ['micro', 'Microentorn', 'CA 4.6', 'Pe4', t => [cnt(t.data.micro, ['compActual', 'compFutura', 'substitutius', 'clients', 'proveidors', 'intermediaris']), 6]],
-    ['pestel', 'Macroentorn (PESTEL)', 'CA 4.6', 'Pe4', t => [PE.PESTEL.reduce((a, [k]) => a + cnt(t.data.pestel[k], ['o', 'a']), 0), 12]],
-    ['dafo', 'DAFO', 'CA 4.6', 'Pe4', t => [cnt(t.data.dafo, ['f', 'd', 'o', 'a']), 4]]]],
   ['model', 'Model de negoci', 'model', [
     ['lean', 'Lean Canvas sostenible', 'CA 4.3 · 5.5', 'Pt5 · Act8', t => [cnt(t.data.lean, PE.LEAN.map(x => x[0])) + (filled(t.data.sost.costosAmb) ? 1 : 0) + (cnt(t.data.sost, ['benSocial', 'benAmbiental', 'cicleVida', 'circular']) >= 2 ? 1 : 0), 11]],
     ['sost', 'ODS i sostenibilitat', 'CA 4.5 · 5.3 · 5.6', 'Act8', t => { const d = t.data.sost; return [(d.ods.length ? 1 : 0) + cnt(d, ['odsAccions', 'tecnologia']), 3]; }],
-    ['ebc', 'Economia social i bé comú', 'CA 4.4 · 4.5 · 5.1 · 5.2', 'Pe5', t => { const d = t.data.ebc; return [PE.EBC.filter(([k]) => filled(d[k].text) && d[k].score !== '').length + cnt(d.rsc, PE.RSC.map(x => x[0])) + (filled(d.lideratge) ? 1 : 0), 11]; }],
     ['agents', 'Agents implicats', 'CA 5.9', '', t => [Math.min(4, t.data.agents.items.filter(x => filled(x.agent) && filled(x.participa)).length), 4]]]],
   ['marxa', 'Posada en marxa', 'marxa', [
     ['juridica', 'Forma jurídica', 'Cont. 5.7', 'Act5 · Act6', t => [(t.data.juridica.forma ? 1 : 0) + cnt(t.data.juridica, ['argConst', 'argSocis', 'argResp', 'video']), 5]],
@@ -3666,7 +3661,7 @@ const ACTS_DEFAULT = [
   { c: 'Au2', n: 'Autoavaluació de la comunicació del projecte', ra: 'RA5', w: 5, ext: true, ca: '', ev: [], lock: true },
   { c: 'CC4', n: 'CC4', ra: 'RA5', w: 10, ext: true, ca: '', ev: [] },
   { c: 'Pt6', n: 'Comunicació del projecte', ra: 'RA5', w: 20, ext: false, ca: '4.10', ev: [['pitch']], lock: true, rub: 'r2_Pt6',
-    crit: 'Exposició oral de 10 minuts sobre el conjunt de la feina feta al projecte (idea, entorn, model de negoci, sostenibilitat, forma jurídica, viabilitat i màrqueting). És l\'última activitat que s\'avalua.' }
+    crit: 'Exposició oral de 10 minuts sobre el conjunt de la feina feta al projecte (idea, model de negoci, sostenibilitat, forma jurídica, viabilitat i màrqueting). És l\'última activitat que s\'avalua.' }
 ];
 /* ---------- Rúbriques per activitat ---------- */
 // Cada rúbrica: { id, n: nom, crit: [{ k: codi, t: criteri, w: pes, d: [Expert, Avançat, Aprenent, Novell, Sense fer] }] }
@@ -3699,8 +3694,8 @@ const RUBS_DEFAULT = [
     ['coh', 'Coherència i validació', 'Els blocs són coherents entre ells i amb la validació feta.', 'Coherent, amb alguna contradicció petita.', 'Poca relació entre blocs o amb la validació.', 'Blocs sense relació entre ells.'],
     ['puv', 'Proposta de valor i avantatge', 'Proposta única de valor clara i avantatge competitiu real.', 'Proposta clara, avantatge poc real.', 'Proposta o avantatge genèrics.', 'No es veu cap proposta de valor.']]),
   rbw('r2_Pt6', 'Pt6 · Comunicació del projecte (exposició de 10 minuts)', [
-    ['con', 'Contingut: tot el projecte', 25, 'Presenten tot el recorregut: idea, anàlisi de l\'entorn, model de negoci, sostenibilitat, forma jurídica, viabilitat i màrqueting.', 'Presenten gairebé tot el projecte; falta algun apartat o queda molt per sobre.', 'Falten diversos apartats importants del projecte.', 'Només presenten la idea, sense la resta de la feina.'],
-    ['rig', 'Rigor i coherència', 20, 'Les dades i les decisions estan ben argumentades i tot el projecte és coherent (la idea encaixa amb l\'entorn, els números i la forma jurídica).', 'Bona argumentació, amb alguna dada sense justificar o una petita incoherència.', 'Poques dades o decisions sense justificar.', 'Afirmacions sense base o contradiccions importants.'],
+    ['con', 'Contingut: tot el projecte', 25, 'Presenten tot el recorregut: idea, model de negoci, sostenibilitat, forma jurídica, viabilitat i màrqueting.', 'Presenten gairebé tot el projecte; falta algun apartat o queda molt per sobre.', 'Falten diversos apartats importants del projecte.', 'Només presenten la idea, sense la resta de la feina.'],
+    ['rig', 'Rigor i coherència', 20, 'Les dades i les decisions estan ben argumentades i tot el projecte és coherent (la idea encaixa amb el model de negoci, els números i la forma jurídica).', 'Bona argumentació, amb alguna dada sense justificar o una petita incoherència.', 'Poques dades o decisions sense justificar.', 'Afirmacions sense base o contradiccions importants.'],
     ['est', 'Estructura i fil conductor', 15, 'Ganxo inicial, fil conductor clar, bones transicions i crida a l\'acció final.', 'Ben estructurada, amb un inici o un tancament fluixos.', 'Estructura feble: és una suma d\'apartats sense fil conductor.', 'Exposició desorganitzada.'],
     ['ora', 'Comunicació oral i no verbal', 15, 'Parlen amb seguretat i naturalitat, sense llegir, amb bon ritme, to de veu i contacte visual.', 'Comunicació clara, amb moments de lectura o poc contacte visual.', 'Llegeixen sovint o el ritme és massa ràpid o monòton.', 'Llegeixen tota l\'exposició o costa molt de seguir-los.'],
     ['sup', 'Suport visual', 10, 'Suport visual net i atractiu, amb la imatge de la marca, poc text i gràfics que ajuden a entendre el projecte.', 'Suport visual correcte, amb alguna diapositiva carregada de text.', 'Suport visual amb massa text o poc cuidat.', 'Sense suport visual o que no ajuda a seguir l\'exposició.'],
@@ -3791,20 +3786,20 @@ const gcls = x => x === null || x === undefined || x === '' || isNaN(x) ? 'g-non
 const f1 = x => x === null || x === undefined || x === '' || isNaN(x) ? '—' : Number(x).toLocaleString('ca-ES', { maximumFractionDigits: 2 });
 function ensureEval() {
   aiCfg();
-  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 2; }
+  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 3; }
   if (!Array.isArray(G.rubs)) G.rubs = JSON.parse(JSON.stringify(RUBS_DEFAULT));
-  if (G.evalV !== 2) evalMigrate();
+  if (G.evalV !== 3) evalMigrate();
   G.teams.forEach(t => { t.grades = t.grades || {}; t.ai = t.ai || {}; });
 }
 // Grups creats amb la versió anterior: passen a les activitats i rúbriques noves (es respecten els pesos, les activitats afegides i les rúbriques pròpies)
 function evalMigrate() {
   const old = RUBS_OLD.map(r => r.id);
-  G.rubs = G.rubs.filter(r => !old.includes(r.id));
+  G.rubs = G.rubs.filter(r => !old.includes(r.id) && !(G.evalV === 2 && r.id === 'r2_Pt6')); // la de Pt6 de la versió 2 parlava de l'anàlisi de l'entorn
   RUBS_DEFAULT.forEach((r, i) => { if (!G.rubs.some(x => x.id === r.id)) G.rubs.splice(Math.min(i, G.rubs.length), 0, JSON.parse(JSON.stringify(r))); });
   ACTS_DEFAULT.forEach(d => { const a = G.acts.find(x => x.c === d.c); if (!a) return;
     Object.assign(a, JSON.parse(JSON.stringify({ n: d.n, ext: d.ext, ev: d.ev, lock: !!d.lock, crit: d.crit || '' })));
     a.rub = d.rub && (!a.rub || a.rub === '__none' || old.includes(a.rub)) ? d.rub : d.rub ? a.rub : undefined; });
-  G.evalV = 2;
+  G.evalV = 3;
 }
 // Feina de l'equip per a una activitat: [{title, pairs:[[label, text]]}]
 function actEvidence(t, a) {
@@ -5720,13 +5715,13 @@ const RUBRIC = [
     d: ['Aplica les cinc fases amb rigor: mapa d\'empatia complet, tres o més entrevistes amb aprenentatges, selecció de la idea amb criteris objectius i prototip provat amb usuaris.', 'Aplica totes les fases, però alguna amb poca profunditat (poques entrevistes o prototip poc provat).', 'Aplica només algunes fases o les evidències de validació són escasses.', 'Proposa una solució sense partir de les necessitats reals de les persones destinatàries.', 'No ho ha fet.'] },
   { id: 'idea', ra: 'RA4', ca: '4.2 · 5.1', title: 'Idea de negoci i Golden Circle', secs: ['idea'],
     d: ['Defineix l\'activitat, l\'element diferenciador i el benefici, i el Golden Circle expressa un propòsit clar i coherent amb el com i el què.', 'Idea ben definida i Golden Circle complet, amb algun element poc concretat.', 'Idea definida de manera general i Golden Circle incomplet.', 'Idea vaga, sense element diferenciador.', 'No ho ha fet.'] },
-  { id: 'entorn', ra: 'RA4', ca: '4.6', title: 'Anàlisi de l\'entorn', secs: ['micro', 'pestel', 'dafo'],
+  { id: 'entorn', ra: 'RA4', ca: '4.6', title: 'Anàlisi de l\'entorn (prova Pe4)', secs: [],
     d: ['Analitza el microentorn i els sis factors PESTEL amb oportunitats i amenaces concretes del sector i en fa una síntesi DAFO coherent.', 'Anàlisi completa, amb alguns factors genèrics.', 'Anàlisi parcial del microentorn o del macroentorn.', 'Anàlisi molt superficial.', 'No ho ha fet.'] },
   { id: 'lean', ra: 'RA4', ca: '4.3 · 5.5', title: 'Model de negoci (Lean Canvas)', secs: ['lean'],
     d: ['Lean Canvas complet i coherent amb la validació, amb una proposta única de valor clara i un avantatge competitiu real.', 'Lean Canvas complet, amb alguna incoherència entre blocs.', 'Lean Canvas incomplet o amb blocs genèrics.', 'Només alguns blocs.', 'No ho ha fet.'] },
   { id: 'mkt', ra: 'RA4', ca: '4.10', title: 'Màrqueting i comunicació', secs: ['marca', 'p7', 'pitch'],
     d: ['Identitat corporativa coherent (nom, logo, missió, visió i valors), 7 P ben desenvolupades i una comunicació del projecte clara i persuasiva.', 'Tot complet, amb algun element poc treballat.', 'Identitat o 7 P incompletes.', 'Elements aïllats sense coherència.', 'No ho ha fet.'] },
-  { id: 'sost', ra: 'RA5', ca: '4.4 · 4.5 · 5.2 · 5.3 · 5.6', title: 'Sostenibilitat, ODS i economia social', secs: ['sost', 'ebc'],
+  { id: 'sost', ra: 'RA5', ca: '4.4 · 4.5 · 5.2 · 5.3 · 5.6', title: 'Sostenibilitat, ODS i economia social', secs: ['sost'],
     d: ['Alinea el model amb ODS concrets, completa el Canvas sostenible i avalua el projecte amb criteris d\'economia social i bé comú, amb un pla de RSC i un lideratge ètic.', 'Tot complet, amb alguna part poc argumentada.', 'Tria ODS amb poca relació amb el model o l\'anàlisi social és parcial.', 'Menció superficial de la sostenibilitat.', 'No ho ha fet.'] },
   { id: 'agents', ra: 'RA5', ca: '5.9', title: 'Agents implicats i col·laboració amb l\'entorn', secs: ['agents'],
     d: ['Identifica tots els agents clau i defineix com participa cadascun i el seu nivell d\'implicació.', 'Identifica la majoria d\'agents i la seva participació.', 'Llista d\'agents sense concretar-ne la participació.', 'Un o dos agents, de manera genèrica.', 'No ho ha fet.'] },
@@ -5912,9 +5907,9 @@ function vAvaluacio(v) {
 function vGuia(v) {
   const CA4 = [['4.1', 'Identifica els problemes de les persones destinatàries com a pas previ a les solucions.', 'empatia'], ['4.2', 'Posa en pràctica el procés creatiu per aconseguir una idea amb valor econòmic, social i/o cultural.', 'idea definir'], ['4.3', 'Dissenya un model de negoci derivat de la idea.', 'lean'], ['4.4', 'Incorpora valors ètics i socials analitzant models de balanç social.', 'ebc'], ['4.5', 'Analitza la contribució de l\'economia circular i del bé comú.', 'ebc sost'], ['4.6', 'Analitza l\'entorn general i específic i el seu impacte en la idea.', 'micro pestel dafo'], ['4.7', 'Realitza entrevistes de problema.', 'entrevistes'], ['4.8', 'Valida la solució amb prototips (encaix problema-solució).', 'prototip'], ['4.9', 'Posa en pràctica tècniques de validació i prototipatge.', 'definir prototip'], ['4.10', 'Experimenta amb estratègies de màrqueting, comunicació i venda.', 'marca p7 pitch']];
   const CA5 = [['5.1', 'Analitza els conceptes d\'emprenedoria i innovació social.', 'idea ebc'], ['5.2', 'Reflexiona sobre el lideratge ètic i sostenible.', 'ebc'], ['5.3', 'Reflexiona sobre la tecnologia com a base del canvi del model productiu.', 'sost'], ['5.4', 'Aplica el Design Thinking per detectar necessitats socials i ambientals.', 'empatia definir'], ['5.5', 'Analitza models de negoci ecosocials i/o de base tecnològica.', 'lean sost'], ['5.6', 'Alinea metes de desenvolupament sostenible amb el model de negoci.', 'sost'], ['5.7', 'Analitza la viabilitat del projecte (inversió, costos, beneficis; formes jurídiques).', 'juridica fiscal inversio treso viab'], ['5.8', 'Investiga opcions financeres socialment responsables.', 'inversio prestec'], ['5.9', 'Defineix els agents implicats i la seva participació.', 'agents']];
-  const where = ks => [...new Set(ks.split(' ').filter(Boolean).map(k => sec(k) ? sec(k).l : 'Dossier de Design Thinking (en paper)'))].join(' · ') || 'Fora de l\'eina';
+  const where = ks => [...new Set(ks.split(' ').filter(Boolean).map(k => sec(k) ? sec(k).l : ['micro', 'pestel', 'dafo', 'ebc'].includes(k) ? 'Prova (Google Forms)' : 'Dossier de Design Thinking (en paper)'))].join(' · ') || 'Fora de l\'eina';
   const tbl = rows => `<div class="tablebox"><table class="fin zebra"><thead><tr><th>CA</th><th>Criteri d'avaluació</th><th>On es treballa</th></tr></thead><tbody>${rows.map(r => `<tr><td><b>${r[0]}</b></td><td>${esc(r[1])}</td><td>${esc(where(r[2]))}</td></tr>`).join('')}</tbody></table></div>`;
-  const acts = [['Act4', 'Golden Circle de la nostra idea', 'idea'], ['Pt3 · Co2', 'Design Thinking intercicles', 'empatia'], ['Pt4', 'Carpeta d\'aprenentatge i presentació de la idea de negoci', 'idea'], ['Pe4', 'Google Forms sobre l\'anàlisi de l\'entorn', 'micro pestel dafo'], ['Act5 · Act6', 'Formes jurídiques i vídeo', 'juridica'], ['Act7', 'Obligacions fiscals i posada en marxa', 'fiscal'], ['Pt5', 'Canvas de la meva idea de negoci', 'lean'], ['Act8', 'ODS i el Canvas sostenible', 'lean sost'], ['Pe5', 'Google Forms sobre economia social i solidària', 'ebc'], ['Act9', 'Pla de tresoreria del primer any', 'inversio prestec treso viab'], ['Act10', 'Màrqueting: nom, logo, imatge i les 7 P', 'marca p7'], ['Pt6 · Co3 · Au2', 'Comunicació del projecte', 'pitch']];
+  const acts = [['Act4', 'Golden Circle de la nostra idea', 'idea'], ['Pt3 · Co2', 'Design Thinking intercicles', 'empatia'], ['Pt4', 'Carpeta d\'aprenentatge i presentació de la idea de negoci', 'idea'], ['Pe3 · Pe4 · Pe5', 'Proves amb Google Forms (només s\'hi posa la nota)', ''], ['Act5 · Act6', 'Formes jurídiques i vídeo', 'juridica'], ['Act7', 'Obligacions fiscals i posada en marxa', 'fiscal'], ['Pt5', 'Canvas de la meva idea de negoci', 'lean'], ['Act8', 'ODS i el Canvas sostenible', 'lean sost'], ['Act9', 'Pla de tresoreria del primer any', 'inversio prestec treso viab'], ['Act10', 'Màrqueting: nom, logo, imatge i les 7 P', 'marca p7'], ['Pt6 · Co3 · Au2', 'Comunicació del projecte', 'pitch']];
   v.innerHTML = `${head('Per al professorat', 'Guia i criteris')}
     <p class="muted intro">L'eina acompanya els equips en el projecte emprenedor del mòdul Itinerari personal per a l'ocupabilitat II. Cada pàgina indica el criteri d'avaluació i l'activitat de la programació que treballa.</p>
     ${card('RA4 · Identifica, defineix i valida idees d\'emprenedoria generadores de noves oportunitats', pad(tbl(CA4)))}
