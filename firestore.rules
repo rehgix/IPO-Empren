@@ -29,11 +29,9 @@ service cloud.firestore {
     // APARTATS OBERTS: el grup desa a «w» quan pot escriure l'alumnat cada dada ({ f: des de, u: fins a }, en mil·lisegons).
     // Una dada que no surt a «w» (grups antics o apartats nous) es pot escriure sempre.
     function winOk(w, k) { return !(k in w) || (request.time.toMillis() >= w[k].f && request.time.toMillis() < w[k].u); }
-    // BLOQUEIG PER EQUIP: el professorat desa a «ov» de l'equip, per apartat, 'x' (ja té nota: no es pot tocar res)
-    // o 'o' (demana millores: es pot editar encara que hagi passat la data). «k» és la dada i «s» l'apartat on s'omple.
-    function ovOk(w, ov, k, s) {
-      return ov.get(s, '') != 'x' && (!(k in w) || (request.time.toMillis() >= w[k].f && (request.time.toMillis() < w[k].u || ov.get(s, '') == 'o')));
-    }
+    // BLOQUEIG PER EQUIP: el professorat desa a «ov» de l'equip, per apartat, 'x' quan una activitat independent ja té nota:
+    // l'equip ja no hi pot tocar res. «k» és la dada i «s» l'apartat on s'omple. Un apartat tancat (a mà o per data) no es reobre mai.
+    function ovOk(w, ov, k, s) { return ov.get(s, '') != 'x' && winOk(w, k); }
     function keyOk(aff, w, ov, k, s) { return !(k in aff) || ovOk(w, ov, k, s); }
     function studentEditOk(gid) {
       let w = grp(gid).get('w', {});

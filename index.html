@@ -1741,19 +1741,20 @@ const todayISO = () => new Date().toLocaleDateString('sv-SE');
 function access(k) {
   if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' || k === 'criteris' ? 'open' : 'readonly';
   if (!G || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
-  const a = (G.access || {})[k] || {}, late = !!a.until && todayISO() > a.until;
+  const a = (G.access || {})[k] || {};
   let s = a.state === 'closed' && a.from && todayISO() >= a.from ? 'open' : (a.state || 'open');
-  if (s === 'open' && late) s = 'readonly';
-  // Per equip: amb nota ja no es pot tocar res; si el professor demana millores, es pot editar encara que hagi passat la data
-  if (role !== 'prof') { const o = secOv(T(), k); if (o === 'x' && s === 'open') s = 'readonly'; else if (o === 'o' && s === 'readonly' && late && a.state !== 'readonly') s = 'open'; }
+  if (s === 'open' && a.until && todayISO() > a.until) s = 'readonly';
+  // Per equip: quan una activitat independent ja té nota, els seus apartats no es poden tocar (un apartat tancat, a mà o per data, no es reobre mai)
+  if (role !== 'prof' && s === 'open' && secOv(T(), k) === 'x') s = 'readonly';
   return s;
 }
-// Bloqueig de cada apartat per a un equip: 'x' = una activitat de l'apartat ja té nota; 'o' = el professor hi demana millores
+// Estat de cada apartat per a un equip: 'x' = una activitat independent (lock) de l'apartat ja té nota i queda tancat;
+// 'g…' = té nota en una activitat del projecte global (es pot continuar editant); després de la «g» va com estava l'apartat en posar la nota
 const hasNota = g => !!g && g.nota !== '' && g.nota !== undefined && g.nota !== null && !isNaN(g.nota);
 function calcOv(t) {
   const ov = {}; if (!t) return ov;
-  PROG.forEach(s => { if ((t.review[s.k] || {}).status === 'millorar') ov[s.k] = 'o'; });
-  ((G && G.acts) || []).forEach(a => { if (!a.ext && hasNota((t.grades || {})[a.c])) (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) ov[k] = 'x'; }); });
+  ((G && G.acts) || []).forEach(a => { const g = (t.grades || {})[a.c]; if (a.ext || !hasNota(g)) return;
+    (a.ev || []).forEach(([k]) => { if (!sec(k) || !sec(k).p) return; if (a.lock) ov[k] = 'x'; else if (!ov[k]) ov[k] = 'g' + ((g.h || {})[k] || ''); }); });
   return ov;
 }
 // L'alumnat no sempre veu les notes: llegeix el bloqueig que el professor ha desat a la fitxa de l'equip
@@ -1768,7 +1769,8 @@ function workState(t, s) {
   const se = sentOf(t, s.k), rv = t.review[s.k] || {}, h = secHash(t, s.k), same = !!se && se.h === h;
   const resent = same && !!rv.status && !!rv.at && se.at > rv.at; // tornat a enviar després de l'última revisió
   // Amb nota o amb «correcte» consta com a lliurat, encara que l'equip no l'hagi enviat
-  if (secOv(t, s.k) === 'x') return rv.status === 'correcte' ? 'correcte' : 'sent';
+  const o = secOv(t, s.k) || '';
+  if (o === 'x' || (o[0] === 'g' && !se && o.slice(1) === h && rv.status !== 'millorar')) return rv.status === 'correcte' ? 'correcte' : 'sent';
   if (rv.status === 'correcte' && !resent && (rv.h ? rv.h === h : same || !se)) return 'correcte';
   if (secState(t, s) === 'none') return 'none';
   if (same) return rv.status && !resent ? rv.status : 'sent';
@@ -1830,11 +1832,7 @@ const SECS = [
   ['ident', 'Identitat corporativa', 'ident', [
     ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['idea', 'La idea', 'idea', [
-    ['idea', 'Idea de negoci i Golden Circle', 'CA 4.2 · 5.1', 'Act4 · Pt4', t => { const d = t.data.idea; return [cnt(d, ['activitat', 'diferenciador', 'benefici', 'why', 'how', 'what']) + (cnt(d, ['motExt', 'motInt', 'motTrans']) ? 1 : 0), 7]; }],
-    ['empatia', 'Design Thinking · Empatitzar', 'CA 4.1 · 5.4', 'Pt3', t => [cnt(t.data.empatia, ['persona', 'veu', 'escolta', 'pensa', 'diu', 'frustracions', 'motivacions']), 7]],
-    ['entrevistes', 'Entrevistes de problema', 'CA 4.7', 'Pt3', t => { const d = t.data.entrevistes; return [(filled(d.hipotesi) ? 1 : 0) + Math.min(3, d.items.filter(x => filled(x.qui) && filled(x.apren)).length) + (filled(d.conclusio) ? 1 : 0), 5]; }],
-    ['definir', 'Design Thinking · Definir i idear', 'CA 4.2 · 4.9', 'Pt3', t => { const d = t.data.definir; return [cnt(d, ['insights', 'repte', 'justificacio']) + (d.idees.filter(x => filled(x.text)).length >= 3 ? 1 : 0) + (d.triada !== '' ? 1 : 0), 5]; }],
-    ['prototip', 'Design Thinking · Prototipar i provar', 'CA 4.8 · 4.9', 'Pt3', t => [cnt(t.data.prototip, ['tipus', 'descripcio', 'feedback', 'ajustos']) + (t.data.prototip.encaix ? 1 : 0), 5]]]],
+    ['idea', 'Idea de negoci i Golden Circle', 'CA 4.2 · 5.1', 'Act4 · Pt4', t => { const d = t.data.idea; return [cnt(d, ['activitat', 'diferenciador', 'benefici', 'why', 'how', 'what']) + (cnt(d, ['motExt', 'motInt', 'motTrans']) ? 1 : 0), 7]; }]]],
   ['entorn', 'L\'entorn', 'entorn', [
     ['micro', 'Microentorn', 'CA 4.6', 'Pe4', t => [cnt(t.data.micro, ['compActual', 'compFutura', 'substitutius', 'clients', 'proveidors', 'intermediaris']), 6]],
     ['pestel', 'Macroentorn (PESTEL)', 'CA 4.6', 'Pe4', t => [PE.PESTEL.reduce((a, [k]) => a + cnt(t.data.pestel[k], ['o', 'a']), 0), 12]],
@@ -3627,7 +3625,7 @@ function vDossier(v) {
   v.innerHTML = `${flashHtml()}${head(`Dossier del projecte`, esc(projName(t)), `<button class="btn ghost" id="copyDos">Copiar el text</button><button class="btn" id="deliver">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${t.delivered ? 'Tornar a lliurar' : 'Lliurar al professor'}</button>`)}
     ${t.delivered ? `<div class="notice info">Lliurat el ${new Date(t.delivered).toLocaleString('ca-ES')}.${t.updated > t.delivered ? ' Heu fet canvis després del lliurament: torneu-lo a lliurar quan acabeu.' : ''}</div>` : ''}
     ${missing.length ? `<div class="notice">Projecte completat al ${Math.round(pr * 100)}%. Falten apartats a: ${missing.map(s => `<button class="linkbtn" data-go="${s.k}">${esc(s.l)}</button>`).join(', ')}.</div>` : '<div class="notice info">Heu completat tots els apartats.</div>'}
-    <p class="muted intro">Aquest dossier recull tot el projecte. Copieu-ne el text per publicar-lo a la carpeta del projecte (Pt4).</p>
+    <p class="muted intro">Aquest dossier recull tot el projecte. Copieu-ne el text per publicar-lo a la vostra carpeta d'aprenentatge.</p>
     ${SECS.filter(g => g[0] !== 'lliura').map(([, gl, , items]) => items.filter(([k]) => sec(k).p).map(([k]) => card(esc(sec(k).l), pad(secHtml(t, k)), esc([sec(k).ca, sec(k).act].filter(Boolean).join(' · ')))).join('')).join('')}
     <textarea id="dosTxt" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>`;
   $('#deliver').onclick = () => { t.delivered = Date.now(); t.updated = t.delivered; save(); flash = { ok: true, html: '<b>Dossier lliurat.</b> ' + PR('El') + ' el pot revisar i us deixarà comentaris a cada apartat.' }; render(); window.scrollTo(0, 0); };
@@ -3637,46 +3635,88 @@ function vDossier(v) {
 const RA_TEXT = { RA4: 'Identifica, defineix i valida idees d\'emprenedoria generadores de noves oportunitats a partir d\'estratègies d\'anàlisi de l\'entorn socioproductiu utilitzant metodologies àgils.', RA5: 'Desenvolupa un projecte emprenedor d\'innovació social i/o tecnològica aplicada en col·laboració amb l\'entorn.' };
 const L_IDEA = ['Sector', 'Nom', 'Activitat', 'Element diferenciador', 'Expectativa de benefici'];
 const L_GC = ['Why · Per a què', 'How · Com', 'What · Què', 'Motivació extrínseca', 'Motivació intrínseca', 'Motivació transcendent'];
+// «lock»: activitat independent que es tanca quan té nota (la resta forma part del projecte global, que es valora al final)
 const ACTS_DEFAULT = [
-  { c: 'Pt3', n: 'Design Thinking intercicles', ra: 'RA4', w: 30, ext: false, ca: '4.1 · 4.2 · 4.7 · 4.8 · 4.9 · 5.4', ev: [['empatia'], ['entrevistes'], ['definir'], ['prototip']],
-    crit: 'Aplica les cinc fases del Design Thinking: empatitzar (buyer persona i mapa d\'empatia complet), entrevistes de problema (mínim tres, amb aprenentatges), definir (insights i repte «Com podríem...?»), idear (diverses idees i selecció amb una matriu de criteris) i prototipar i provar amb usuaris (opinions, ajustos i encaix problema-solució).' },
-  { c: 'Pt4', n: 'Carpeta del projecte i definició de la idea', ra: 'RA4', w: 10, ext: false, ca: '4.2', ev: [['idea', L_IDEA], ['dossier']],
-    crit: 'La idea de negoci és del seu sector i en defineix els tres elements: l\'activitat (producte o servei), l\'element diferenciador respecte a la competència i l\'expectativa de benefici. Ha lliurat el dossier per publicar-lo a la carpeta del projecte.' },
-  { c: 'Pt5', n: 'Canvas de la idea de negoci', ra: 'RA4', w: 10, ext: false, ca: '4.3 · 5.5', ev: [['lean']],
-    crit: 'Lean Canvas amb els nou blocs complets (problema, segments, proposta única de valor, solució, canals, ingressos, costos, mètriques i avantatge competitiu), concrets i coherents entre ells i amb la validació feta.' },
-  { c: 'Act4', n: 'Golden Circle de la idea', ra: 'RA4', w: 5, ext: false, ca: '4.2 · 5.1', ev: [['idea', L_GC]],
+  { c: 'Pt3', n: 'Design Thinking intercicles', ra: 'RA4', w: 30, ext: false, ca: '4.1 · 4.2 · 4.7 · 4.8 · 4.9 · 5.4', ev: [], lock: true, rub: 'r2_Pt3',
+    crit: 'Dossier en paper del repte de Design Thinking: empatitzar, definir, idear, prototipar i testejar (exposició de 3 minuts amb el prototip), més el document individual de cada alumne i la seva participació en el treball d\'equip.' },
+  { c: 'Pt4', n: 'Carpeta d\'aprenentatge i presentació de la idea de negoci', ra: 'RA4', w: 10, ext: false, ca: '4.2', ev: [['idea', L_IDEA]], rub: 'r2_Pt4',
+    crit: 'L\'equip crea la seva carpeta d\'aprenentatge a la web i presenta la idea de negoci en un pitch d\'uns 3 minuts: l\'activitat (producte o servei) i el sector, l\'element diferenciador respecte a la competència i l\'expectativa de benefici.' },
+  { c: 'Pt5', n: 'Canvas de la meva idea de negoci', ra: 'RA4', w: 10, ext: false, ca: '4.3 · 5.5', ev: [['lean']], rub: 'r_Pt5',
+    crit: 'Lean Canvas amb els nou blocs complets (problema, segments, proposta única de valor, solució, canals, ingressos, costos, mètriques i avantatge competitiu), concrets i coherents entre ells.' },
+  { c: 'Act4', n: 'Golden Circle de la nostra idea', ra: 'RA4', w: 5, ext: false, ca: '4.2 · 5.1', ev: [['idea', L_GC]], rub: 'r_acts',
     crit: 'El Why expressa un propòsit clar (què volen aportar i què es perdria el món); el How descriu l\'estratègia i els pilars; el What concreta els productes o serveis; identifica motivacions extrínseques, intrínseques i transcendents.' },
-  { c: 'Act10', n: 'Màrqueting: nom, logo, imatge i les 7 P', ra: 'RA4', w: 5, ext: false, ca: '4.10', ev: [['marca'], ['p7']],
+  { c: 'Act10', n: 'Màrqueting: nom, logo, imatge i les 7 P', ra: 'RA4', w: 5, ext: false, ca: '4.10', ev: [['marca'], ['p7']], rub: 'r_acts',
     crit: 'Defineix nom, eslògan, logo, missió, visió i valors coherents amb la idea. Presenta com a mínim tres esbossos del logo abans del definitiu i justifica la tria a partir dels colors, les icones i la tipografia. Desenvolupa les 7 P del màrqueting mix (producte, preu, distribució, promoció, persones, procés i entorn físic) de manera concreta.' },
-  { c: 'Pe3', n: 'Qüestionari sobre Design Thinking', ra: 'RA4', w: 10, ext: true, ca: '4.1 · 5.4', ev: [] },
-  { c: 'Pe4', n: 'Qüestionari sobre l\'anàlisi de l\'entorn', ra: 'RA4', w: 10, ext: true, ca: '4.6', ev: [['micro'], ['pestel'], ['dafo']],
-    crit: 'Analitza el microentorn (competència actual i futura, substitutius, clients, proveïdors, intermediaris) i els sis factors PESTEL amb oportunitats i amenaces concretes, i en fa una síntesi DAFO coherent.' },
-  { c: 'Co2', n: 'Coavaluació del Design Thinking', ra: 'RA4', w: 10, ext: true, ca: '', ev: [] },
+  { c: 'Pe3', n: 'Google Forms sobre Design Thinking', ra: 'RA4', w: 10, ext: true, ca: '4.1 · 5.4', ev: [] },
+  { c: 'Pe4', n: 'Google Forms sobre l\'anàlisi de l\'entorn', ra: 'RA4', w: 10, ext: true, ca: '4.6', ev: [] },
+  { c: 'Co2', n: 'Coavaluació del Design Thinking', ra: 'RA4', w: 10, ext: true, ca: '', ev: [], lock: true },
   { c: 'CC3', n: 'CC3', ra: 'RA4', w: 10, ext: true, ca: '', ev: [] },
-  { c: 'Act5', n: 'Les formes jurídiques', ra: 'RA5', w: 20, ext: false, ca: 'Cont. 5.7', ev: [['juridica', ['Forma jurídica', 'Socis', 'Capital inicial']], ['juridica', ['Constitució i gestió', 'Socis i capital', 'Responsabilitat']]],
+  { c: 'Act5', n: 'Les formes jurídiques', ra: 'RA5', w: 20, ext: false, ca: 'Cont. 5.7', ev: [['juridica', ['Forma jurídica', 'Socis', 'Capital inicial']], ['juridica', ['Constitució i gestió', 'Socis i capital', 'Responsabilitat']]], lock: true, rub: 'r_acts',
     crit: 'Coneix les característiques de les formes jurídiques (socis, capital mínim, responsabilitat, fiscalitat i constitució) i tria la més adequada per al seu projecte de manera coherent amb el nombre de socis i el capital.' },
-  { c: 'Act6', n: 'Vídeo sobre la forma jurídica', ra: 'RA5', w: 10, ext: false, ca: 'Cont. 5.7', ev: [['juridica', ['Forma jurídica', 'Constitució i gestió', 'Socis i capital', 'Responsabilitat', 'Guió del vídeo']]],
-    crit: 'El guió del vídeo explica el nom i l\'activitat del projecte, la forma jurídica triada i, com a mínim, tres arguments tècnics: constitució i gestió operativa, nombre de socis i capital inicial, i responsabilitat davant dels deutes.' },
-  { c: 'Act7', n: 'Obligacions fiscals i posada en marxa', ra: 'RA5', w: 5, ext: false, ca: 'Cont. 5.7', ev: [['juridica', ['Forma jurídica']], ['fiscal']],
-    crit: 'Identifica els tributs que corresponen a la seva forma jurídica (IRPF o impost sobre societats, IVA, IAE, retencions, taxes), els llibres obligatoris i els tràmits de constitució i posada en marxa, amb un calendari d\'obligacions.' },
-  { c: 'Act8', n: 'ODS i Canvas sostenible', ra: 'RA5', w: 5, ext: false, ca: '4.5 · 5.3 · 5.5 · 5.6 · 5.9', ev: [['sost'], ['agents']],
+  { c: 'Act6', n: 'Vídeo sobre la forma jurídica de la meva idea de negoci', ra: 'RA5', w: 10, ext: false, ca: 'Cont. 5.7', ev: [['juridica', ['Forma jurídica', 'Constitució i gestió', 'Socis i capital', 'Responsabilitat', 'Guió del vídeo']]], lock: true, rub: 'r_acts',
+    crit: 'El vídeo explica el nom i l\'activitat del projecte, la forma jurídica triada i, com a mínim, tres arguments tècnics: constitució i gestió operativa, nombre de socis i capital inicial, i responsabilitat davant dels deutes.' },
+  { c: 'Act7', n: 'Obligacions fiscals i posada en marxa', ra: 'RA5', w: 5, ext: false, ca: 'Cont. 5.7', ev: [['juridica', ['Forma jurídica']], ['fiscal']], rub: 'r_acts',
+    crit: 'Identifica els tributs que corresponen a la seva forma jurídica (IRPF o impost sobre societats, IVA, IAE, retencions, taxes), els llibres obligatoris i els tràmits de constitució i posada en marxa.' },
+  { c: 'Act8', n: 'ODS i el Canvas sostenible', ra: 'RA5', w: 5, ext: false, ca: '4.5 · 5.3 · 5.5 · 5.6 · 5.9', ev: [['sost'], ['agents']], rub: 'r_acts',
     crit: 'Tria ODS relacionats amb el projecte i explica com els integra al model de negoci; completa el Canvas sostenible (costos i beneficis socials, ambientals, de cicle de vida i circulars), reflexiona sobre la tecnologia i identifica els agents implicats i la seva participació.' },
-  { c: 'Act9', n: 'Pla de tresoreria del primer any', ra: 'RA5', w: 10, ext: false, ca: '5.7 · 5.8', ev: [['inversio'], ['prestec'], ['treso'], ['viab']],
+  { c: 'Act9', n: 'Pla de tresoreria del primer any', ra: 'RA5', w: 10, ext: false, ca: '5.7 · 5.8', ev: [['inversio'], ['prestec'], ['treso'], ['viab']], rub: 'r_acts',
     crit: 'Pla d\'inversió i finançament equilibrat que considera opcions socialment responsables; préstec calculat; pla de tresoreria de 12 mesos amb cobraments i pagaments realistes i cap mes en negatiu sense solució; conclusió de viabilitat argumentada amb el resultat i el punt mort.' },
-  { c: 'Pt6', n: 'Comunicació del projecte', ra: 'RA5', w: 20, ext: false, ca: '4.10', ev: [['pitch']],
-    crit: 'El guió del pitch té tots els apartats (ganxo, problema, solució, mercat, model de negoci, impacte, equip i crida a l\'acció), és clar, persuasiu i adequat a la durada, i tria un format de presentació.' },
-  { c: 'Pe5', n: 'Qüestionari sobre economia social i solidària', ra: 'RA5', w: 10, ext: true, ca: '4.4 · 4.5 · 5.2', ev: [['ebc']],
-    crit: 'Aplica els principis de l\'economia social i solidària, valora el projecte amb la matriu del bé comú, proposa un pla de responsabilitat social corporativa i reflexiona sobre el lideratge ètic.' },
-  { c: 'Co3', n: 'Coavaluació de la comunicació', ra: 'RA5', w: 5, ext: true, ca: '', ev: [] },
-  { c: 'Au2', n: 'Autoavaluació de la comunicació', ra: 'RA5', w: 5, ext: true, ca: '', ev: [] },
-  { c: 'CC4', n: 'CC4', ra: 'RA5', w: 10, ext: true, ca: '', ev: [] }
+  { c: 'Pe5', n: 'Google Forms sobre economia social i solidària', ra: 'RA5', w: 10, ext: true, ca: '4.4 · 4.5 · 5.2', ev: [] },
+  { c: 'Co3', n: 'Coavaluació de la comunicació del projecte', ra: 'RA5', w: 5, ext: true, ca: '', ev: [], lock: true },
+  { c: 'Au2', n: 'Autoavaluació de la comunicació del projecte', ra: 'RA5', w: 5, ext: true, ca: '', ev: [], lock: true },
+  { c: 'CC4', n: 'CC4', ra: 'RA5', w: 10, ext: true, ca: '', ev: [] },
+  { c: 'Pt6', n: 'Comunicació del projecte', ra: 'RA5', w: 20, ext: false, ca: '4.10', ev: [['pitch']], lock: true, rub: 'r2_Pt6',
+    crit: 'Exposició oral de 10 minuts sobre el conjunt de la feina feta al projecte (idea, entorn, model de negoci, sostenibilitat, forma jurídica, viabilitat i màrqueting). És l\'última activitat que s\'avalua.' }
 ];
 /* ---------- Rúbriques per activitat ---------- */
 // Cada rúbrica: { id, n: nom, crit: [{ k: codi, t: criteri, w: pes, d: [Expert, Avançat, Aprenent, Novell, Sense fer] }] }
 const R0 = 'No ho ha fet o no té relació amb l\'activitat.';
 const rb = (id, n, cs) => ({ id, n, crit: cs.map(([k, t, ...d]) => ({ k, t, w: 1, d: d.concat(R0) })) });
+// Rúbrica amb pesos: [codi, criteri, pes, Expert, Avançat, Aprenent, Novell, (Sense fer)]
+const rbw = (id, n, cs) => ({ id, n, crit: cs.map(([k, t, w, ...d]) => ({ k, t, w, d: d.length > 4 ? d : d.concat(R0) })) });
 const RUBS_DEFAULT = [
   rb('r_gen', 'Rúbrica general (un sol criteri)', [['gen', 'Qualitat global de la feina', 'Compleix tots els criteris amb qualitat, concreció, coherència entre apartats i aportacions pròpies ben argumentades.', 'Compleix tots els criteris, però algun apartat és poc concret o poc argumentat.', 'Compleix una part dels criteris; hi ha apartats incomplets, genèrics o poc coherents.', 'Feina molt incompleta o superficial.']]),
+  rbw('r2_Pt3', 'Pt3 · Design Thinking intercicles (dossier, exposició i document individual)', [
+    ['emp', 'Empatitzar: persona usuària i mapa d\'empatia', 10, 'Defineix bé a qui volen ajudar i quina necessitat té, i omple els sis requadres del mapa d\'empatia amb idees concretes i creïbles.', 'Persona i necessitat definides i mapa d\'empatia complet, amb algun requadre genèric.', 'Mapa d\'empatia incomplet o amb respostes molt generals.', 'Només uns quants apunts, sense posar-se a la pell de la persona usuària.'],
+    ['def', 'Definir: necessitats i declaració de necessitat', 10, 'Recull cinc necessitats detectades i les resumeix en una declaració clara amb l\'estructura «persona usuària + necessitat + motiu».', 'Necessitats recollides i declaració correcta, però poc concreta en algun dels tres elements.', 'Poques necessitats o declaració que no segueix l\'estructura.', 'Declaració confusa o sense relació amb el mapa d\'empatia.'],
+    ['ide', 'Idear: valoració de les idees i idea guanyadora', 10, 'Valoren sis idees amb els quatre criteris, sumen bé els punts i expliquen la idea guanyadora amb detall (què és, com funciona i qui la farà servir).', 'Taula de valoració completa i idea guanyadora explicada, amb algun aspecte poc detallat.', 'Taula incompleta o idea guanyadora explicada de manera molt breu.', 'Tria la idea sense valorar-la amb els criteris.'],
+    ['pro', 'Prototipar: prototip en paper', 15, 'El prototip mostra clarament com funciona la solució, està ben treballat i tot l\'equip el sap explicar.', 'El prototip s\'entén, però hi falta algun detall de com funciona.', 'Prototip molt senzill o que costa d\'entendre sense explicació.', 'Prototip gairebé sense fer o que no té relació amb la idea triada.'],
+    ['com', 'Testejar: comunicació i estructura de l\'exposició', 10, 'L\'exposició és clara, lògica i convincent: respon les cinc preguntes del guió (per a qui, què, com, on i per què), ensenya el prototip i respecta els 3 minuts.', 'La presentació està ben estructurada, amb alguna pregunta del guió poc explicada o un petit desajust de temps.', 'La idea s\'entén, però l\'estructura és feble o no es respecta el temps.', 'L\'exposició és desorganitzada i costa d\'entendre la proposta.'],
+    ['via', 'Viabilitat i aplicabilitat de la proposta', 10, 'La idea és totalment realista, detallada i pràctica.', 'La idea és realista, tot i que es pot millorar.', 'La idea és viable, però li falta concreció.', 'La idea és poc realista.'],
+    ['inn', 'Innovació i creativitat', 10, 'La proposta és molt original.', 'La proposta introdueix elements creatius.', 'La proposta té alguns elements originals, però la idea ja s\'ha vist en contextos semblants.', 'La proposta és una idea que ja existeix i no aporta res original.'],
+    ['sos', 'Sostenibilitat', 5, 'La sostenibilitat forma part de la proposta i la relaciona amb els ODS del repte.', 'Té en compte la sostenibilitat.', 'Poc sostenible.', 'Gens sostenible.'],
+    ['ind', 'Document individual', 10, 'Document individual complet: cinc necessitats detectades, sis idees al Crazy 6\'s i les tres preguntes de la valoració respostes amb reflexió pròpia.', 'Document complet, amb alguna resposta de la valoració poc argumentada.', 'Document incomplet: falten necessitats, idees o alguna pregunta de la valoració.', 'Document gairebé buit o amb respostes d\'una sola paraula.', 'No ha lliurat el document individual.'],
+    ['par', 'Participació en el treball d\'equip', 10, 'Participa activament en totes les fases, compleix el seu rol i ajuda els companys.', 'Participa en la majoria de fases i compleix el seu rol.', 'Participa poc o només quan se li demana.', 'Gairebé no participa o dificulta la feina de l\'equip.', 'No ha participat en el treball.']]),
+  rbw('r2_Pt4', 'Pt4 · Presentació de la idea de negoci (pitch de 3 minuts)', [
+    ['act', 'Activitat i sector', 20, 'Expliquen amb claredat quin producte o servei ofereixen, a qui va dirigit i la relació amb el seu cicle.', 'L\'activitat s\'entén, amb algun aspecte poc concret.', 'Activitat explicada de manera general.', 'No queda clar què fa l\'empresa.'],
+    ['dif', 'Element diferenciador', 20, 'Diferència clara i creïble respecte a la competència, explicada amb exemples.', 'Element diferenciador correcte però poc argumentat.', 'Element diferenciador genèric («més bo», «més barat»).', 'No es diferencia de la competència.'],
+    ['ben', 'Expectativa de benefici', 20, 'Expliquen d\'on vindran els ingressos i per què el projecte pot ser rendible.', 'Benefici explicat, amb poca concreció.', 'Benefici esmentat sense explicar.', 'Idea vaga del benefici.'],
+    ['est', 'Estructura del pitch', 15, 'Comença amb un ganxo, segueix un ordre lògic i acaba amb un tancament clar.', 'Ordre lògic, però sense ganxo o sense tancament.', 'Salta d\'un tema a l\'altre i costa de seguir.', 'Presentació desordenada.'],
+    ['ora', 'Comunicació oral', 15, 'Parlen amb seguretat, sense llegir, amb bon to de veu i mirant el públic.', 'Parlen amb claredat, però consulten sovint les notes.', 'Llegeixen bona part del pitch o costa de sentir-los.', 'Llegeixen tot el pitch o gairebé no s\'entén.'],
+    ['tem', 'Temps i participació de l\'equip', 10, 'S\'ajusten als 3 minuts i tots els membres hi participen de manera equilibrada.', 'Petit desajust de temps o participació una mica desigual.', 'Es passen o es queden molt curts de temps, o parla sobretot una persona.', 'No controlen el temps i una sola persona fa tota la presentació.']]),
+  rb('r_Pt5', 'Pt5 · Canvas de la meva idea de negoci', [
+    ['blo', 'Blocs del Lean Canvas', 'Els nou blocs complets i concrets.', 'Els nou blocs complets, algun poc concret.', 'Falten blocs o n\'hi ha de genèrics.', 'Només alguns blocs.'],
+    ['coh', 'Coherència i validació', 'Els blocs són coherents entre ells i amb la validació feta.', 'Coherent, amb alguna contradicció petita.', 'Poca relació entre blocs o amb la validació.', 'Blocs sense relació entre ells.'],
+    ['puv', 'Proposta de valor i avantatge', 'Proposta única de valor clara i avantatge competitiu real.', 'Proposta clara, avantatge poc real.', 'Proposta o avantatge genèrics.', 'No es veu cap proposta de valor.']]),
+  rbw('r2_Pt6', 'Pt6 · Comunicació del projecte (exposició de 10 minuts)', [
+    ['con', 'Contingut: tot el projecte', 25, 'Presenten tot el recorregut: idea, anàlisi de l\'entorn, model de negoci, sostenibilitat, forma jurídica, viabilitat i màrqueting.', 'Presenten gairebé tot el projecte; falta algun apartat o queda molt per sobre.', 'Falten diversos apartats importants del projecte.', 'Només presenten la idea, sense la resta de la feina.'],
+    ['rig', 'Rigor i coherència', 20, 'Les dades i les decisions estan ben argumentades i tot el projecte és coherent (la idea encaixa amb l\'entorn, els números i la forma jurídica).', 'Bona argumentació, amb alguna dada sense justificar o una petita incoherència.', 'Poques dades o decisions sense justificar.', 'Afirmacions sense base o contradiccions importants.'],
+    ['est', 'Estructura i fil conductor', 15, 'Ganxo inicial, fil conductor clar, bones transicions i crida a l\'acció final.', 'Ben estructurada, amb un inici o un tancament fluixos.', 'Estructura feble: és una suma d\'apartats sense fil conductor.', 'Exposició desorganitzada.'],
+    ['ora', 'Comunicació oral i no verbal', 15, 'Parlen amb seguretat i naturalitat, sense llegir, amb bon ritme, to de veu i contacte visual.', 'Comunicació clara, amb moments de lectura o poc contacte visual.', 'Llegeixen sovint o el ritme és massa ràpid o monòton.', 'Llegeixen tota l\'exposició o costa molt de seguir-los.'],
+    ['sup', 'Suport visual', 10, 'Suport visual net i atractiu, amb la imatge de la marca, poc text i gràfics que ajuden a entendre el projecte.', 'Suport visual correcte, amb alguna diapositiva carregada de text.', 'Suport visual amb massa text o poc cuidat.', 'Sense suport visual o que no ajuda a seguir l\'exposició.'],
+    ['tem', 'Temps i repartiment entre els membres', 10, 'S\'ajusten als 10 minuts i tots els membres intervenen de manera equilibrada i coordinada.', 'Petit desajust de temps o repartiment una mica desigual.', 'Es passen o es queden curts clarament, o algun membre gairebé no intervé.', 'No controlen el temps i l\'exposició recau en una o dues persones.'],
+    ['pre', 'Respostes a les preguntes', 5, 'Responen les preguntes amb seguretat i demostren que dominen tot el projecte.', 'Responen bé la majoria de preguntes.', 'Respostes vagues o que només sap donar un membre.', 'No saben respondre les preguntes sobre el seu projecte.']]),
+  rbw('r_acts', 'Activitats del projecte (Act4 a Act10)', [
+    ['com', 'Feina completa', 20, 'Tots els apartats de l\'activitat estan fets, sense respostes en blanc ni d\'una sola paraula.', 'Tots els apartats fets, algun de manera molt breu.', 'Falta algun apartat o n\'hi ha diversos a mitges.', 'Només hi ha una petita part de l\'activitat.'],
+    ['cor', 'Correcció dels continguts', 20, 'Aplica correctament els conceptes treballats a classe, sense errors.', 'Conceptes ben aplicats, amb algun error petit.', 'Hi ha errors que demostren que algun concepte no s\'ha entès.', 'Errors greus o confusió general dels conceptes.'],
+    ['con', 'Concreció i adaptació al projecte', 20, 'Les respostes són concretes i pensades per a la seva empresa i el seu sector, amb dades o exemples reals.', 'Respostes adaptades al projecte, alguna de genèrica.', 'Respostes generals que servirien per a qualsevol empresa.', 'Respostes que no tenen a veure amb el seu projecte.'],
+    ['jus', 'Justificació de les decisions', 15, 'Explica per què pren cada decisió, amb arguments clars i ben raonats.', 'Justifica la majoria de decisions.', 'Justificacions breus o poc raonades.', 'Decisions sense justificar.'],
+    ['coh', 'Coherència amb la resta del projecte', 10, 'Encaixa del tot amb la idea de negoci i amb els altres apartats del projecte.', 'Coherent, amb algun detall que no acaba d\'encaixar.', 'Diverses contradiccions amb altres apartats.', 'No té relació amb la resta del projecte.'],
+    ['pro', 'Elaboració pròpia', 5, 'Feina clarament elaborada per l\'equip, amb idees i paraules pròpies.', 'Feina pròpia, amb alguna part poc treballada.', 'Algunes parts semblen copiades o generades sense revisar.', 'La major part és copiada.'],
+    ['pre', 'Expressió i presentació', 10, 'Redacció (o exposició, si és un vídeo) clara i ordenada, amb vocabulari tècnic i sense faltes.', 'Expressió clara, amb alguna falta o imprecisió.', 'Costa d\'entendre o té força faltes.', 'Expressió molt descuidada.']])
+];
+// Rúbriques de la versió anterior: ja no es poden triar, però serveixen per ensenyar el detall de les notes que es van posar amb elles
+const RUBS_OLD = [
   rb('r_Pt3', 'Pt3 · Design Thinking intercicles', [
     ['emp', 'Empatitzar', 'Buyer persona i mapa d\'empatia complets, concrets i basats en persones reals.', 'Buyer persona i mapa d\'empatia complets, amb algun apartat genèric.', 'Buyer persona o mapa d\'empatia incomplets.', 'Només uns quants trets, sense relació amb persones reals.'],
     ['ent', 'Entrevistes de problema', 'Tres o més entrevistes amb preguntes obertes i aprenentatges clars que canvien la idea.', 'Tres entrevistes, amb aprenentatges poc desenvolupats.', 'Menys de tres entrevistes o sense aprenentatges.', 'Una entrevista superficial.'],
@@ -3687,22 +3727,14 @@ const RUBS_DEFAULT = [
     ['dif', 'Element diferenciador', 'Diferència clara i creïble respecte a la competència.', 'Element diferenciador correcte però poc argumentat.', 'Element diferenciador genèric («més bo», «més barat»).', 'No es diferencia de la competència.'],
     ['ben', 'Expectativa de benefici', 'Explica d\'on vindran els ingressos i per què el projecte pot ser rendible.', 'Benefici explicat, amb poca concreció.', 'Benefici esmentat sense explicar.', 'Idea vaga del benefici.'],
     ['dos', 'Dossier del projecte', 'Dossier lliurat, complet i ben presentat.', 'Dossier lliurat amb alguna part incompleta.', 'Dossier lliurat molt incomplet.', 'Dossier amb molt poca feina.']]),
-  rb('r_Pt5', 'Pt5 · Canvas de la idea de negoci', [
-    ['blo', 'Blocs del Lean Canvas', 'Els nou blocs complets i concrets.', 'Els nou blocs complets, algun poc concret.', 'Falten blocs o n\'hi ha de genèrics.', 'Només alguns blocs.'],
-    ['coh', 'Coherència i validació', 'Els blocs són coherents entre ells i amb la validació feta.', 'Coherent, amb alguna contradicció petita.', 'Poca relació entre blocs o amb la validació.', 'Blocs sense relació entre ells.'],
-    ['puv', 'Proposta de valor i avantatge', 'Proposta única de valor clara i avantatge competitiu real.', 'Proposta clara, avantatge poc real.', 'Proposta o avantatge genèrics.', 'No es veu cap proposta de valor.']]),
+  rb('r_Pt6', 'Pt6 · Comunicació del projecte', [
+    ['apa', 'Apartats del pitch', 'Tots els apartats: ganxo, problema, solució, mercat, model de negoci, impacte, equip i crida a l\'acció.', 'Gairebé tots els apartats.', 'Falten diversos apartats.', 'Només alguns apartats.'],
+    ['cla', 'Claredat i persuasió', 'Missatge clar, persuasiu i adequat a la durada.', 'Clar, poc persuasiu.', 'Poc clar o massa llarg.', 'Confús.'],
+    ['for', 'Format', 'Format triat i ben preparat.', 'Format triat, preparació millorable.', 'Format triat sense preparar.', 'Format poc adequat.']]),
   rb('r_Act4', 'Act4 · Golden Circle de la idea', [
     ['why', 'Why · Per a què', 'Propòsit clar i inspirador: què volen aportar i què es perdria el món.', 'Propòsit clar però poc desenvolupat.', 'Propòsit confús o barrejat amb el què.', 'Propòsit molt vague.'],
     ['how', 'How i What', 'Estratègia, pilars i productes o serveis concrets i coherents amb el propòsit.', 'How i What complets, algun poc concret.', 'How o What incomplets.', 'Només una frase general.'],
     ['mot', 'Motivacions', 'Identifica motivacions extrínseques, intrínseques i transcendents ben diferenciades.', 'Les tres motivacions, alguna poc clara.', 'Només una o dues motivacions.', 'Motivacions confuses.']]),
-  rb('r_Act10', 'Act10 · Màrqueting: nom, logo, imatge i les 7 P', [
-    ['ide', 'Identitat corporativa', 'Nom, eslògan, missió, visió i valors coherents amb la idea.', 'Identitat completa, amb algun element poc coherent.', 'Identitat incompleta.', 'Elements aïllats.'],
-    ['log', 'Logo i esbossos', 'Tres o més esbossos i tria justificada pels colors, les icones i la tipografia.', 'Esbossos i logo, justificació breu.', 'Menys de tres esbossos o sense justificar.', 'Logo sense procés.'],
-    ['p7', 'Les 7 P del màrqueting mix', 'Les set P desenvolupades de manera concreta i coherent.', 'Les set P, alguna poc concreta.', 'Falten P o són genèriques.', 'Només alguna P.']]),
-  rb('r_Pe4', 'Pe4 · Anàlisi de l\'entorn', [
-    ['mic', 'Microentorn', 'Competència actual i futura, substitutius, clients, proveïdors i intermediaris ben analitzats.', 'Microentorn complet, amb algun element genèric.', 'Microentorn parcial.', 'Anàlisi molt superficial.'],
-    ['pes', 'PESTEL', 'Els sis factors amb oportunitats i amenaces concretes del sector.', 'Els sis factors, alguns genèrics.', 'Falten factors.', 'Pocs factors, sense relació amb el sector.'],
-    ['daf', 'Síntesi DAFO', 'DAFO coherent amb l\'anàlisi feta.', 'DAFO complet amb alguna incoherència.', 'DAFO incomplet.', 'DAFO sense relació amb l\'anàlisi.']]),
   rb('r_Act5', 'Act5 · Les formes jurídiques', [
     ['con', 'Coneixement de les formes', 'Explica bé socis, capital mínim, responsabilitat, fiscalitat i constitució.', 'Coneix la majoria de característiques.', 'Coneixement parcial o amb errors.', 'Molt pocs coneixements.'],
     ['tri', 'Tria per al projecte', 'Forma triada coherent amb el nombre de socis i el capital, ben justificada.', 'Tria coherent, poc justificada.', 'Tria poc coherent.', 'Tria sense justificar.']]),
@@ -3722,19 +3754,24 @@ const RUBS_DEFAULT = [
     ['inv', 'Inversió i finançament', 'Pla equilibrat que considera opcions socialment responsables i préstec ben calculat.', 'Pla equilibrat, poc argumentat.', 'Pla desequilibrat o préstec mal calculat.', 'Xifres aïllades.'],
     ['tre', 'Pla de tresoreria', '12 mesos amb cobraments i pagaments realistes i cap mes negatiu sense solució.', 'Complet, alguna hipòtesi poc realista.', 'Incomplet o amb mesos negatius sense solució.', 'Molt incomplet.'],
     ['via', 'Viabilitat', 'Conclusió argumentada amb el resultat i el punt mort.', 'Conclusió correcta, poc argumentada.', 'Conclusió sense dades.', 'Sense conclusió clara.']]),
-  rb('r_Pt6', 'Pt6 · Comunicació del projecte', [
-    ['apa', 'Apartats del pitch', 'Tots els apartats: ganxo, problema, solució, mercat, model de negoci, impacte, equip i crida a l\'acció.', 'Gairebé tots els apartats.', 'Falten diversos apartats.', 'Només alguns apartats.'],
-    ['cla', 'Claredat i persuasió', 'Missatge clar, persuasiu i adequat a la durada.', 'Clar, poc persuasiu.', 'Poc clar o massa llarg.', 'Confús.'],
-    ['for', 'Format', 'Format triat i ben preparat.', 'Format triat, preparació millorable.', 'Format triat sense preparar.', 'Format poc adequat.']]),
+  rb('r_Act10', 'Act10 · Màrqueting: nom, logo, imatge i les 7 P', [
+    ['ide', 'Identitat corporativa', 'Nom, eslògan, missió, visió i valors coherents amb la idea.', 'Identitat completa, amb algun element poc coherent.', 'Identitat incompleta.', 'Elements aïllats.'],
+    ['log', 'Logo i esbossos', 'Tres o més esbossos i tria justificada pels colors, les icones i la tipografia.', 'Esbossos i logo, justificació breu.', 'Menys de tres esbossos o sense justificar.', 'Logo sense procés.'],
+    ['p7', 'Les 7 P del màrqueting mix', 'Les set P desenvolupades de manera concreta i coherent.', 'Les set P, alguna poc concreta.', 'Falten P o són genèriques.', 'Només alguna P.']]),
+  rb('r_Pe4', 'Pe4 · Anàlisi de l\'entorn', [
+    ['mic', 'Microentorn', 'Competència actual i futura, substitutius, clients, proveïdors i intermediaris ben analitzats.', 'Microentorn complet, amb algun element genèric.', 'Microentorn parcial.', 'Anàlisi molt superficial.'],
+    ['pes', 'PESTEL', 'Els sis factors amb oportunitats i amenaces concretes del sector.', 'Els sis factors, alguns genèrics.', 'Falten factors.', 'Pocs factors, sense relació amb el sector.'],
+    ['daf', 'Síntesi DAFO', 'DAFO coherent amb l\'anàlisi feta.', 'DAFO complet amb alguna incoherència.', 'DAFO incomplet.', 'DAFO sense relació amb l\'anàlisi.']]),
   rb('r_Pe5', 'Pe5 · Economia social i solidària', [
     ['ess', 'Principis de l\'ESS i bé comú', 'Aplica bé els principis i valora el projecte amb la matriu del bé comú.', 'Aplicació correcta, poc argumentada.', 'Aplicació parcial.', 'Menció superficial.'],
     ['rsc', 'RSC i lideratge ètic', 'Pla de RSC concret i reflexió sobre el lideratge ètic.', 'Pla de RSC correcte, reflexió breu.', 'Pla incomplet.', 'Pla molt pobre.']])
 ];
 const ROL_KEYS = ['accio', 'social', 'mental'], rolDup = (t, i, k) => !!t.members[i][k] && t.members.some((x, j) => j !== i && rolN(x[k]) === rolN(t.members[i][k]) && (j < i || false));
 const ROL_OLD = { 'Investigador': 'Investigador de Recursos', 'Creador/Redactor': 'Creador' }, rolN = v => ROL_OLD[v] || v;
-const rubOf = a => a && a.rub ? (G.rubs || []).find(r => r.id === a.rub) || null : null;
-const rubRec = a => (G.rubs || []).find(r => r.id === 'r_' + a.c) || null;
-const rubNeed = a => !a.rub && a.ev && a.ev.length; // cal triar-ne una per corregir
+// Les activitats de nota externa (formularis, coavaluacions...) no tenen rúbrica: només s'hi posa la nota
+const rubOf = a => a && a.rub && !a.ext ? (G.rubs || []).find(r => r.id === a.rub) || null : null;
+const rubRec = a => a.ext ? null : (G.rubs || []).find(r => r.id === 'r2_' + a.c) || (G.rubs || []).find(r => r.id === 'r_' + a.c) || (/^Act\d+$/.test(a.c) && (G.rubs || []).find(r => r.id === 'r_acts')) || null;
+const rubNeed = a => !a.ext && !a.rub; // cal triar-ne una per corregir
 // Nota amb la rúbrica: mitjana ponderada dels nivells dels criteris, sobre 10 (només si tots estan avaluats)
 function rubGrade(r, rl) {
   const cs = r ? r.crit : [], fet = cs.filter(c => rl && typeof rl[c.k] === 'number'), W = cs.reduce((s, c) => s + (Number(c.w) || 0), 0);
@@ -3754,17 +3791,29 @@ const gcls = x => x === null || x === undefined || x === '' || isNaN(x) ? 'g-non
 const f1 = x => x === null || x === undefined || x === '' || isNaN(x) ? '—' : Number(x).toLocaleString('ca-ES', { maximumFractionDigits: 2 });
 function ensureEval() {
   aiCfg();
-  if (!G.acts) G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT));
+  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 2; }
   if (!Array.isArray(G.rubs)) G.rubs = JSON.parse(JSON.stringify(RUBS_DEFAULT));
+  if (G.evalV !== 2) evalMigrate();
   G.teams.forEach(t => { t.grades = t.grades || {}; t.ai = t.ai || {}; });
+}
+// Grups creats amb la versió anterior: passen a les activitats i rúbriques noves (es respecten els pesos, les activitats afegides i les rúbriques pròpies)
+function evalMigrate() {
+  const old = RUBS_OLD.map(r => r.id);
+  G.rubs = G.rubs.filter(r => !old.includes(r.id));
+  RUBS_DEFAULT.forEach((r, i) => { if (!G.rubs.some(x => x.id === r.id)) G.rubs.splice(Math.min(i, G.rubs.length), 0, JSON.parse(JSON.stringify(r))); });
+  ACTS_DEFAULT.forEach(d => { const a = G.acts.find(x => x.c === d.c); if (!a) return;
+    Object.assign(a, JSON.parse(JSON.stringify({ n: d.n, ext: d.ext, ev: d.ev, lock: !!d.lock, crit: d.crit || '' })));
+    a.rub = d.rub && (!a.rub || a.rub === '__none' || old.includes(a.rub)) ? d.rub : d.rub ? a.rub : undefined; });
+  G.evalV = 2;
 }
 // Feina de l'equip per a una activitat: [{title, pairs:[[label, text]]}]
 function actEvidence(t, a) {
   return (a.ev || []).map(([k, labels]) => {
     if (k === 'dossier') return { title: 'Dossier', pairs: [['Dossier del projecte', t.delivered ? 'Lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'No lliurat']] };
+    if (!sec(k)) return null; // apartat que ja no existeix
     let ps = pairs(t, k).filter(r => r[1] !== null); if (labels) ps = ps.filter(([l]) => labels.includes(l));
     return { title: sec(k).l, k, pairs: ps };
-  });
+  }).filter(Boolean);
 }
 function evidenceText(t, a) {
   return actEvidence(t, a).map(g => `## ${g.title}\n` + (g.pairs.length ? g.pairs.map(([l, x]) => `- ${l}: ${String(x || '').trim() || '(buit)'}`).join('\n') : '(sense contingut)')).join('\n\n');
@@ -3777,7 +3826,7 @@ function evidenceFill(t, a) {
 // Proposta automàtica sense IA: grau de compleció + revisions del professor
 function autoLevel(t, a) {
   if (!a.ev || !a.ev.length) return null;
-  const secs = [...new Set(a.ev.map(e => e[0]).filter(k => k !== 'dossier'))];
+  const secs = [...new Set(a.ev.map(e => e[0]).filter(k => sec(k) && sec(k).p))]; if (!secs.length) return null;
   const full = a.ev.every(e => !e[1]) ? secs.reduce((s, k) => { const [d, n] = sec(k).p(t); return s + Math.min(1, d / n); }, 0) / Math.max(1, secs.length) : evidenceFill(t, a);
   let l = full >= 0.95 ? 4 : full >= 0.7 ? 3 : full >= 0.4 ? 2 : full > 0.05 ? 1 : 0;
   if (secs.some(k => t.review[k] && t.review[k].status === 'millorar')) l = Math.max(0, l - 1);
@@ -3866,7 +3915,7 @@ let aiState = {}, manualScope = null;
 // Selector de rúbrica d'una activitat (val per a tots els equips del grup)
 function rubSel(a, attr) {
   const rec = rubRec(a);
-  return `<select class="field-sel" ${attr} aria-label="Rúbrica de ${esc(a.c)}"><option value="">${a.ev && a.ev.length ? '— Tria una rúbrica —' : 'Sense rúbrica'}</option>${G.rubs.map(r => `<option value="${esc(r.id)}" ${a.rub === r.id ? 'selected' : ''}>${esc(r.n)}${rec && rec.id === r.id ? ' (recomanada)' : ''}</option>`).join('')}${a.ev && a.ev.length ? `<option value="__none" ${a.rub === '__none' ? 'selected' : ''}>Sense rúbrica (només el nivell general)</option>` : ''}</select>`;
+  return `<select class="field-sel" ${attr} aria-label="Rúbrica de ${esc(a.c)}"><option value="">— Tria una rúbrica —</option>${G.rubs.map(r => `<option value="${esc(r.id)}" ${a.rub === r.id ? 'selected' : ''}>${esc(r.n)}${rec && rec.id === r.id ? ' (recomanada)' : ''}</option>`).join('')}<option value="__none" ${a.rub === '__none' ? 'selected' : ''}>Sense rúbrica (només el nivell general)</option></select>`;
 }
 // Rúbrica per corregir: una fila per criteri i una casella per nivell
 function rubGrid(a, r, rl, airl) {
@@ -3881,9 +3930,10 @@ function gradeCard(t, a) {
   const noteIn = `<label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label>`;
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="small muted" style="font-weight:400">· ${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
-    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Activitat que es fa fora de l\'eina: introdueix la nota obtinguda.' : 'Aquesta activitat no té feina associada a l\'eina.'}</p>`}
-    <div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>
+    ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? 'Nota externa: escriu la nota que han tret.' : 'Aquesta activitat es fa fora de l\'eina (en paper o a classe): corregeix-la amb la rúbrica.'}</p>`}
+    ${a.ext ? '' : `<div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>`}
     ${r ? rubGrid(a, r, rl, aiCfg().enabled ? airl : null) + `<div class="gradebar"><p class="small" style="margin:0;flex:1;min-width:200px">Nota segons la rúbrica: <b>${rg.nota === null ? `falten ${rg.total - rg.done} de ${rg.total} criteris` : f1(rg.nota) + ' · ' + LVL_NAMES[noteToLvl(rg.nota)]}</b><span class="muted"> · Si cal, pots canviar la nota a mà.</span></p>${noteIn}</div>`
+      : a.ext ? `<div class="gradebar"><span style="flex:1"></span>${noteIn}</div>`
       : rubNeed(a) ? `<div class="gradebar"><div class="notice info" style="margin:0;flex:1">Tria la rúbrica amb què vols corregir aquesta activitat. També pots escriure la nota directament.</div>${noteIn}</div>`
       : `<div class="gradebar"><div class="lvls" role="group" aria-label="Nivell">${[4, 3, 2, 1, 0].map(n => `<button type="button" class="lvl ${lvl === n ? 'on' : ''}" data-lvl="${a.c}" data-v="${n}">${LVL_NAMES[n]}<small>${n}</small>${al === n ? '<em class="sug" title="Proposta automàtica"></em>' : ''}${aiCfg().enabled && ai && ai.nivell === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</button>`).join('')}</div>${noteIn}</div>`}
     ${al !== null && ev.length && !r ? `<p class="small muted" style="margin:8px 0 0">Proposta automàtica: <b>${LVL_NAMES[al]} (${f1(LVL_NOTE(al))})</b></p>` : ''}
@@ -3928,7 +3978,10 @@ function vQualificacio(v) {
   const aoff = $('#aiOff'), aon = $('#aiOn2');
   if (aoff) aoff.onclick = () => { aiCfg().enabled = false; manualScope = null; save(); render(); };
   if (aon) aon.onclick = () => { aiCfg().enabled = true; save(); render(); };
-  const setG = (c, patch) => { t.grades[c] = Object.assign(t.grades[c] || {}, patch); save(); };
+  const setG = (c, patch) => { const g = t.grades[c] = Object.assign(t.grades[c] || {}, patch), a = G.acts.find(x => x.c === c);
+    // Amb la nota es guarda com estava cada apartat: consta com a lliurat mentre l'equip no hi faci canvis
+    if ('nota' in patch && a) { g.h = {}; (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) g.h[k] = secHash(t, k); }); }
+    save(); };
   const rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const n = +b.dataset.v; setG(b.dataset.lvl, { nivell: n, nota: LVL_NOTE(n) }); rerender(); });
   v.querySelectorAll('[data-nota]').forEach(i => i.onchange = () => { const x = i.value === '' ? '' : Math.max(0, Math.min(10, Number(i.value))); setG(i.dataset.nota, { nota: x, nivell: x === '' ? null : noteToLvl(x) }); rerender(); });
@@ -4000,7 +4053,7 @@ h2{font-size:18px;margin:28px 0 10px}h4{font-size:13px;margin:14px 0 4px;color:v
 dl{margin:0}dt{font-size:12px;color:var(--muted);margin-top:8px}dd{margin:2px 0 0}.rempty{color:var(--muted);font-style:italic}`;
 function reportDoc(teams) { return `<!doctype html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Informe · ${esc(teams.length === 1 ? projName(teams[0]) : G.name)}</title><style>${REPORT_CSS}</style></head><body>${teams.map(t => `<div class="rep">${reportBody(t)}</div>`).join('')}</body></html>`; }
 // Nivells de la rúbrica d'una activitat qualificada (per a l'informe)
-const rubUsed = g => g && g.rub && g.rl ? (G.rubs || []).find(r => r.id === g.rub) : null;
+const rubUsed = g => g && g.rub && g.rl ? (G.rubs || []).find(r => r.id === g.rub) || RUBS_OLD.find(r => r.id === g.rub) : null;
 function rubRep(g) { const r = rubUsed(g); if (!r) return ''; return `<table class="rtab rrub"><tbody>${r.crit.map(c => `<tr><td>${esc(c.t)}</td><td>${typeof g.rl[c.k] === 'number' ? LVL_NAMES[g.rl[c.k]] + ' (' + g.rl[c.k] + ')' : '—'}</td></tr>`).join('')}</tbody></table>`; }
 function reportText(t) {
   const r4 = raGradeAct(t, 'RA4'), r5 = raGradeAct(t, 'RA5');
@@ -4079,7 +4132,7 @@ function vCriteris(v) {
   const card1 = a => { const r = rubOf(a), pg = (a.ev || []).map(e => e[0]).filter((k, i, l) => sec(k) && l.indexOf(k) === i);
     const wts = r ? r.crit.map(c => Number(c.w) || 0) : [], showW = wts.some(w => w !== wts[0]), W = wts.reduce((x, y) => x + y, 0);
     const body = r ? r.crit.map(c => `<div class="rv-c"><h4>${esc(c.t)}${showW && W ? ` <span class="pill grey">pes ${Math.round((Number(c.w) || 0) / W * 100)} %</span>` : ''}</h4><div class="rv-l">${lv.map(([n, nm], i) => `<div><b>${nm} · ${n}</b>${esc((c.d || [])[i] || '—')}</div>`).join('')}</div></div>`).join('') + '<p class="small muted">Si no es fa l\'activitat, la nota és 0 (Sense fer).</p>'
-      : a.crit ? `<p class="small"><b>Què es valora:</b> ${esc(a.crit)}</p>` : '<p class="small muted">Encara no hi ha criteris publicats per a aquesta activitat.</p>';
+      : a.crit ? `<p class="small"><b>Què es valora:</b> ${esc(a.crit)}</p>` : a.ext ? '<p class="small muted">Es fa fora de l\'eina: hi constarà la nota que tragueu.</p>' : '<p class="small muted">Encara no hi ha criteris publicats per a aquesta activitat.</p>';
     return `<details class="rubed rv-a" ${r ? '' : 'open'}><summary><b><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</b><span class="small muted">${f1(a.w)} % del ${esc(a.ra)}${a.ext ? ' · es qualifica fora de l\'eina' : ''}${r ? ' · rúbrica: ' + esc(r.n) : ''}</span></summary>
       <div class="rubed-b">${pg.length ? `<div class="row" style="margin-bottom:6px"><span class="small muted">On es treballa:</span>${pg.map(k => `<button type="button" class="btn ghost small" data-go="${k}">${esc(sec(k).l)}</button>`).join('')}</div>` : ''}${body}</div></details>`; };
   v.innerHTML = `${head0}
@@ -4162,11 +4215,11 @@ function rubImpHtml() {
 }
 function vRubriques(v) {
   ensureEval();
-  const used = id => G.acts.filter(a => a.rub === id);
+  const used = id => G.acts.filter(a => !a.ext && a.rub === id);
   v.innerHTML = `${head('Rúbriques', 'Rúbriques de correcció')}
     <p class="muted intro">Cada activitat es corregeix amb la rúbrica que hi triïs. A «Qualificació per activitats» marques el nivell de cada criteri i la nota es calcula sola. La IA també fa servir la rúbrica per proposar el nivell de cada criteri i un comentari.</p>
     <label class="choice" style="margin:0 0 14px"><input type="checkbox" id="rubShow" ${G.rubHide ? '' : 'checked'}><span><b>Mostrar les rúbriques a l'alumnat</b><span class="small muted">Els equips les veuen a «Lliurament → Com s'avaluarà» i les poden consultar mentre treballen. Desactiva-ho mentre encara les prepares.</span></span></label>
-    ${card('Rúbrica de cada activitat', pad(`<div class="rubass">${G.acts.map((a, i) => `<div class="rubassr"><span><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</span>${rubSel(a, `data-rubact="${i}"`)}</div>`).join('')}</div>
+    ${card('Rúbrica de cada activitat', pad(`<div class="rubass">${G.acts.map((a, i) => a.ext ? '' : `<div class="rubassr"><span><span class="actcode">${esc(a.c)}</span> ${esc(a.n)}</span>${rubSel(a, `data-rubact="${i}"`)}</div>`).join('')}</div>
       <div class="row" style="margin-top:12px"><button type="button" class="btn ghost small" id="rubRec">Posar la rúbrica recomanada on encara no n'hi ha</button></div>`))}
     <div class="row"><button type="button" class="btn" id="rubNew">+ Nova rúbrica</button><button type="button" class="btn ghost" id="rubImp">${ico('<path d="M4 4h16v16H4zM4 10h16M10 4v16"/>')}Importar des d'un full de càlcul</button><button type="button" class="btn ghost" id="rubReset">Restablir les rúbriques de la programació</button></div>
     <div id="rubImpBox">${rubImpHtml()}</div>
@@ -4213,12 +4266,13 @@ function vRubriques(v) {
 function actsConfigHtml() {
   ensureEval();
   const sum = ra => G.acts.filter(a => a.ra === ra).reduce((s, a) => s + (Number(a.w) || 0), 0);
-  return card('Activitats, qualificació i correcció', pad(`<p class="small muted">Valors de la programació del departament. Cada RA hauria de sumar 100%. «Què s'avalua» és el criteri que fa servir la IA per corregir.</p>
-    <div class="tablebox"><table class="acttab"><thead><tr><th>Codi</th><th>Activitat</th><th>RA</th><th class="n">Pes %</th><th>Qualificació</th><th>Què s'avalua</th><th></th></tr></thead><tbody>
+  return card('Activitats, qualificació i correcció', pad(`<p class="small muted">Valors de la programació del departament. Cada RA hauria de sumar 100%. «Què s'avalua» és el criteri que fa servir la IA per corregir. Les activitats marcades a «Es tanca» són independents: quan hi poses nota, l'equip ja no pot canviar els seus apartats. La resta forma part del projecte global, que es valora al final.</p>
+    <div class="tablebox"><table class="acttab"><thead><tr><th>Codi</th><th>Activitat</th><th>RA</th><th class="n">Pes %</th><th>Qualificació</th><th title="Activitat independent: quan té nota, l'equip ja no pot canviar els seus apartats">Es tanca</th><th>Què s'avalua</th><th></th></tr></thead><tbody>
     ${G.acts.map((a, i) => `<tr><td><input type="text" data-act="${i}" data-k="c" value="${esc(a.c)}" aria-label="Codi" style="width:70px"></td><td><input type="text" data-act="${i}" data-k="n" value="${esc(a.n)}" aria-label="Activitat"></td>
       <td><select class="field-sel" data-act="${i}" data-k="ra" aria-label="RA"><option ${a.ra === 'RA4' ? 'selected' : ''}>RA4</option><option ${a.ra === 'RA5' ? 'selected' : ''}>RA5</option></select></td>
       <td><input type="number" min="0" max="100" data-act="${i}" data-k="w" value="${esc(a.w)}" aria-label="Pes" style="width:70px"></td>
       <td><select class="field-sel" data-act="${i}" data-k="ext" aria-label="Qualificació"><option value="0" ${!a.ext ? 'selected' : ''}>Amb l'eina</option><option value="1" ${a.ext ? 'selected' : ''}>Nota externa</option></select></td>
+      <td style="text-align:center"><input type="checkbox" data-act="${i}" data-k="lock" ${a.lock ? 'checked' : ''} aria-label="Es tanca amb la nota"></td>
       <td><textarea rows="2" data-act="${i}" data-k="crit" aria-label="Què s'avalua">${esc(a.crit || '')}</textarea></td><td><button type="button" class="btn ghost small" data-actdel="${i}">Treure</button></td></tr>`).join('')}
     </tbody></table></div>
     <p class="small" id="actSums">Suma RA4: <b>${sum('RA4')}%</b> · Suma RA5: <b>${sum('RA5')}%</b></p>
@@ -4233,10 +4287,10 @@ function actsConfigHtml() {
 }
 function bindActsConfig(v) {
   const sums = () => { const s = ra => G.acts.filter(a => a.ra === ra).reduce((x, a) => x + (Number(a.w) || 0), 0); const el = $('#actSums'); if (el) el.innerHTML = `Suma RA4: <b>${s('RA4')}%</b> · Suma RA5: <b>${s('RA5')}%</b>`; };
-  v.querySelectorAll('[data-act]').forEach(el => { const h = () => { const a = G.acts[+el.dataset.act], k = el.dataset.k; a[k] = k === 'w' ? Number(el.value) || 0 : k === 'ext' ? el.value === '1' : el.value; save(); sums(); }; el.oninput = h; el.onchange = h; });
+  v.querySelectorAll('[data-act]').forEach(el => { const h = () => { const a = G.acts[+el.dataset.act], k = el.dataset.k; a[k] = k === 'w' ? Number(el.value) || 0 : k === 'ext' ? el.value === '1' : k === 'lock' ? el.checked : el.value; save(); sums(); }; el.oninput = h; el.onchange = h; });
   v.querySelectorAll('[data-actdel]').forEach(b => b.onclick = () => { G.acts.splice(+b.dataset.actdel, 1); save(); render(); });
   $('#actAdd').onclick = () => { G.acts.push({ c: 'Nova', n: 'Nova activitat', ra: 'RA4', w: 0, ext: true, ca: '', ev: [], crit: '' }); save(); render(); };
-  $('#actReset').onclick = () => { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); save(); render(); };
+  $('#actReset').onclick = () => { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); G.acts.forEach(a => { if (a.rub && !rubOf(a)) a.rub = undefined; }); save(); render(); };
   $('#showGrades').onchange = e => { G.showGrades = e.target.checked; save(); renderSide(); };
   $('#aiOn').onchange = e => { aiCfg().enabled = e.target.checked; save(); const y = window.scrollY; render(); window.scrollTo(0, y); };
   $('#allowPaste').onchange = e => { G.allowPaste = e.target.checked; save(); };
@@ -4404,7 +4458,7 @@ function teamFromDoc(d) {
   return normTeam(t);
 }
 const groupFields = () => {
-  const cfg = {}; ['sector', 'acts', 'rubs', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
+  const cfg = {}; ['sector', 'acts', 'rubs', 'evalV', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
@@ -4431,7 +4485,7 @@ function writeWindows() {
 }
 const canWrite = (k, t) => { const x = writeWindows()[k], n = Date.now(), v = (DATA_SECS[k] || [k]).map(s => secOv(t, s));
   if (v.every(o => o === 'x')) return false; // ja té nota
-  return !x || (n >= x.f && (n < x.u || v.includes('o'))); }; // «a millorar» allarga el termini
+  return !x || (n >= x.f && n < x.u); };
 function groupToG(g) { const cfg = P(g.cfg) || {}; return Object.assign(cfg, { v: 1, name: g.name, profs: (g.profs || []).filter(x => x !== (ME && ME.email)), showGrades: !!g.showGrades, join: g.join !== false, teams: [] }); }
 
 /* ---------- Indicador de desat ---------- */
@@ -5380,7 +5434,7 @@ async function homeView(msg, d) {
         const ids = g.teamIds || [], pend = [];
         ts.forEach(t => PROG.forEach(s => { if (workState(t, s) === 'sent') pend.push({ ti: ids.indexOf(t.id), team: projName(t), k: s.k, l: s.l, at: (sentOf(t, s.k) || {}).at || 0 }); }));
         ST[g.id].pend = pend.sort((a, b) => a.at - b.at);
-        ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => (t.ov || {})[s.k] === 'x' || ['sent', 'correcte'].includes(workState(t, s))).length, 0);
+        ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => { const o = (t.ov || {})[s.k] || ''; return o === 'x' || (o[0] === 'g' && !sentOf(t, s.k) && o.slice(1) === secHash(t, s.k)) || ['sent', 'correcte'].includes(workState(t, s)); }).length, 0);
         ST[g.id].rev = pend.length;
       } catch (e) { ST[g.id].err = true; }
       paintGuide();
@@ -5588,7 +5642,7 @@ function exampleGroup() {
   Object.assign(d.p7, { product: 'Instal·lació solar completa amb manteniment.', price: 'Pressupost tancat des de 6.000 €, amb finançament opcional.', place: 'Visites a domicili i web pròpia.', promotion: 'Xarxes socials, xerrades als barris i recomanacions.', people: 'Els tres socis i un instal·lador col·laborador.', process: 'Visita, pressupost, tràmits, instal·lació i seguiment.', physical: 'Furgoneta rotulada, uniformes i fulletons.' });
   Object.assign(d.pitch, { ganxo: 'I si la teva factura de la llum baixés un 40 %?', problema: 'Les plaques solars semblen cares i complicades.', solucio: 'Fem el projecte, els tràmits i la instal·lació per tu.', mercat: 'Milers de cases amb teulada a la comarca.', model: 'Venem la instal·lació i oferim manteniment anual.', impacte: 'Menys factura per a les famílies i menys CO₂.', equip: 'Tres socis amb formació en electricitat i gestió.', crida: 'Demana el teu pressupost gratuït!', format: 'video', videoUrl: 'https://drive.google.com/file/d/exemple-sol-a-casa/view' });
   t.review = { idea: { status: 'correcte', comment: 'Molt ben treballat!' }, empatia: { status: 'correcte', comment: '' }, entrevistes: { status: 'correcte', comment: 'Bé que hàgiu parlat amb un instal·lador.' }, lean: { status: 'correcte', comment: '' }, treso: { status: 'millorar', comment: 'Reviseu el creixement de vendes: un 8 % mensual és molt optimista.' } };
-  t.grades = { Act4: { nivell: 4, nota: 9.5, comentari: 'Molt ben definit.' }, Pt3: { nivell: 4, nota: 9, comentari: 'Totes les fases fetes.' }, Pt4: { nivell: 3, nota: 8, comentari: 'Falta publicar la carpeta del projecte.' }, Pt5: { nivell: 3, nota: 8, comentari: '' }, Pe3: { nota: 7.5 }, Pe4: { nota: 8 } };
+  t.grades = { Act4: { nivell: 4, nota: 9.5, comentari: 'Molt ben definit.' }, Pt3: { nivell: 4, nota: 9, comentari: 'Totes les fases fetes.' }, Pt4: { nivell: 3, nota: 8, comentari: 'Falta concretar l\'element diferenciador.' }, Pt5: { nivell: 3, nota: 8, comentari: '' }, Pe3: { nota: 7.5 }, Pe4: { nota: 8 } };
   t.delivered = ago(1); t.updated = ago(1);
 
   /* ===================== EQUIP 2 · LABMAR (laboratori d'anàlisi) ===================== */
@@ -5662,7 +5716,7 @@ function exampleGroup() {
 /* ================= PROFESSORAT ================= */
 const LEVELS = [[4, 'Expert'], [3, 'Avançat'], [2, 'Aprenent'], [1, 'Novell'], [0, 'Sense fer']];
 const RUBRIC = [
-  { id: 'dt', ra: 'RA4', ca: '4.1 · 4.2 · 4.7 · 4.8 · 4.9 · 5.4', title: 'Design Thinking i validació', secs: ['empatia', 'entrevistes', 'definir', 'prototip'],
+  { id: 'dt', ra: 'RA4', ca: '4.1 · 4.2 · 4.7 · 4.8 · 4.9 · 5.4', title: 'Design Thinking i validació (dossier en paper)', secs: [],
     d: ['Aplica les cinc fases amb rigor: mapa d\'empatia complet, tres o més entrevistes amb aprenentatges, selecció de la idea amb criteris objectius i prototip provat amb usuaris.', 'Aplica totes les fases, però alguna amb poca profunditat (poques entrevistes o prototip poc provat).', 'Aplica només algunes fases o les evidències de validació són escasses.', 'Proposa una solució sense partir de les necessitats reals de les persones destinatàries.', 'No ho ha fet.'] },
   { id: 'idea', ra: 'RA4', ca: '4.2 · 5.1', title: 'Idea de negoci i Golden Circle', secs: ['idea'],
     d: ['Defineix l\'activitat, l\'element diferenciador i el benefici, i el Golden Circle expressa un propòsit clar i coherent amb el com i el què.', 'Idea ben definida i Golden Circle complet, amb algun element poc concretat.', 'Idea definida de manera general i Golden Circle incomplet.', 'Idea vaga, sense element diferenciador.', 'No ho ha fet.'] },
@@ -5683,6 +5737,7 @@ const RUBRIC = [
 ];
 const lvl = x => x >= 0.9 ? 4 : x >= 0.65 ? 3 : x >= 0.35 ? 2 : x > 0.05 ? 1 : 0;
 function suggest(t, r) {
+  if (!r.secs.length) return t.evals.levels[r.id]; // es fa fora de l'eina: no hi ha proposta
   const p = r.secs.reduce((a, k) => { const [d, n] = sec(k).p(t); return a + Math.min(1, d / n); }, 0) / r.secs.length;
   let l = lvl(p); if (r.secs.some(k => t.review[k] && t.review[k].status === 'millorar')) l = Math.max(0, l - 1); return l;
 }
@@ -5857,9 +5912,9 @@ function vAvaluacio(v) {
 function vGuia(v) {
   const CA4 = [['4.1', 'Identifica els problemes de les persones destinatàries com a pas previ a les solucions.', 'empatia'], ['4.2', 'Posa en pràctica el procés creatiu per aconseguir una idea amb valor econòmic, social i/o cultural.', 'idea definir'], ['4.3', 'Dissenya un model de negoci derivat de la idea.', 'lean'], ['4.4', 'Incorpora valors ètics i socials analitzant models de balanç social.', 'ebc'], ['4.5', 'Analitza la contribució de l\'economia circular i del bé comú.', 'ebc sost'], ['4.6', 'Analitza l\'entorn general i específic i el seu impacte en la idea.', 'micro pestel dafo'], ['4.7', 'Realitza entrevistes de problema.', 'entrevistes'], ['4.8', 'Valida la solució amb prototips (encaix problema-solució).', 'prototip'], ['4.9', 'Posa en pràctica tècniques de validació i prototipatge.', 'definir prototip'], ['4.10', 'Experimenta amb estratègies de màrqueting, comunicació i venda.', 'marca p7 pitch']];
   const CA5 = [['5.1', 'Analitza els conceptes d\'emprenedoria i innovació social.', 'idea ebc'], ['5.2', 'Reflexiona sobre el lideratge ètic i sostenible.', 'ebc'], ['5.3', 'Reflexiona sobre la tecnologia com a base del canvi del model productiu.', 'sost'], ['5.4', 'Aplica el Design Thinking per detectar necessitats socials i ambientals.', 'empatia definir'], ['5.5', 'Analitza models de negoci ecosocials i/o de base tecnològica.', 'lean sost'], ['5.6', 'Alinea metes de desenvolupament sostenible amb el model de negoci.', 'sost'], ['5.7', 'Analitza la viabilitat del projecte (inversió, costos, beneficis; formes jurídiques).', 'juridica fiscal inversio treso viab'], ['5.8', 'Investiga opcions financeres socialment responsables.', 'inversio prestec'], ['5.9', 'Defineix els agents implicats i la seva participació.', 'agents']];
-  const where = ks => ks.split(' ').map(k => sec(k).l).join(' · ');
+  const where = ks => [...new Set(ks.split(' ').filter(Boolean).map(k => sec(k) ? sec(k).l : 'Dossier de Design Thinking (en paper)'))].join(' · ') || 'Fora de l\'eina';
   const tbl = rows => `<div class="tablebox"><table class="fin zebra"><thead><tr><th>CA</th><th>Criteri d'avaluació</th><th>On es treballa</th></tr></thead><tbody>${rows.map(r => `<tr><td><b>${r[0]}</b></td><td>${esc(r[1])}</td><td>${esc(where(r[2]))}</td></tr>`).join('')}</tbody></table></div>`;
-  const acts = [['Act4', 'Golden Circle de la idea', 'idea'], ['Pt3 · Co2', 'Design Thinking intercicles', 'empatia entrevistes definir prototip'], ['Pt4', 'Carpeta del projecte i definició de la idea', 'idea dossier'], ['Pe4', 'Anàlisi de l\'entorn', 'micro pestel dafo'], ['Act5 · Act6', 'Formes jurídiques i vídeo', 'juridica'], ['Act7', 'Obligacions fiscals i posada en marxa', 'fiscal'], ['Pt5', 'Canvas de la idea de negoci', 'lean'], ['Act8', 'ODS i Canvas sostenible', 'lean sost'], ['Pe5', 'Economia social i solidària', 'ebc'], ['Act9', 'Pla de tresoreria del primer any', 'inversio prestec treso viab'], ['Act10', 'Màrqueting: nom, logo, imatge i 7 P', 'marca p7'], ['Pt6 · Co3 · Au2', 'Comunicació del projecte', 'pitch']];
+  const acts = [['Act4', 'Golden Circle de la nostra idea', 'idea'], ['Pt3 · Co2', 'Design Thinking intercicles', 'empatia'], ['Pt4', 'Carpeta d\'aprenentatge i presentació de la idea de negoci', 'idea'], ['Pe4', 'Google Forms sobre l\'anàlisi de l\'entorn', 'micro pestel dafo'], ['Act5 · Act6', 'Formes jurídiques i vídeo', 'juridica'], ['Act7', 'Obligacions fiscals i posada en marxa', 'fiscal'], ['Pt5', 'Canvas de la meva idea de negoci', 'lean'], ['Act8', 'ODS i el Canvas sostenible', 'lean sost'], ['Pe5', 'Google Forms sobre economia social i solidària', 'ebc'], ['Act9', 'Pla de tresoreria del primer any', 'inversio prestec treso viab'], ['Act10', 'Màrqueting: nom, logo, imatge i les 7 P', 'marca p7'], ['Pt6 · Co3 · Au2', 'Comunicació del projecte', 'pitch']];
   v.innerHTML = `${head('Per al professorat', 'Guia i criteris')}
     <p class="muted intro">L'eina acompanya els equips en el projecte emprenedor del mòdul Itinerari personal per a l'ocupabilitat II. Cada pàgina indica el criteri d'avaluació i l'activitat de la programació que treballa.</p>
     ${card('RA4 · Identifica, defineix i valida idees d\'emprenedoria generadores de noves oportunitats', pad(tbl(CA4)))}
@@ -5914,7 +5969,7 @@ function vConfig(v) {
   $('#tAdd').onclick = () => { addTeam(); render(); };
   if (!CLOUD) $('#ngCreate').onclick = () => { const names = $('#ngTeams').value.split('\n').map(x => x.trim()).filter(Boolean); if (!names.length) { $('#ngBox').innerHTML = '<div class="notice">Escriu com a mínim un equip.</div>'; return; }
     $('#ngBox').innerHTML = `<div class="notice">Segur? S'esborraran tots els projectes actuals. <button class="btn small" id="ngYes">Sí, crear el grup</button> <button class="btn ghost small" id="ngNo">Cancel·lar</button></div>`;
-    $('#ngYes').onclick = () => { const acts = G.acts, rubs = G.rubs, profs = G.profs; G = newGroup($('#ngName').value.trim() || 'IPO II', names, G.sector); G.acts = acts; G.rubs = rubs; if (profs) G.profs = profs; ensureEval(); role = 'prof'; tab = null; save(); render(); }; $('#ngNo').onclick = () => { $('#ngBox').innerHTML = ''; }; };
+    $('#ngYes').onclick = () => { const acts = G.acts, rubs = G.rubs, profs = G.profs, ev = G.evalV; G = newGroup($('#ngName').value.trim() || 'IPO II', names, G.sector); G.acts = acts; G.rubs = rubs; G.evalV = ev; if (profs) G.profs = profs; ensureEval(); role = 'prof'; tab = null; save(); render(); }; $('#ngNo').onclick = () => { $('#ngBox').innerHTML = ''; }; };
   if ($('#ngExample')) $('#ngExample').onclick = () => { G = exampleGroup(); ensureEval(); role = 'prof'; tab = null; save(); render(); };
   if (!CLOUD) $('#expTxt').value = JSON.stringify(G);
   if (!CLOUD) $('#expCopy').onclick = async () => { const x = $('#expTxt'); try { await navigator.clipboard.writeText(x.value); $('#expCopy').textContent = 'Copiat'; } catch (e) { x.select(); $('#expCopy').textContent = 'Text seleccionat: prem Ctrl+C'; } };
