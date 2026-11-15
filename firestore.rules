@@ -29,18 +29,27 @@ service cloud.firestore {
     // APARTATS OBERTS: el grup desa a «w» quan pot escriure l'alumnat cada dada ({ f: des de, u: fins a }, en mil·lisegons).
     // Una dada que no surt a «w» (grups antics o apartats nous) es pot escriure sempre.
     function winOk(w, k) { return !(k in w) || (request.time.toMillis() >= w[k].f && request.time.toMillis() < w[k].u); }
-    function keyOk(aff, w, k) { return !(k in aff) || winOk(w, k); }
+    // BLOQUEIG PER EQUIP: el professorat desa a «ov» de l'equip, per apartat, 'x' (ja té nota: no es pot tocar res)
+    // o 'o' (demana millores: es pot editar encara que hagi passat la data). «k» és la dada i «s» l'apartat on s'omple.
+    function ovOk(w, ov, k, s) {
+      return ov.get(s, '') != 'x' && (!(k in w) || (request.time.toMillis() >= w[k].f && (request.time.toMillis() < w[k].u || ov.get(s, '') == 'o')));
+    }
+    function keyOk(aff, w, ov, k, s) { return !(k in aff) || ovOk(w, ov, k, s); }
     function studentEditOk(gid) {
       let w = grp(gid).get('w', {});
+      let ov = resource.data.get('ov', {});
       let aff = request.resource.data.get('data', {}).diff(resource.data.get('data', {})).affectedKeys();
       // Si només canvia la marca d'«enviat» (_meta) o cap dada, no cal mirar apartat per apartat
-      return (aff.hasOnly(['_meta']) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['members'])) || keyOk(aff, w, 'idea') && keyOk(aff, w, 'empatia') && keyOk(aff, w, 'entrevistes') && keyOk(aff, w, 'definir')
-        && keyOk(aff, w, 'prototip') && keyOk(aff, w, 'micro') && keyOk(aff, w, 'pestel') && keyOk(aff, w, 'dafo')
-        && keyOk(aff, w, 'lean') && keyOk(aff, w, 'sost') && keyOk(aff, w, 'ebc') && keyOk(aff, w, 'agents')
-        && keyOk(aff, w, 'juridica') && keyOk(aff, w, 'fiscal') && keyOk(aff, w, 'inversio') && keyOk(aff, w, 'finan')
-        && keyOk(aff, w, 'prestec') && keyOk(aff, w, 'treso') && keyOk(aff, w, 'viab') && keyOk(aff, w, 'marca')
-        && keyOk(aff, w, 'pitch') && keyOk(aff, w, 'p7')
-        && keyOk(request.resource.data.diff(resource.data).affectedKeys(), w, 'members');
+      return (aff.hasOnly(['_meta']) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['members'])) ||
+        keyOk(aff, w, ov, 'idea', 'idea') && keyOk(aff, w, ov, 'empatia', 'empatia') && keyOk(aff, w, ov, 'entrevistes', 'entrevistes') && keyOk(aff, w, ov, 'definir', 'definir')
+        && keyOk(aff, w, ov, 'prototip', 'prototip') && keyOk(aff, w, ov, 'micro', 'micro') && keyOk(aff, w, ov, 'pestel', 'pestel') && keyOk(aff, w, ov, 'dafo', 'dafo')
+        && keyOk(aff, w, ov, 'lean', 'lean') && keyOk(aff, w, ov, 'ebc', 'ebc') && keyOk(aff, w, ov, 'agents', 'agents') && keyOk(aff, w, ov, 'juridica', 'juridica')
+        && keyOk(aff, w, ov, 'fiscal', 'fiscal') && keyOk(aff, w, ov, 'inversio', 'inversio') && keyOk(aff, w, ov, 'prestec', 'prestec') && keyOk(aff, w, ov, 'treso', 'treso')
+        && keyOk(aff, w, ov, 'viab', 'viab') && keyOk(aff, w, ov, 'marca', 'marca') && keyOk(aff, w, ov, 'pitch', 'pitch') && keyOk(aff, w, ov, 'p7', 'p7')
+        // Dades que s'omplen des d'un altre apartat: el finançament (a «inversio») i la sostenibilitat (a «sost» i «lean»)
+        && keyOk(aff, w, ov, 'finan', 'inversio')
+        && (keyOk(aff, w, ov, 'sost', 'sost') || ovOk(w, ov, 'sost', 'lean'))
+        && keyOk(request.resource.data.diff(resource.data).affectedKeys(), w, ov, 'members', 'equip');
     }
     // DADES DE L'EQUIP: només els apartats que existeixen (més _meta: enviats, i _who: qui ha escrit cada cosa)
     function dataKeysOk() {
@@ -58,15 +67,19 @@ service cloud.firestore {
     // ARXIUS: imatges i documents del prototip i el logo (màxim 1 MB i amb data d'esborrat del grup)
     // Noms d'arxiu fixos (u0-u29 per a prototip i esbossos, l0-l4 per al logo): així un equip no pot omplir la base de dades
     function fileIdOk(fid) { return fid.matches('^(u[12]?[0-9]|l[0-4])$'); }
-    function studentFileOk(gid, fid) {
+    function studentFileOk(gid, tid, fid) {
       let f = request.resource.data;
       return f.keys().hasOnly(['name', 'kind', 'size', 'data', 'expiresAt'])
         && f.name is string && f.name.size() <= 300 && f.kind in ['img', 'doc', 'logo']
         && f.data is string && f.data.size() < 1000000
         && f.expiresAt is timestamp && f.expiresAt <= grp(gid).expiresAt
-        && filesOpen(gid) && fileIdOk(fid);
+        && filesOpen(gid, tid) && fileIdOk(fid);
     }
-    function filesOpen(gid) { let w = grp(gid).get('w', {}); return winOk(w, 'prototip') || winOk(w, 'marca'); }
+    function filesOpen(gid, tid) {
+      let w = grp(gid).get('w', {});
+      let ov = get(/databases/$(database)/documents/groups/$(gid)/teams/$(tid)).data.get('ov', {});
+      return ovOk(w, ov, 'prototip', 'prototip') || ovOk(w, ov, 'marca', 'marca');
+    }
 
     // PROFESSORAT AUTORITZAT: el document es diu com el correu
     match /profs/{email} {
@@ -141,8 +154,8 @@ service cloud.firestore {
         match /files/{fid} {
           allow read: if isProf(gid) || inTeam(gid, tid);
           // L'alumnat només pot treure arxius mentre el prototip o la marca estan oberts
-          allow delete: if isProf(gid) || (inTeam(gid, tid) && filesOpen(gid));
-          allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid, fid));
+          allow delete: if isProf(gid) || (inTeam(gid, tid) && filesOpen(gid, tid));
+          allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid, tid, fid));
         }
         match /prof/{part} {
           allow read: if isProf(gid)

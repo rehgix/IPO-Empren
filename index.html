@@ -1740,12 +1740,24 @@ function emptyData(sector) {
 const todayISO = () => new Date().toLocaleDateString('sv-SE');
 function access(k) {
   if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' || k === 'criteris' ? 'open' : 'readonly';
-  if (!G || !G.access || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
-  const a = G.access[k]; if (!a) return 'open';
+  if (!G || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
+  const a = (G.access || {})[k] || {}, late = !!a.until && todayISO() > a.until;
   let s = a.state === 'closed' && a.from && todayISO() >= a.from ? 'open' : (a.state || 'open');
-  if (s === 'open' && a.until && todayISO() > a.until) s = 'readonly';
+  if (s === 'open' && late) s = 'readonly';
+  // Per equip: amb nota ja no es pot tocar res; si el professor demana millores, es pot editar encara que hagi passat la data
+  if (role !== 'prof') { const o = secOv(T(), k); if (o === 'x' && s === 'open') s = 'readonly'; else if (o === 'o' && s === 'readonly' && late && a.state !== 'readonly') s = 'open'; }
   return s;
 }
+// Bloqueig de cada apartat per a un equip: 'x' = una activitat de l'apartat ja té nota; 'o' = el professor hi demana millores
+const hasNota = g => !!g && g.nota !== '' && g.nota !== undefined && g.nota !== null && !isNaN(g.nota);
+function calcOv(t) {
+  const ov = {}; if (!t) return ov;
+  PROG.forEach(s => { if ((t.review[s.k] || {}).status === 'millorar') ov[s.k] = 'o'; });
+  ((G && G.acts) || []).forEach(a => { if (!a.ext && hasNota((t.grades || {})[a.c])) (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) ov[k] = 'x'; }); });
+  return ov;
+}
+// L'alumnat no sempre veu les notes: llegeix el bloqueig que el professor ha desat a la fitxa de l'equip
+const secOv = (t, k) => t ? (CLOUD && ME && !ME.isProf ? t.ov || {} : calcOv(t))[k] : undefined;
 // Estat de la feina d'un apartat: 'none' (sense fer), 'edit' (en edició), 'sent' (enviat), 'correcte', 'millorar'
 const SEND_SRC = { equip: t => t.members.map(({ uid, ...m }) => m), lean: t => [t.data.lean, ['costosAmb', 'benSocial', 'benAmbiental', 'cicleVida', 'circular'].map(k => t.data.sost[k])], sost: t => [t.data.sost.ods, t.data.sost.odsAccions, t.data.sost.tecnologia], inversio: t => [t.data.inversio, t.data.finan],
   prototip: t => Object.assign({}, t.data.prototip, { fitxers: (t.data.prototip.fitxers || []).map(f => (f.name || '') + '|' + (f.size || 0)) }), marca: t => Object.assign({}, t.data.marca, { logo: (t.data.marca.logo || '').length ? 1 : 0, esbossos: (t.data.marca.esbossos || []).map(f => (f.name || '') + '|' + (f.size || 0)) }) };
@@ -1753,9 +1765,15 @@ function secHash(t, k) { const v = (SEND_SRC[k] || (x => x.data[k]))(t); const s
 const sentOf = (t, k) => ((t.data._meta || {}).sent || {})[k];
 function workState(t, s) {
   if (!s || !s.p) return null;
+  const se = sentOf(t, s.k), rv = t.review[s.k] || {}, h = secHash(t, s.k), same = !!se && se.h === h;
+  const resent = same && !!rv.status && !!rv.at && se.at > rv.at; // tornat a enviar després de l'última revisió
+  // Amb nota o amb «correcte» consta com a lliurat, encara que l'equip no l'hagi enviat
+  if (secOv(t, s.k) === 'x') return rv.status === 'correcte' ? 'correcte' : 'sent';
+  if (rv.status === 'correcte' && !resent && (rv.h ? rv.h === h : same || !se)) return 'correcte';
   if (secState(t, s) === 'none') return 'none';
-  const se = sentOf(t, s.k), rv = t.review[s.k] || {};
-  if (se && se.h === secHash(t, s.k)) return rv.status && (!rv.at || rv.at >= se.at) ? rv.status : 'sent';
+  if (same) return rv.status && !resent ? rv.status : 'sent';
+  // «A millorar» no consta com a lliurat, encara que s'hagués enviat abans
+  if (rv.status === 'millorar' && rv.h === h) return 'millorar';
   return 'edit';
 }
 /* ---------- Professor o professora: segons el nom de qui ha creat el grup (o el que triï a «Configuració») ---------- */
@@ -1770,7 +1788,7 @@ const WS_LABEL = { none: 'Sense fer', edit: 'En edició', sent: 'Enviat', correc
 function sendSection(k) { const t = T(); t.data._meta = t.data._meta || {}; t.data._meta.sent = Object.assign({}, t.data._meta.sent || {}, { [k]: { at: Date.now(), h: secHash(t, k) } }); t.updated = Date.now(); save(); }
 function sendBarHtml(t, s, ac) {
   const ws = workState(t, s), se = sentOf(t, s.k), when = se ? new Date(se.at).toLocaleString('ca-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
-  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: `<b>✓ Enviat ${PR('al')}</b> el ${when}. Si hi feu canvis, l'haureu de tornar a enviar.`, correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
+  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: se ? `<b>✓ Enviat ${PR('al')}</b> el ${when}.${ac === 'open' ? ' Si hi feu canvis, l\'haureu de tornar a enviar.' : ''}` : '<b>✓ Consta com a lliurat.</b>', correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
   const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar ' + PR('al')}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar ${PR('al')}</button>` : '';
   return `<div class="sendbar ws-${ws}"><i class="wsdot ${ws}"></i><div class="sb-t">${msg}</div>${btn}</div>`;
 }
@@ -2128,7 +2146,7 @@ function pageBody(v, k, intro, body, opts = {}) {
   bindSendBar();
   if (opts.aside) { liveFn = () => opts.aside(t); opts.aside(t); }
   if (ac === 'readonly') {
-    $('#pageBody').parentElement.insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : '<div class="notice">Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.</div>');
+    $('#pageBody').parentElement.insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : `<div class="notice">${secOv(t, k) === 'x' ? 'Aquest apartat ja està avaluat: podeu consultar la feina, però ja no la podeu modificar.' : 'Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.'}</div>`);
     $('#pageBody').querySelectorAll('input, textarea, select, button:not(.keep)').forEach(el => { el.disabled = true; }); $('#pageBody').querySelectorAll('[data-pdel]').forEach(el => el.remove());
   }
 }
@@ -2176,7 +2194,7 @@ function vInici(v) {
     const cl = ss.every(s => access(s.k) === 'closed'), from = cl ? openFrom(ss.map(s => s.k)) : '';
     const ok = ss.filter(s => workState(t, s) === 'correcte').length;
     const rows = ss.map(s => { const ac = access(s.k), w = workState(t, s), rv = t.review[s.k];
-      const meta = [s.act || s.ca, ac === 'readonly' ? (w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : ''].filter(Boolean).join(' · ');
+      const meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   v.innerHTML = `${flashHtml()}<section class="ihero">
@@ -4377,11 +4395,11 @@ function unpackSection(t, k, str) {
   t.data[k] = v;
 }
 const profPart = t => ({ review: J(t.review || {}), grades: J({ grades: t.grades || {}, evals: t.evals || { levels: {}, comment: '' } }), ai: J(t.ai || {}) });
-function teamDocOf(t, exp) { const data = {}; Object.keys(t.data).forEach(k => { data[k] = packSection(t, k); }); return { name: t.name, members: J(t.members || []), data, delivered: t.delivered || null, updated: t.updated || Date.now(), expiresAt: { __ts: exp } }; }
-function snapTeam(t) { const s = { name: t.name, members: J(t.members || []), delivered: J(t.delivered || null), data: {}, prof: profPart(t), files: Object.keys(teamFiles(t)) }; Object.keys(t.data).forEach(k => { s.data[k] = packSection(t, k); }); SNAP.teams[t.id] = s; }
+function teamDocOf(t, exp) { const data = {}; Object.keys(t.data).forEach(k => { data[k] = packSection(t, k); }); return { name: t.name, members: J(t.members || []), data, delivered: t.delivered || null, updated: t.updated || Date.now(), ov: (t.ov = calcOv(t)), expiresAt: { __ts: exp } }; }
+function snapTeam(t) { const s = { name: t.name, members: J(t.members || []), delivered: J(t.delivered || null), ov: J(t.ov || {}), data: {}, prof: profPart(t), files: Object.keys(teamFiles(t)) }; Object.keys(t.data).forEach(k => { s.data[k] = packSection(t, k); }); SNAP.teams[t.id] = s; }
 function normTeam(t) { t.data = Object.assign(emptyData(G && G.sector), t.data || {}); if (t.data.idea) t.data.idea.sector = cicleKey(t.data.idea.sector); if (!Array.isArray(t.data.prototip.fitxers)) t.data.prototip.fitxers = []; if (!Array.isArray(t.data.marca.esbossos)) t.data.marca.esbossos = []; t.members = Array.isArray(t.members) ? t.members.filter(isObj) : []; t.review = t.review || {}; t.evals = t.evals || { levels: {}, comment: '' }; t.grades = t.grades || {}; t.ai = t.ai || {}; return t; }
 function teamFromDoc(d) {
-  const t = normTeam({ id: d.id, name: d.name, members: P(d.members) || [], delivered: d.delivered || null, updated: d.updated || 0, data: {} });
+  const t = normTeam({ id: d.id, name: d.name, members: P(d.members) || [], delivered: d.delivered || null, updated: d.updated || 0, ov: isObj(d.ov) ? d.ov : {}, data: {} });
   Object.keys(d.data || {}).forEach(k => unpackSection(t, k, d.data[k]));
   return normTeam(t);
 }
@@ -4411,7 +4429,9 @@ function writeWindows() {
   });
   return w;
 }
-const canWrite = k => { const x = writeWindows()[k], n = Date.now(); return !x || (n >= x.f && n < x.u); };
+const canWrite = (k, t) => { const x = writeWindows()[k], n = Date.now(), v = (DATA_SECS[k] || [k]).map(s => secOv(t, s));
+  if (v.every(o => o === 'x')) return false; // ja té nota
+  return !x || (n >= x.f && (n < x.u || v.includes('o'))); }; // «a millorar» allarga el termini
 function groupToG(g) { const cfg = P(g.cfg) || {}; return Object.assign(cfg, { v: 1, name: g.name, profs: (g.profs || []).filter(x => x !== (ME && ME.email)), showGrades: !!g.showGrades, join: g.join !== false, teams: [] }); }
 
 /* ---------- Indicador de desat ---------- */
@@ -4449,10 +4469,10 @@ async function stuPush() {
   const t = G.teams[0]; if (!t || t.id !== ME.teamId) return;
   const s = SNAP.teams[t.id], upd = {}, sent = { data: {} }, ops = [];
   // Els apartats tancats o en només lectura no s'envien: les regles de seguretat els rebutjarien
-  Object.keys(t.data).forEach(k => { const v = packSection(t, k); if (v !== s.data[k] && canWrite(k)) { upd['data.' + k] = v; sent.data[k] = v; } });
-  const mv = J(t.members); if (mv !== s.members && canWrite('members')) { upd.members = mv; sent.members = mv; }
+  Object.keys(t.data).forEach(k => { const v = packSection(t, k); if (v !== s.data[k] && canWrite(k, t)) { upd['data.' + k] = v; sent.data[k] = v; } });
+  const mv = J(t.members); if (mv !== s.members && canWrite('members', t)) { upd.members = mv; sent.members = mv; }
   const dv = J(t.delivered || null); if (dv !== s.delivered) { upd.delivered = t.delivered || null; sent.delivered = dv; }
-  const fileOk = canWrite('prototip') || canWrite('marca'), fs = fileOk ? teamFiles(t) : {}, ids = Object.keys(fs);
+  const fileOk = canWrite('prototip', t) || canWrite('marca', t), fs = fileOk ? teamFiles(t) : {}, ids = Object.keys(fs);
   ids.filter(id => !s.files.includes(id)).forEach(id => ops.push({ op: 'set', path: gpath('teams', t.id, 'files', id), data: Object.assign({}, fs[id], { expiresAt: { __ts: GROUP.expiresAt } }) }));
   // Només s'esborren els arxius que ja no surten a la fitxa (no els d'un company que encara no s'han descarregat)
   const refs = fileOk ? fileIdsOf({ data: { prototip: packSection(t, 'prototip'), marca: packSection(t, 'marca') } }) : s.files;
@@ -4502,6 +4522,8 @@ async function profPush() {
     const si = P(s.data.idea) || {}, sc = t.data.idea.sector || '';
     if ((si.sector || '') !== sc) { const nv = J(Object.assign({}, si, { sector: sc })); ops.push({ op: 'update', path: gpath('teams', t.id), data: { 'data.idea': nv, updated: Date.now() } }); after.push(() => { s.data.idea = nv; }); }
     ['review', 'grades', 'ai'].forEach(p => { if (pp[p] !== s.prof[p]) { ops.push({ op: 'set', path: gpath('teams', t.id, 'prof', p), data: { v: pp[p], expiresAt: { __ts: exp } } }); after.push(() => { s.prof[p] = pp[p]; }); } });
+    // Bloqueig per equip (nota posada o millores demanades): el comproven les regles de seguretat
+    const ov = calcOv(t), ovs = J(ov); if (ovs !== s.ov) { ops.push({ op: 'update', path: gpath('teams', t.id), data: { ov } }); after.push(() => { s.ov = ovs; t.ov = ov; }); }
   });
   if (!ops.length) return;
   await FB.batch(ops);
@@ -4542,6 +4564,7 @@ function applyTeamDoc(d) {
   if (d.members !== s.members && !(SENT && SENT.members === d.members)) { if (TOUCH) TOUCH.add('members'); t.members = J(t.members) === s.members ? (P(d.members) || []) : merge3(P(s.members), t.members, P(d.members)) || []; s.members = d.members; ch = true; }
   const dd = J(d.delivered || null); if (dd !== s.delivered && J(t.delivered || null) === s.delivered) { t.delivered = d.delivered || null; s.delivered = dd; ch = true; }
   if (d.name !== s.name && t.name === s.name) { t.name = d.name; s.name = d.name; ch = true; }
+  const dov = J(isObj(d.ov) ? d.ov : {}); if (dov !== s.ov) { s.ov = dov; if (!ME.isProf) { t.ov = P(dov); ch = true; } }
   t.updated = d.updated || t.updated;
   if (!ME.isProf) claimRow();
   s.files = fileIdsOf(d);
@@ -5357,7 +5380,7 @@ async function homeView(msg, d) {
         const ids = g.teamIds || [], pend = [];
         ts.forEach(t => PROG.forEach(s => { if (workState(t, s) === 'sent') pend.push({ ti: ids.indexOf(t.id), team: projName(t), k: s.k, l: s.l, at: (sentOf(t, s.k) || {}).at || 0 }); }));
         ST[g.id].pend = pend.sort((a, b) => a.at - b.at);
-        ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => sentOf(t, s.k)).length, 0);
+        ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => (t.ov || {})[s.k] === 'x' || ['sent', 'correcte'].includes(workState(t, s))).length, 0);
         ST[g.id].rev = pend.length;
       } catch (e) { ST[g.id].err = true; }
       paintGuide();
@@ -5808,7 +5831,7 @@ function vRevisio(v) {
   v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { revK = b.dataset.jump; render(); const l = $('.rlayout'); if (l && l.getBoundingClientRect().top < 0) l.scrollIntoView({ block: 'start' }); });
   $('#rHide').onchange = e => { revHide = e.target.checked; rr(); };
   if ($('#rSel')) $('#rSel').onchange = e => { revK = e.target.value; rr(); };
-  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); revLog(t, k); save(); rr(); });
+  v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); t.review[k].h = secHash(t, k); revLog(t, k); save(); rr(); });
   v.querySelectorAll('[data-cm]').forEach(a => { a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); }; a.onchange = () => { revLog(t, a.dataset.cm); save(); }; });
   v.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, a = v.querySelector(`[data-cm="${k}"]`); a.value = (a.value.trim() ? a.value.trim() + ' ' : '') + b.textContent; a.dispatchEvent(new Event('input')); a.focus(); });
 }

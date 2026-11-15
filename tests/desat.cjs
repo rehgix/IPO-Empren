@@ -17,7 +17,8 @@ function reset() { DOWN = false; LOG = []; DB = {
 const clone = x => x == null ? null : JSON.parse(JSON.stringify(x));
 function ruleStu(uid, o) { // regles de l'alumnat (resum fidel de firestore.rules)
   const m = /^groups\/g1\/teams\/(\w+)$/.exec(o.path), f = /^groups\/g1\/teams\/(\w+)\/files\/(\w+)$/.exec(o.path), g = DB['groups/g1'], w = g.w || {}, now = Date.now();
-  const win = k => !(k in w) || (now >= w[k].f && now < w[k].u), mem = DB['groups/g1/members/' + uid];
+  const ov = (m && (DB[o.path] || {}).ov) || {}, SEC = { finan: ['inversio'], sost: ['sost', 'lean'], members: ['equip'] };
+  const win = k => { const v = (SEC[k] || [k]).map(x => ov[x]); return !v.every(x => x === 'x') && (!(k in w) || (now >= w[k].f && (now < w[k].u || v.includes('o')))); }, mem = DB['groups/g1/members/' + uid];
   if (m) { if (o.op !== 'update' || !mem || mem.team !== m[1]) return 'no és del teu equip';
     for (const k of Object.keys(o.data)) { if (k.startsWith('data.')) { const dk = k.slice(5); if (!KEYS.includes(dk)) return 'apartat desconegut ' + dk; if (!['_meta', '_who'].includes(dk) && !win(dk)) return 'apartat tancat ' + dk; }
       else if (k === 'members') { if (!win('members')) return 'equip tancat'; } else if (!['delivered', 'updated'].includes(k)) return 'camp no permès ' + k; }
