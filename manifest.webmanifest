@@ -1,0 +1,16 @@
+{
+  "name": "IPO Emprèn",
+  "short_name": "IPO Emprèn",
+  "description": "Eina per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut Miquel Biada.",
+  "lang": "ca",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F1F3F8",
+  "theme_color": "#F1F3F8",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
