@@ -1744,6 +1744,13 @@ function emptyData(sector) {
 const todayISO = () => new Date().toLocaleDateString('sv-SE');
 function access(k) {
   if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' || k === 'criteris' ? 'open' : 'readonly';
+  return stuAccess(k);
+}
+// Tancat: l'alumnat no el veu enlloc (ni el menú, ni l'inici, ni el dossier). El professor, a la vista «Alumne», el veu marcat com a tancat.
+const amagat = k => !!stuView() && !!sec(k) && !!sec(k).p && access(k) === 'closed';
+const tancatProf = k => !!(CLOUD && ME && ME.isProf && role !== 'prof') && !!sec(k) && !!sec(k).p && stuAccess(k) === 'closed';
+// Estat de l'apartat per a l'alumnat (el que veuen ells)
+function stuAccess(k) {
   if (!G || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
   const a = (G.access || {})[k] || {};
   let s = a.state === 'closed' && a.from && todayISO() >= a.from ? 'open' : (a.state || 'open');
@@ -1901,7 +1908,7 @@ function radios(path, opts, rerender) { const cur = getP(T().data, path); return
 /* ---------- Menú lateral ---------- */
 function menu() {
   if (role === 'prof') return [['Grup classe', 'prof', [['seguiment', 'Seguiment dels equips'], ['obertura', 'Obertura dels apartats'], ['revisio', 'Revisió dels projectes'], ['qualificacio', 'Qualificació per activitats'], ['informe', 'Informes dels equips']]], ['Recursos', 'rec', [['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques'], ['config', 'Configuració']]]];
-  return SECS.map(g => [g[1], g[2], g[3].filter(s => s[0] !== 'criteris' || !G.rubHide).map(s => [s[0], s[1]]).concat(g[0] === 'lliura' && G.showGrades ? [['notes', 'Les vostres notes']] : [])]);
+  return SECS.map(g => [g[1], g[2], g[3].filter(s => (s[0] !== 'criteris' || !G.rubHide) && !amagat(s[0])).map(s => [s[0], s[1]]).concat(g[0] === 'lliura' && G.showGrades ? [['notes', 'Les vostres notes']] : [])]).filter(g => g[2].length);
 }
 function renderSide() {
   $('#gameName').textContent = G.name;
@@ -1916,7 +1923,7 @@ function renderSide() {
   $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup${items.every(([k]) => NAVIC[k]) ? ' allic' : ''}" data-g="${ic}"><div class="ghead" title="${esc(g)}">${ico(GICONS[ic])}<span>${g}</span></div>${items.map(([k, l]) => {
     const st = role === 'prof' ? null : secState(T(), sec(k)); const rv = role !== 'prof' && T().review[k];
     const ac = role === 'prof' ? 'open' : access(k);
-    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
+    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${tancatProf(k) ? '<span class="rotag">tancat</span>' : ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
   const cur = all.find(x => x[0] === tab);
   $('#menuToggle').innerHTML = `<span>${cur ? cur[1] : tab === 'alumnes' ? 'Gestiona l\'alumnat' : 'Menú'}</span><span class="small">Menú ▾</span>`;
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
@@ -2058,7 +2065,7 @@ function grpBar() {
 }
 // Desa qualsevol canvi dels camps de l'equip
 function onField(e) {
-  if (role === 'prof' || access(tab) !== 'open') return;
+  if (!G || role === 'prof' || access(tab) !== 'open') return;
   const el = e.target, t = T(); let changed = false;
   const put = (path, v) => { const old = getP(t.data, path); setP(t.data, path, v); trackEdit(t, path, old, v); changed = true; };
   if (el.dataset.path) put(el.dataset.path, el.type === 'checkbox' ? el.checked : el.value);
@@ -2130,7 +2137,7 @@ function lockedPage(v, k) {
   }
 }
 function pageBody(v, k, intro, body, opts = {}) {
-  const s = sec(k), t = T(), i = ALL.findIndex(x => x.k === k), prev = ALL[i - 1], next = ALL[i + 1];
+  const s = sec(k), t = T(), vis = ALL.filter(x => !amagat(x.k)), i = vis.findIndex(x => x.k === k), prev = vis[i - 1], next = vis[i + 1];
   const ac = access(k);
   const rv = t.review[k];
   const [d, n] = s.p ? s.p(t) : [0, 0];
@@ -2143,7 +2150,7 @@ function pageBody(v, k, intro, body, opts = {}) {
   bindSendBar();
   if (opts.aside) { liveFn = () => opts.aside(t); opts.aside(t); }
   if (ac === 'readonly') {
-    $('#pageBody').parentElement.insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : `<div class="notice">${secOv(t, k) === 'x' ? 'Aquest apartat ja està avaluat: podeu consultar la feina, però ja no la podeu modificar.' : 'Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.'}</div>`);
+    $('#pageBody').parentElement.insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">' + (tancatProf(k) ? '<b>Apartat tancat: l\'alumnat no el veu.</b> ' : '') + 'Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : `<div class="notice">${secOv(t, k) === 'x' ? 'Aquest apartat ja està avaluat: podeu consultar la feina, però ja no la podeu modificar.' : 'Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.'}</div>`);
     $('#pageBody').querySelectorAll('input, textarea, select, button:not(.keep)').forEach(el => { el.disabled = true; }); $('#pageBody').querySelectorAll('[data-pdel]').forEach(el => el.remove());
   }
 }
@@ -2186,11 +2193,12 @@ function vInici(v) {
   const names = t.members.map(x => esc(nomBo(x.name))).filter(Boolean).join(', ');
   const chips = [names || 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir'), t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'];
   const sub = filled(m.eslogan) ? m.eslogan : '';
-  const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g, g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(([, ss]) => ss.length);
+  const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g, g[3].map(([k]) => sec(k)).filter(s => s.p && !amagat(s.k))]).filter(([, ss]) => ss.length);
+  const acx = k => tancatProf(k) ? 'closed' : access(k); // el professor hi veu també quins estan tancats
   const tiles = groups.map(([[gk, gl], ss], i) => {
-    const cl = ss.every(s => access(s.k) === 'closed'), from = cl ? openFrom(ss.map(s => s.k)) : '';
+    const cl = ss.every(s => acx(s.k) === 'closed'), from = cl ? openFrom(ss.map(s => s.k)) : '';
     const ok = ss.filter(s => workState(t, s) === 'correcte').length;
-    const rows = ss.map(s => { const ac = access(s.k), w = workState(t, s), rv = t.review[s.k];
+    const rows = ss.map(s => { const ac = acx(s.k), w = workState(t, s), rv = t.review[s.k];
       const meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
@@ -3616,16 +3624,16 @@ function secHtml(t, k, who = false) {
 }
 function dossierText(t) {
   let out = `PROJECTE EMPRENEDOR · ${projName(t)}\n${t.name}${t.members.length ? ' · ' + t.members.map(m => nomBo(m.name)).filter(Boolean).join(', ') : ''}\n`;
-  ALL.filter(s => s.p).forEach(s => { const ps = pairs(t, s.k).filter(([, x]) => x && String(x).trim()); if (!ps.length) return; out += `\n## ${s.l}\n` + groupPairs(s.k, ps).map(g => (g.title ? `### ${g.title}\n` : '') + g.rows.map(([l, x]) => `${l}: ${x}`).join('\n')).join('\n') + '\n'; });
+  ALL.filter(s => s.p && !amagat(s.k)).forEach(s => { const ps = pairs(t, s.k).filter(([, x]) => x && String(x).trim()); if (!ps.length) return; out += `\n## ${s.l}\n` + groupPairs(s.k, ps).map(g => (g.title ? `### ${g.title}\n` : '') + g.rows.map(([l, x]) => `${l}: ${x}`).join('\n')).join('\n') + '\n'; });
   return out;
 }
 function vDossier(v) {
-  const t = T(), pr = progress(t), missing = PROG.filter(s => secState(t, s) !== 'done');
+  const t = T(), pr = progress(t), missing = PROG.filter(s => !amagat(s.k) && secState(t, s) !== 'done');
   v.innerHTML = `${flashHtml()}${head(`Dossier del projecte`, esc(projName(t)), `<button class="btn ghost" id="copyDos">Copiar el text</button><button class="btn" id="deliver">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${t.delivered ? 'Tornar a lliurar' : 'Lliurar al professor'}</button>`)}
     ${t.delivered ? `<div class="notice info">Lliurat el ${new Date(t.delivered).toLocaleString('ca-ES')}.${t.updated > t.delivered ? ' Heu fet canvis després del lliurament: torneu-lo a lliurar quan acabeu.' : ''}</div>` : ''}
     ${missing.length ? `<div class="notice">Projecte completat al ${Math.round(pr * 100)}%. Falten apartats a: ${missing.map(s => `<button class="linkbtn" data-go="${s.k}">${esc(s.l)}</button>`).join(', ')}.</div>` : '<div class="notice info">Heu completat tots els apartats.</div>'}
     <p class="muted intro">Aquest dossier recull tot el projecte. Copieu-ne el text per publicar-lo a la vostra carpeta d'aprenentatge.</p>
-    ${SECS.filter(g => g[0] !== 'lliura').map(([, gl, , items]) => items.filter(([k]) => sec(k).p).map(([k]) => card(esc(sec(k).l), pad(secHtml(t, k)), esc([sec(k).ca, sec(k).act].filter(Boolean).join(' · ')))).join('')).join('')}
+    ${SECS.filter(g => g[0] !== 'lliura').map(([, gl, , items]) => items.filter(([k]) => sec(k).p && !amagat(k)).map(([k]) => card(esc(sec(k).l), pad(secHtml(t, k)), esc([sec(k).ca, sec(k).act].filter(Boolean).join(' · ')))).join('')).join('')}
     <textarea id="dosTxt" class="sr-only" aria-hidden="true" tabindex="-1"></textarea>`;
   $('#deliver').onclick = () => { t.delivered = Date.now(); t.updated = t.delivered; save(); flash = { ok: true, html: '<b>Dossier lliurat.</b> ' + PR('El') + ' el pot revisar i us deixarà comentaris a cada apartat.' }; render(); window.scrollTo(0, 0); };
   $('#copyDos').onclick = async () => { const x = dossierText(t); try { await navigator.clipboard.writeText(x); $('#copyDos').textContent = 'Copiat'; } catch (e) { const ta = $('#dosTxt'); ta.classList.remove('sr-only'); ta.removeAttribute('aria-hidden'); ta.value = x; ta.rows = 12; ta.select(); $('#copyDos').textContent = 'Text a sota: prem Ctrl+C'; } };
@@ -5343,7 +5351,7 @@ async function homeView(msg, d) {
   const v = $('#view'), hseq = ++HOME_SEQ, rseq = ROUTE_SEQ;
   if (!d && HOMEC && HOMEC.email === USER.email) { d = HOMEC;
     homeFetch().then(n => { if (n.listErr || !USER || n.email !== USER.email) return; n.st = d.st; n.tot = d.tot; const same = J([n.gs, n.ok, n.req, n.nReq]) === J([d.gs, d.ok, d.req, d.nReq]); HOMEC = n;
-      const busy = ($('#ngName') && $('#ngName').value) || v.querySelector('[data-gdelbox] .notice') || ($('#hqPick') && !$('#hqPick').hidden); // no es redibuixa si estàs fent alguna cosa
+      const busy = ($('#ngName') && $('#ngName').value) || v.querySelector('[data-gdelbox] .notice') || v.querySelector('[data-grenbox] input') || ($('#hqPick') && !$('#hqPick').hidden); // no es redibuixa si estàs fent alguna cosa
       if (!same && hseq === HOME_SEQ && rseq === ROUTE_SEQ && !busy) homeView(msg, n); }).catch(() => {}); }
   if (!d) { v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>'; d = await homeFetch(); if (hseq !== HOME_SEQ || rseq !== ROUTE_SEQ) return; if (!d.listErr) HOMEC = d; }
   let gs = d.gs.slice(); const { listErr, ok, req, nReq } = d, ST = d.st = d.st || {};
@@ -5403,18 +5411,21 @@ async function homeView(msg, d) {
         <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
-        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
-        <div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
-    ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
+        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gren="${esc(g.id)}">Canviar el nom</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
+        <div data-grenbox></div><div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
+    ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" maxlength="100" required placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button></div>`))}`;
   const mk = async (example) => {
+    const nm = $('#ngName').value.trim().slice(0, 100); // el nom és obligatori (el grup d'exemple en porta un per defecte)
+    if (!nm && !example) { $('#ngMsg').innerHTML = '<div class="notice">Escriu el nom del grup abans de crear-lo.</div>'; $('#ngName').focus(); return; }
+    $('#ngMsg').innerHTML = '';
     const btns = [$('#ngGo'), $('#ngEx')]; btns.forEach(b => { b.disabled = true; });
     try {
       const n = Math.max(1, Math.min(12, Number($('#ngN').value) || 5)), sector = $('#ngSector').value;
-      const name = $('#ngName').value.trim() || (example ? 'Grup d\'exemple' : 'IPO II · el meu grup');
+      const name = nm || 'Grup d\'exemple';
       let g = example ? exampleGroup() : newGroup(name, Array.from({ length: n }, (_, i) => 'Equip ' + (i + 1)), sector);
       if (example) { g.name = name; g.join = false; delete g.example; } // grup d'exemple: l'alumnat no pot entrar-hi
       G = g; ensureIds(); ensureEval();
@@ -5435,6 +5446,17 @@ async function homeView(msg, d) {
     box.innerHTML = '<div class="hqp-t">Per a quin grup vols l\'enllaç?</div>' + gs.map(g => `<button type="button" class="hqp" data-pid="${esc(g.id)}"><span>${esc(g.name)}</span><span class="s"></span></button>`).join('');
     box.hidden = false; box.querySelectorAll('[data-pid]').forEach(b => b.onclick = () => cp(b.dataset.pid, b.querySelector('.s')));
   };
+  // Canviar el nom d'un grup ja creat (no pot quedar buit)
+  v.querySelectorAll('[data-gren]').forEach(b => b.onclick = () => { const box = b.closest('.gcard').querySelector('[data-grenbox]'), g = gs.find(x => x.id === b.dataset.gren);
+    box.innerHTML = `<div class="pfield"><label for="rn_${esc(g.id)}">Nou nom del grup</label><input type="text" id="rn_${esc(g.id)}" maxlength="100" value="${esc(g.name)}"></div><div data-rnmsg></div><div class="row"><button type="button" class="btn small" data-ryes>Desar el nom</button><button type="button" class="btn ghost small" data-rno>Cancel·lar</button></div>`;
+    const inp = box.querySelector('input'), msg = box.querySelector('[data-rnmsg]'), yes = box.querySelector('[data-ryes]'); inp.focus(); inp.select();
+    const go = async () => { const nn = inp.value.trim().slice(0, 100);
+      if (!nn) { msg.innerHTML = '<div class="notice">El nom del grup no pot quedar buit.</div>'; inp.focus(); return; }
+      if (nn === g.name) { box.innerHTML = ''; return; }
+      yes.disabled = true;
+      try { await FB.update('groups/' + g.id, { name: nn }); HOMEC = null; homeView('Nom del grup canviat.'); } catch (err) { yes.disabled = false; msg.innerHTML = '<div class="notice">No s\'ha pogut canviar el nom. Torna-ho a provar.</div>'; } };
+    yes.onclick = go; box.querySelector('[data-rno]').onclick = () => { box.innerHTML = ''; };
+    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); go(); } else if (e.key === 'Escape') box.innerHTML = ''; }; });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
@@ -5984,7 +6006,8 @@ function vConfig(v) {
       ${card('Recuperar una còpia', pad(`<textarea id="impTxt" rows="5" aria-label="Text de la còpia per recuperar" placeholder="Enganxa aquí el text de la còpia"></textarea><input type="file" id="impFile" accept=".json,.txt"><div id="impMsg"></div><button class="btn small" id="impBtn">Recuperar</button>`))}
     </div>`}`;
   bindActsConfig(v); bindCloudConfig(v); cfgTabs(v);
-  $('#gName').oninput = e => { G.name = e.target.value; save(); renderSide(); };
+  $('#gName').oninput = e => { if (!e.target.value.trim()) return; G.name = e.target.value; save(); renderSide(); }; // un nom buit no es desa
+  $('#gName').onblur = e => { if (!e.target.value.trim()) { e.target.value = G.name; toast('El nom del grup no pot quedar buit.'); } };
   $('#gFem').onchange = e => { if (e.target.value) G.profFem = e.target.value; else delete G.profFem; save(); render(); };
   $('#gSector').onchange = e => { const old = G.sector, n = G.teams.filter(t => !t.data.idea.sector || t.data.idea.sector === old); G.sector = e.target.value; n.forEach(t => { t.data.idea.sector = G.sector; }); save(); const y = window.scrollY; render(); window.scrollTo(0, y); toast(n.length ? `Sector canviat al grup i a ${n.length === 1 ? '1 equip' : n.length + ' equips'}.` : 'Sector del grup canviat.'); };
   v.querySelectorAll('[data-tsec]').forEach(s => s.onchange = () => { const t = G.teams[+s.dataset.tsec]; t.data.idea.sector = s.value; t.updated = Date.now(); save(); toast(`Sector de ${t.name} canviat.`); });

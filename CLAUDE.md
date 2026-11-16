@@ -35,6 +35,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 ## Normes de codi
 - Tots els textos de la web, en **català**.
 - Quan un text per a l'alumnat parla del docent, fes servir `PR()` (`PR('el')` → «el professor» / «la professora», també `'El'`, `'al'`, `'pel'`, `'del'`, `'n'`): es tria segons el nom de qui ha creat el grup o l'opció de «Configuració».
+- Apartats tancats: l'alumnat **no els veu enlloc** (menú, inici, dossier, botons anterior/següent): ho decideix `amagat(k)`. El professor, a la vista «Alumne», els veu tots i els tancats surten marcats (`tancatProf(k)`, etiqueta «tancat»). `access()` és el que pot fer qui mira; `stuAccess()` és l'estat real per a l'alumnat.
 - Alumnat: en entrar veu una finestra amb el que ha de millorar i el que falta enviar (`stuWelcome`), i una campaneta amb l'historial de comentaris (`bellUpdate`, `notifs`). Cada canvi de revisió del professor queda a `review[apartat].log` (`revLog`).
 - Escriu el codi com el que ja hi ha: funcions compactes, noms curts, comentaris breus en català.
 - Tot el text que ve de l'alumnat passa per `esc()` abans de posar-lo a la pàgina.
@@ -56,9 +57,10 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - La web publicada només s'actualitza després del push.
 - Si al push es baixa algun commit que no és teu, digues-ho a l'usuari.
 
-## Token de GitHub
-- El token és a `token.txt`, a l'arrel del projecte. Està a `.gitignore`: **mai s'ha de pujar, copiar, mostrar ni enganxar enlloc**.
-- Per fer pull/push, passa'l amb un script `GIT_ASKPASS` (usuari `x-access-token`, contrasenya = contingut de `token.txt`) i `-c credential.helper=`. No el posis mai dins de l'URL del remot.
+## Connexió amb GitHub
+- **No cal cap token ni que l'usuari enganxi cap clau.** La connexió es fa amb la integració de GitHub de Claude.
+- Si falta algun permís, digues-li exactament on concedir-lo (no li demanis mai un token).
+- L'usuari de GitHub és **rehgix** (repositori `rehgix/IPO-Empren`).
 
 ## Com actuar
 - Abans de llegir un arxiu semcer, busca amb grep i llegeix només el que necessitis.
