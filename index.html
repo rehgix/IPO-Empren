@@ -1093,6 +1093,8 @@ table.fin{box-shadow:none}
 .snums div{background:var(--tile);border-radius:28px;padding:20px 22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;min-width:0}
 .snums b{font-weight:700;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
 .snums small{font-size:14px;color:var(--muted)}
+.snums [data-sn]{cursor:pointer;transition:transform var(--t-fast)}.snums [data-sn]:hover{transform:translateY(-2px)}.snums [data-sn]:focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+.snums small i{font-style:normal;margin-left:6px;opacity:.45}.snums [data-sn]:hover small i{opacity:1}
 .snums .hot{background:var(--hot)}.snums .hot b{color:#0F1222}.snums .hot small{color:var(--hot-f)}
 .slist{display:grid;gap:12px}
 .stm{display:grid;grid-template-columns:minmax(170px,1fr) minmax(220px,1.7fr) 86px minmax(150px,.9fr) minmax(160px,1fr);gap:10px 24px;align-items:center;background:var(--tile);border:0;border-radius:28px;padding:18px 26px;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:box-shadow var(--t-fast)}
@@ -5814,11 +5816,12 @@ function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { pro
 // Noms de l'equip: els comptes que hi han entrat (nom de Google); al grup d'exemple, els de «Equip i rols»
 const teamNames = t => (CLOUD && ROSTER.length ? ROSTER.filter(m => m.team === t.id).map(m => nomBo(m.name) || m.email) : t.members.map(m => nomBo(m.name))).filter(Boolean).sort((a, b) => a.localeCompare(b, 'ca'));
 const SQ_COL = ['#FFD23F', '#FFB0D0', '#9BE7D9', '#C9BCFF', '#B9D0FF', '#FFC9A8', '#BDEBC9'];
-let sSort = 'ordre'; // ordre de la llista d'equips a Seguiment
+let sSort = 'ordre', sRev = false; // ordre de la llista d'equips a Seguiment i si es veu la llista d'apartats per revisar
 function vSeguiment(v) {
   const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g[0], g[1], g[3].map(([k]) => sec(k)).filter(s => s.p)]).filter(g => g[2].length);
   const nT = G.teams.length, nAl = G.teams.reduce((a, t) => a + t.members.length, 0), avg = nT ? G.teams.reduce((a, t) => a + progress(t), 0) / nT : 0;
   const wsN = (t, w) => PROG.filter(s => w === 'millorar' ? milPending(t, s) : workState(t, s) === w).length, nRev = G.teams.reduce((a, t) => a + wsN(t, 'sent'), 0);
+  const pendL = sRev ? G.teams.flatMap((t, ti) => PROG.filter(s => workState(t, s) === 'sent').map(s => ({ ti, team: projName(t), k: s.k, l: s.l, at: (sentOf(t, s.k) || {}).at || 0 }))).sort((a, b) => a.at - b.at) : [];
   const ord = G.teams.map((t, i) => i), TT = i => G.teams[i];
   if (sSort === 'rev') ord.sort((a, b) => wsN(TT(b), 'sent') - wsN(TT(a), 'sent') || a - b);
   else if (sSort === 'prog') ord.sort((a, b) => progress(TT(a)) - progress(TT(b)) || a - b);
@@ -5833,7 +5836,8 @@ function vSeguiment(v) {
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}"${rev ? ' data-pill="sent" title="Obrir el primer apartat per revisar"' : ''}>${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}"${mil ? ' data-pill="mil" title="Obrir el primer apartat a millorar"' : ''}>${mil} a millorar</span></span>
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
-      <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
+      <div class="snums">${[['equips', nT, 'equips', 'Anar a la llista d\'equips', ''], ['alumnes', nAl, 'alumnes', 'Veure la llista d\'alumnes del grup', ''], ['prog', Math.round(avg * 100) + ' %', 'de mitjana', 'Ordenar els equips de menys a més progrés', ''], ['rev', nRev, 'apartats per revisar', 'Veure tots els apartats per revisar', nRev ? 'hot' : '']].map(([k, n, l, tt, c]) => `<div class="${c}" role="button" tabindex="0" data-sn="${k}" title="${tt}"${k === 'rev' ? ` aria-expanded="${sRev}"` : ''}><b>${n}</b><small>${l}<i aria-hidden="true">→</i></small></div>`).join('')}</div></section>
+    ${sRev ? `<div id="sRevBox">${card(`Apartats per revisar · ${nRev}`, pad(pendL.length ? `<p class="small muted">Tots els apartats que els equips han enviat i encara no has revisat, del més antic al més nou. Toca'n un per obrir-lo.</p><div class="pd-l">${pendL.map(x => `<button type="button" class="pd-i" data-pt="${x.ti}" data-pk="${esc(x.k)}"><span class="pd-t"><b>${esc(x.team)}</b> · ${esc(x.l)}</span><span class="pd-d">${x.at ? 'enviat ' + fmtDay(x.at) : ''}</span></button>`).join('')}</div>` : '<p class="muted" style="margin:0">No hi ha cap apartat per revisar. Quan un equip n\'enviï un, sortirà aquí.</p>'))}</div>` : ''}
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Vista d\'alumne» a dalt per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     ${G.teams.length ? `<div class="stools"><div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>
       ${nT > 1 ? `<label class="ssort">Ordena per <select class="field-sel" id="sSort">${[['ordre', 'Ordre dels equips'], ['rev', 'Pendents de revisar'], ['prog', 'Menor progrés'], ['alfa', 'Alfabètic']].map(([k, l]) => `<option value="${k}" ${sSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</div>` : ''}
@@ -5845,6 +5849,15 @@ function vSeguiment(v) {
     const s = p && PROG.find(x => p.dataset.pill === 'mil' ? milPending(t, x) : workState(t, x) === 'sent'); revFilter = 'tots'; revK = s ? s.k : null; go('revisio'); const l = s && $('.rlayout'); if (l) l.scrollIntoView({ block: 'start' }); });
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   if ($('#sSort')) $('#sSort').onchange = e => { sSort = e.target.value; rr(); };
+  // Les quatre targetes de dalt porten a algun lloc: equips, alumnat, progrés i apartats per revisar
+  const toList = () => { const l = $('.stools') || $('.slist'); if (l) l.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  v.querySelectorAll('[data-sn]').forEach(b => { const f = () => { const k = b.dataset.sn;
+      if (k === 'alumnes') return go('alumnes');
+      if (k === 'rev') { sRev = !sRev; rr(); const x = $('#sRevBox'); if (x) x.scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+      if (k === 'prog' && G.teams.length > 1) { sSort = 'prog'; rr(); toast('Equips ordenats de menys a més progrés.'); }
+      toList(); };
+    b.onclick = f; b.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); f(); } }; });
+  v.querySelectorAll('#sRevBox [data-pk]').forEach(b => b.onclick = () => { profTeam = +b.dataset.pt; revFilter = 'tots'; revK = b.dataset.pk; go('revisio'); const l = $('.rlayout'); if (l) l.scrollIntoView({ block: 'start' }); });
   v.querySelectorAll('[data-ed]').forEach(b => b.onclick = () => { edTeam = edTeam === +b.dataset.ed ? -1 : +b.dataset.ed; rr(); });
   $('#sAdd').onclick = () => { edTeam = addTeam(); render(); toast('Equip afegit. Ja el pots editar.'); const p = $('.sedpanel'); if (p) p.scrollIntoView({ block: 'center' }); };
   const P = $('.sedpanel'); if (!P) return; const t = G.teams[edTeam], i = edTeam;
