@@ -23,7 +23,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `GICONS` i les regles `[data-g="..."]`: icona i colors de cada bloc. Un bloc nou necessita totes dues coses.
 - `VIEWS`: quina funció dibuixa cada pàgina. `render()` és el punt central que redibuixa la pantalla.
 - `projName(t)`: el nom que es mostra de cada equip (el del projecte; si no n'hi ha, «Equip N»). Fes-lo servir en lloc de `t.name` als títols i llistes.
-- Navegació del professorat: barra lateral de 88 px amb icona i una paraula (`#tbTabs`, llista `PTABS` amb el nom curt; classe `has-rail`), i a dalt només la capçalera (`#topHead`: «Els meus grups», «Alumnat», «Professor/a | Alumne» i la franja del grup). `topGroup()` dins d'un grup, `topHome()` al tauler. En pantalles petites la barra s'amaga i s'obre amb el botó del costat del logo (`railSet`). El menú lateral ample només és per a l'alumnat (classe `noside` al `body` quan no hi és). Només hi ha tema clar.
+- Navegació del professorat: barra lateral de 88 px amb icona i una paraula (`#tbTabs`, llista `PTABS` amb el nom curt; classe `has-rail`), i a dalt només la capçalera (`#topHead`: «Els meus grups», «Gestiona l'alumnat», «Vista de professor | Vista d'alumne» i la franja del grup). `topGroup()` dins d'un grup, `topHome()` al tauler. En pantalles petites la barra s'amaga i s'obre amb el botó del costat del logo (`railSet`). El menú lateral ample només és per a l'alumnat (classe `noside` al `body` quan no hi és). Només hi ha tema clar.
 - `role`: `'prof'` o el número de l'equip. `profTeam`: l'equip que el professor està mirant.
 - `RUBRIC` i `G.acts`: rúbrica i activitats per a la nota. Si es mouen apartats, cal revisar que la nota continuï comptant bé.
 
@@ -35,7 +35,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 ## Normes de codi
 - Tots els textos de la web, en **català**.
 - Quan un text per a l'alumnat parla del docent, fes servir `PR()` (`PR('el')` → «el professor» / «la professora», també `'El'`, `'al'`, `'pel'`, `'del'`, `'n'`): es tria segons el nom de qui ha creat el grup o l'opció de «Configuració».
-- Apartats tancats: l'alumnat **no els veu enlloc** (menú, inici, dossier, botons anterior/següent): ho decideix `amagat(k)`. El professor, a la vista «Alumne», els veu tots i els tancats surten marcats (`tancatProf(k)`, etiqueta «tancat»). `access()` és el que pot fer qui mira; `stuAccess()` és l'estat real per a l'alumnat.
+- Apartats tancats: l'alumnat **no els veu enlloc** (menú, inici, dossier, botons anterior/següent): ho decideix `amagat(k)`. El professor, a la «Vista d'alumne», els veu tots i els tancats surten marcats (`tancatProf(k)`, etiqueta «tancat»). `access()` és el que pot fer qui mira; `stuAccess()` és l'estat real per a l'alumnat.
 - Alumnat: en entrar veu una finestra amb el que ha de millorar i el que falta enviar (`stuWelcome`), i una campaneta amb l'historial de comentaris (`bellUpdate`, `notifs`). Cada canvi de revisió del professor queda a `review[apartat].log` (`revLog`).
 - Escriu el codi com el que ja hi ha: funcions compactes, noms curts, comentaris breus en català.
 - Tot el text que ve de l'alumnat passa per `esc()` abans de posar-lo a la pàgina.

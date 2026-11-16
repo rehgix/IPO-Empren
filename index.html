@@ -119,7 +119,7 @@ textarea{font-size:13px;min-height:140px}
 <div class="app">
   <aside class="side">
     <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</div>
-    <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Professor/a</button><button type="button" data-rs="stu">Alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
+    <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Vista de professor</button><button type="button" data-rs="stu">Vista d'alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
     <div class="side-label" id="navLabel">Secció</div>
     <nav class="nav" id="tabs" role="tablist" aria-label="Seccions"></nav>
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
@@ -1362,7 +1362,7 @@ body.has-top #view{padding-top:18px}
 .tback svg,.tchip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tchip .dcount{min-width:22px;padding:1px 7px;border-radius:99px;font-size:12px;text-align:center;background:var(--accent-soft,#fff6e6);color:var(--accent-ink,#b45309);font-variant-numeric:tabular-nums}
 #tbRole .role{display:flex;align-items:center;gap:8px}
-#tbRole .rseg{background:#E6E8EF;min-width:220px}
+#tbRole .rseg{background:#E6E8EF;min-width:270px}#tbRole .rseg button{white-space:nowrap}
 #tbRole .rseg button{color:var(--muted)}#tbRole .rseg button[aria-pressed="true"]{background:#fff;color:var(--ink)}
 #tbRole select{width:auto;max-width:200px;padding:8px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13.5px}
 /* Barra lateral del professorat: 88 px, icona a dalt i una paraula a sota */
@@ -1746,7 +1746,7 @@ function access(k) {
   if (CLOUD && ME && ME.isProf && role !== 'prof') return k === 'inici' || k === 'notes' || k === 'criteris' ? 'open' : 'readonly';
   return stuAccess(k);
 }
-// Tancat: l'alumnat no el veu enlloc (ni el menú, ni l'inici, ni el dossier). El professor, a la vista «Alumne», el veu marcat com a tancat.
+// Tancat: l'alumnat no el veu enlloc (ni el menú, ni l'inici, ni el dossier). El professor, a la «Vista d'alumne», el veu marcat com a tancat.
 const amagat = k => !!stuView() && !!sec(k) && !!sec(k).p && access(k) === 'closed';
 const tancatProf = k => !!(CLOUD && ME && ME.isProf && role !== 'prof') && !!sec(k) && !!sec(k).p && stuAccess(k) === 'closed';
 // Estat de l'apartat per a l'alumnat (el que veuen ells)
@@ -1929,7 +1929,7 @@ function renderSide() {
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
   stuBtn();
 }
-// Selector «Professor/a | Alumne»: en passar a alumne, obre l'equip que s'estava mirant
+// Selector «Vista de professor | Vista d'alumne»: en passar a alumne, obre l'equip que s'estava mirant
 document.querySelector('.rseg').addEventListener('click', e => { const b = e.target.closest('[data-rs]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
   role = b.dataset.rs === 'prof' ? 'prof' : Math.max(0, Math.min(profTeam || 0, G.teams.length - 1)); tab = null; save(); render(); navPush(); });
 $('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); navPush(); });
@@ -4706,7 +4706,7 @@ function stuBtn() {
   const box = $('#tbStu'), want = G && (CLOUD ? ME && ME.isProf && GID : true);
   if (!want) { box.innerHTML = ''; return; }
   const n = CLOUD ? ROSTER.length : G.teams.reduce((a, t) => a + t.members.filter(m => m.name).length, 0);
-  box.innerHTML = `<button type="button" id="stuBtn" class="tchip ${role === 'prof' && tab === 'alumnes' ? 'on' : ''}" title="Enllaç per al Classroom i alumnes que han entrat">${ico('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>')}<span>Alumnat</span><span class="dcount">${n}</span></button>`;
+  box.innerHTML = `<button type="button" id="stuBtn" class="tchip ${role === 'prof' && tab === 'alumnes' ? 'on' : ''}" title="Enllaç per al Classroom i alumnes que han entrat">${ico('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0M16 4.5a3.5 3.5 0 0 1 0 7M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/>')}<span>Gestiona l'alumnat</span><span class="dcount">${n}</span></button>`;
   $('#stuBtn').onclick = () => { role = 'prof'; go('alumnes'); };
 }
 function dashBtn() {
@@ -5540,7 +5540,7 @@ function cloudAfterRender(v) {
 /* ---------- Configuració del grup ---------- */
 function cloudConfigHtml() {
   if (!CLOUD || !ME || !ME.isProf) return '';
-  return card('Alumnat del grup', pad(`<p class="small muted">L'enllaç per al Classroom i la llista d'alumnes són a «Alumnat», el botó de dalt.</p><div class="row"><button type="button" class="btn ghost small" data-go="alumnes">Anar a «Alumnat»</button></div>`))
+  return card('Alumnat del grup', pad(`<p class="small muted">L'enllaç per al Classroom i la llista d'alumnes són a «Gestiona l'alumnat», el botó de dalt.</p><div class="row"><button type="button" class="btn ghost small" data-go="alumnes">Anar a «Alumnat»</button></div>`))
     + card('Altres professors del grup', pad(`<div class="pfield"><label for="profsTa">Correus dels professors que també poden gestionar aquest grup</label><div class="help">${groupOwner() ? 'Un correu per línia. Podran gestionar el grup com tu, però només tu pots canviar aquesta llista i esborrar el grup.' : 'Només el professor que ha creat el grup pot canviar aquesta llista.'}</div><textarea id="profsTa" rows="3" placeholder="nom.cognom@institut.cat" ${groupOwner() ? '' : 'disabled'}>${esc((G.profs || []).join('\n'))}</textarea></div>`))
     + card('Esborrar el grup', pad(`<p class="small muted">Esborra ara mateix el grup i tota la feina dels equips. No es pot desfer.</p><div id="gDelBox"></div>${groupOwner() ? '<button type="button" class="btn ghost small" id="gDel">Esborrar aquest grup</button>' : '<p class="small muted">Només el professor que ha creat el grup el pot esborrar.</p>'}`));
 }
@@ -5826,7 +5826,7 @@ function vSeguiment(v) {
       <span class="snx">${nx ? esc(nx.l) : 'Al dia'}<small>RA4 ${f1(raGradeAct(t, 'RA4').nota)} · RA5 ${f1(raGradeAct(t, 'RA5').nota)} · ${t.delivered ? 'Dossier lliurat' + (t.updated > t.delivered ? ' (amb canvis)' : '') : 'Dossier pendent'}</small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums"><div><b>${nT}</b><small>equips</small></div><div><b>${nAl}</b><small>alumnes</small></div><div><b>${Math.round(avg * 100)} %</b><small>de mitjana</small></div><div class="${nRev ? 'hot' : ''}"><b>${nRev}</b><small>apartats per revisar</small></div></div></section>
-    ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Alumne» a dalt per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
+    ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Vista d\'alumne» a dalt per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     ${G.teams.length ? `<div class="stools"><div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>
       ${nT > 1 ? `<label class="ssort">Ordena per <select class="field-sel" id="sSort">${[['ordre', 'Ordre dels equips'], ['rev', 'Pendents de revisar'], ['prog', 'Menor progrés'], ['alfa', 'Alfabètic']].map(([k, l]) => `<option value="${k}" ${sSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</div>` : ''}
     <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
