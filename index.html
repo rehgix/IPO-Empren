@@ -1067,7 +1067,9 @@ table.fin{box-shadow:none}
 .bento .bl{break-inside:avoid;margin:0 0 16px}
 .bl{border-radius:28px;padding:22px;background:var(--gs);display:flex;flex-direction:column;gap:10px;min-width:0}
 .bh{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:2px}
-.bh h2{margin:0;font:650 21px/1.15 var(--font);letter-spacing:-.02em}
+.bh h2{margin:0;font:650 21px/1.15 var(--font);letter-spacing:-.02em;display:flex;align-items:center;gap:10px}
+.bnum{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:50%;background:var(--gc);color:#fff;font:700 15px/1 var(--font);letter-spacing:0} /* ordre dels blocs a l'inici */
+.bl.cl .bnum{background:var(--muted)}
 .bcnt{background:var(--gc);color:var(--bg);font-weight:650;font-size:13.5px;padding:4px 11px;border-radius:999px;white-space:nowrap}
 .bit{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:4px 12px;background:var(--bit);border:0;border-radius:16px;padding:11px 14px;width:100%;font:inherit;color:inherit;text-align:left;cursor:pointer;transition:background var(--t-fast)}
 .bit:hover{background:var(--tile)}
@@ -2201,7 +2203,7 @@ function vInici(v) {
     const rows = ss.map(s => { const ac = acx(s.k), w = workState(t, s), rv = t.review[s.k];
       const meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
-    return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
+    return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2><span class="bnum" aria-label="Bloc ${i + 1}">${i + 1}</span>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   v.innerHTML = `${flashHtml()}<section class="ihero">
     <div class="iname">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
       <div class="ichips">${chips.map(c => `<span>${c}</span>`).join('')}</div></div>
