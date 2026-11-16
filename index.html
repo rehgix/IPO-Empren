@@ -1131,6 +1131,8 @@ table.fin{box-shadow:none}
 .hqpick{border:0;border-radius:24px;background:var(--tile)}
 .hqp{border-radius:999px;border-color:var(--line)}
 .hsec{font-size:21px;font-weight:650;letter-spacing:-.02em;margin:14px 0 -4px}
+.hsecrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}.hsecrow .hsec{margin:0}
+.ngdlg .bkbox{width:min(660px,100%)}.ngdlg .pfield{margin:0}
 .glist{gap:16px}
 .gcard{border:0;border-radius:28px;background:var(--tile);padding:22px 24px}
 .gcard:hover{box-shadow:var(--sh-float);border:0}
@@ -5408,18 +5410,21 @@ async function homeView(msg, d) {
   v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
     ${hero}${stats}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
-    ${gs.length ? '<h3 class="hsec">Els teus grups</h3>' + `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
+    ${gs.length || ok ? `<div class="hsecrow"><h3 class="hsec">Els teus grups</h3>${ok ? `<button type="button" class="btn small" id="ngOpen">${ico('<path d="M12 5v14M5 12h14"/>')}<span>Afegir un grup nou</span></button>` : ''}</div>` : ''}
+    ${gs.length ? `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
         <a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a>
         <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
         <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gren="${esc(g.id)}">Canviar el nom</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
-        <div data-grenbox></div><div data-gdelbox></div></div>`).join('')}</div>` + guide : guide}
-    ${!ok ? reqCard(req) : card('Crear un grup nou', pad(`<div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" maxlength="100" required placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
+        <div data-grenbox></div><div data-gdelbox></div></div>`).join('')}</div>` + guide : (ok ? '<p class="muted">Encara no tens cap grup. Crea\'n un amb el botó «Afegir un grup nou».</p>' : '') + guide}
+    ${!ok ? reqCard(req) : ''}`;
+  // Finestra per crear un grup nou
+  const ngForm = `<b>Crear un grup nou</b><div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" maxlength="100" required placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
-      <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button></div>`))}`;
+      <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
   const mk = async (example) => {
     const nm = $('#ngName').value.trim().slice(0, 100); // el nom és obligatori (el grup d'exemple en porta un per defecte)
     if (!nm && !example) { $('#ngMsg').innerHTML = '<div class="notice">Escriu el nom del grup abans de crear-lo.</div>'; $('#ngName').focus(); return; }
@@ -5431,15 +5436,16 @@ async function homeView(msg, d) {
       let g = example ? exampleGroup() : newGroup(name, Array.from({ length: n }, (_, i) => 'Equip ' + (i + 1)), sector);
       if (example) { g.name = name; g.join = false; delete g.example; } // grup d'exemple: l'alumnat no pot entrar-hi
       G = g; ensureIds(); ensureEval();
-      const gid = await createGroupDoc(); HOMEC = null;
+      const gid = await createGroupDoc(); HOMEC = null; ngClose && ngClose();
       location.hash = 'g=' + gid;
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
-  if (ok) { $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); } else bindReq();
+  let ngClose = null; const openNew = () => { if (!ok || $('#ngName')) return; ngClose = bkDialog(ngForm, o => { o.classList.add('ngdlg'); $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); $('#ngName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); mk(false); } }; setTimeout(() => $('#ngName').focus(), 50); }); };
+  if (ok) $('#ngOpen').onclick = openNew; else bindReq();
   bkHome(v, ok || gs.length > 0);
-  if (homeNew && $('#ngName')) { homeNew = false; const f = $('#ngName'); f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); }
+  if (homeNew) { homeNew = false; openNew(); }
   v.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = async () => { const link = location.origin + location.pathname + '#g=' + b.dataset.gcopy; try { await navigator.clipboard.writeText(link); (b.querySelector('span') || b).textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } });
-  const nb = v.querySelector('[data-hq="nou"]'); if (nb) nb.onclick = () => { const f = $('#ngName'); if (!f) return; f.closest('.list').scrollIntoView({ behavior: 'smooth', block: 'start' }); setTimeout(() => f.focus({ preventScroll: true }), 350); };
+  const nb = v.querySelector('[data-hq="nou"]'); if (nb) nb.onclick = openNew;
   // «Enllaç per a l'alumnat»: amb un sol grup el copia; amb diversos, deixa triar el grup
   const cp = async (id, el) => { const link = location.origin + location.pathname + '#g=' + id; try { await navigator.clipboard.writeText(link); el.textContent = '✓ Enllaç copiat'; } catch (e) { prompt('Copia aquest enllaç:', link); } };
   const hb = v.querySelector('[data-hqcopy]'); if (hb) hb.onclick = () => {
@@ -5469,7 +5475,7 @@ async function homeView(msg, d) {
       pb.querySelectorAll('[data-pmore]').forEach(b => b.onclick = () => { const id = b.dataset.pmore; PEND_OPEN.has(id) ? PEND_OPEN.delete(id) : PEND_OPEN.add(id); paintGuide(); }); }
     box.querySelectorAll('[data-gotab]').forEach(b => b.onclick = () => { GOTAB = { gid: g0.id, tab: b.dataset.gotab }; location.hash = '#g=' + g0.id; });
     box.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = () => v.querySelector(`.gcard [data-gcopy="${g0.id}"]`)?.click());
-    box.querySelectorAll('[data-hq="nou"]').forEach(b => b.onclick = () => v.querySelector('.hquick [data-hq="nou"]')?.click() || $('#ngName')?.focus()); };
+    box.querySelectorAll('[data-hq="nou"]').forEach(b => b.onclick = openNew); };
   const paintGuide = () => { const box = v.querySelector('#hGuide'), pb = v.querySelector('#hPend'); if (box) box.innerHTML = guideHtml(); if (pb) pb.innerHTML = pendHtml(); bindGuide(); };
   bindGuide();
   // Totals del resum (alumnes i progrés mitjà), que s'omplen a mesura que carreguen els grups
