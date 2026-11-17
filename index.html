@@ -1149,6 +1149,13 @@ table.fin{box-shadow:none}
 .gcol[data-col=""]{background:repeating-linear-gradient(45deg,var(--tile) 0 5px,#e7e5e4 5px 7px)}
 .gcol.on{outline:2px solid var(--ink);outline-offset:2px}
 .ckrow{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer}
+.hgsteps{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
+.hgs{display:grid;gap:14px;align-content:start;border:1px solid var(--line);border-left:6px solid var(--gcol,#a8a29e);border-radius:18px;padding:16px 18px;background:var(--tile)}
+.hgs.has-col{background:color-mix(in srgb,var(--gcol) 8%,var(--tile))}
+.hgs .gdot{background:var(--gcol,#a8a29e);margin:0}
+.hgs-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-bottom:10px;border-bottom:1px solid var(--line)}
+.hgs-h b{font-size:17px;letter-spacing:-.01em}
+.hgs-c{margin-left:auto;font-size:13px;font-weight:600;color:var(--gcol,var(--muted,#78716c))}
 .gcard:hover{box-shadow:var(--sh-float);border:0}
 .gcard b{font-size:20px;letter-spacing:-.02em}
 .gbar{height:10px}
@@ -5363,7 +5370,7 @@ async function homeFetch() {
   return { email: USER.email, gs, listErr, ok, req, nReq };
 }
 // Colors que es poden donar a cada grup (a la targeta del tauler). «' '» = sense color
-const GCOLS = [{ k: '', h: '', n: 'Cap color' }, { k: 'taronja', h: '#e08a0b', n: 'Taronja' }, { k: 'verd', h: '#15803d', n: 'Verd' }, { k: 'blau', h: '#2563eb', n: 'Blau' }, { k: 'lila', h: '#7c3aed', n: 'Lila' }, { k: 'rosa', h: '#c2185b', n: 'Rosa' }, { k: 'turquesa', h: '#0e7490', n: 'Turquesa' }, { k: 'vermell', h: '#dc2626', n: 'Vermell' }, { k: 'groc', h: '#ca8a04', n: 'Groc' }, { k: 'lima', h: '#65a30d', n: 'Verd llima' }, { k: 'blaumari', h: '#1e3a8a', n: 'Blau marí' }, { k: 'blaucel', h: '#0ea5e9', n: 'Blau cel' }, { k: 'indi', h: '#4f46e5', n: 'Índigo' }, { k: 'fucsia', h: '#d946ef', n: 'Fúcsia' }, { k: 'coral', h: '#fb7185', n: 'Coral' }, { k: 'marro', h: '#92400e', n: 'Marró' }, { k: 'gris', h: '#57534e', n: 'Gris' }];
+const GCOLS = [{ k: '', h: '', n: 'Cap color' }, { k: 'taronja', h: '#f97316', n: 'Taronja' }, { k: 'verd', h: '#15803d', n: 'Verd' }, { k: 'blau', h: '#2563eb', n: 'Blau' }, { k: 'lila', h: '#7c3aed', n: 'Lila' }, { k: 'rosa', h: '#c2185b', n: 'Rosa' }, { k: 'turquesa', h: '#0e7490', n: 'Turquesa' }, { k: 'vermell', h: '#dc2626', n: 'Vermell' }, { k: 'groc', h: '#eab308', n: 'Groc' }, { k: 'lima', h: '#65a30d', n: 'Verd llima' }, { k: 'blaumari', h: '#1e3a8a', n: 'Blau marí' }, { k: 'blaucel', h: '#0ea5e9', n: 'Blau cel' }, { k: 'fucsia', h: '#d946ef', n: 'Fúcsia' }, { k: 'coral', h: '#fb7185', n: 'Coral' }, { k: 'marro', h: '#92400e', n: 'Marró' }, { k: 'gris', h: '#57534e', n: 'Gris' }];
 const gcolHex = k => { const c = GCOLS.find(x => x.k === k && x.h); return c ? c.h : ''; };
 const gcolsHtml = cur => `<div class="gcols" role="radiogroup" aria-label="Color del grup">${GCOLS.map(c => `<button type="button" class="gcol${c.k === (cur || '') ? ' on' : ''}" role="radio" aria-checked="${c.k === (cur || '')}" data-col="${c.k}" title="${c.n}" aria-label="${c.n}" style="${c.h ? 'background:' + c.h : ''}"></button>`).join('')}</div>`;
 const bindGcols = root => root.querySelectorAll('.gcol').forEach(b => b.onclick = () => root.querySelectorAll('.gcol').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); }));
@@ -5406,19 +5413,25 @@ async function homeView(msg, d) {
     <div class="stat"><span class="muted small">Alumnes</span><span class="v" data-hs="alum">${d.tot ? d.tot.alum : '…'}</span></div>
     <div class="stat"><span class="muted small">Completat de mitjana</span><span class="v" data-hs="prog">${d.tot ? d.tot.p + ' %' : '…'}</span><div class="bar"><span data-hs="bar" style="width:${d.tot ? d.tot.p : 0}%"></span></div></div></div>` : '';
   // Primers passos: estat real de l'últim grup (alumnes que hi han entrat, apartats oberts i feina per revisar)
-  const g0 = gs[0], acc0 = g0 ? Object.values((P(g0.cfg) || {}).access || {}).filter(a => a && (a.state !== 'closed' || a.from)).length : 0;
+  // Primers passos: un bloc per a cada grup que encara no està en marxa (amb el seu nom, color i progrés)
+  const accOf = g => Object.values((P(g.cfg) || {}).access || {}).filter(a => a && (a.state !== 'closed' || a.from)).length;
+  const setupOk = g => accOf(g) > 0 && !!ST[g.id] && ST[g.id].alum > 0;
+  const stepLi = (x, i) => `<li class="${x.ok ? 'ok' : ''}"><span class="n">${x.ok ? '✓' : i + 1}</span><div><b>${x.t}</b><p>${x.d}</p>${x.a ? `<div class="row" style="margin-top:8px">${x.a}</div>` : ''}</div></li>`;
+  const stepsOf = g => { const st = ST[g.id], nAl = st ? st.alum : null, nRev = st && st.rev != null ? st.rev : null, nSent = st ? st.sent : 0, acc = accOf(g), id = esc(g.id);
+    return [
+      { ok: nAl > 0, t: 'Dona l\'enllaç a l\'alumnat', d: nAl == null ? 'Comprovant quants alumnes hi han entrat…' : nAl ? `Hi han entrat <b>${nAl} ${nAl === 1 ? 'alumne' : 'alumnes'}</b>. Si en falta algun, torna-li a passar l'enllaç.` : 'Encara no hi ha entrat cap alumne. Copia l\'enllaç i comparteix-lo al Classroom.', a: `<button type="button" class="btn ${nAl ? 'ghost ' : ''}small" data-gcopy="${id}">Copiar l'enllaç</button>` },
+      { ok: acc > 0, t: 'Obre els apartats', d: acc ? `Tens <b>${acc} ${acc === 1 ? 'apartat obert o programat' : 'apartats oberts o programats'}</b>.` : 'Ara mateix tot està tancat: l\'alumnat no pot treballar fins que obris algun apartat.', a: `<button type="button" class="btn ${acc ? 'ghost ' : ''}small" data-gotab="obertura" data-gid="${id}">Planificació</button>` },
+      { ok: nRev === 0 && nSent > 0, t: 'Revisa i qualifica', d: nRev == null ? 'Comprovant què han enviat els equips…' : nRev ? `Tens <b>${nRev} ${nRev === 1 ? 'apartat enviat' : 'apartats enviats'} per revisar</b>.` : nSent ? 'Ho tens tot revisat. Quan els equips enviïn més feina, sortirà aquí.' : 'Encara cap equip ha enviat res per revisar.', a: nRev ? `<button type="button" class="btn small" data-gotab="revisio" data-gid="${id}">Anar a Revisió</button>` : '' }]; };
   const guideHtml = () => {
-    const st = g0 && ST[g0.id], nAl = st ? st.alum : null, nRev = st && st.rev != null ? st.rev : null, nSent = st ? st.sent : 0;
-    const steps = [
-      { ok: !!g0, t: 'Crea un grup', d: g0 ? `Ja tens ${gs.length === 1 ? 'un grup' : gs.length + ' grups'}. L'últim és «${esc(g0.name)}».` : 'Posa-li nom, tria el sector i el nombre d\'equips. Si només vols provar l\'eina, crea\'n un d\'exemple.', a: g0 ? '' : '<button type="button" class="btn small" data-hq="nou">Crear un grup</button>' },
-      { ok: nAl > 0, t: 'Dona l\'enllaç a l\'alumnat', d: !g0 ? 'Copia l\'enllaç del grup i comparteix-lo (per exemple al Classroom). Entren amb el compte de l\'institut.' : nAl == null ? 'Comprovant quants alumnes hi han entrat…' : nAl ? `Hi han entrat <b>${nAl} ${nAl === 1 ? 'alumne' : 'alumnes'}</b>. Si en falta algun, torna-li a passar l'enllaç.` : 'Encara no hi ha entrat cap alumne. Copia l\'enllaç i comparteix-lo al Classroom.', a: g0 ? `<button type="button" class="btn ${nAl ? 'ghost ' : ''}small" data-gcopy="${esc(g0.id)}">Copiar l'enllaç</button>` : '' },
-      { ok: acc0 > 0, t: 'Obre els apartats', d: !g0 ? 'El grup comença amb tot tancat. Tu decideixes què treballa l\'alumnat i quan.' : acc0 ? `Tens <b>${acc0} ${acc0 === 1 ? 'apartat obert o programat' : 'apartats oberts o programats'}</b>.` : 'Ara mateix tot està tancat: l\'alumnat no pot treballar fins que obris algun apartat.', a: g0 ? `<button type="button" class="btn ${acc0 ? 'ghost ' : ''}small" data-gotab="obertura">Planificació</button>` : '' },
-      { ok: nRev === 0 && nSent > 0, t: 'Revisa i qualifica', d: !g0 ? 'Segueix el progrés dels equips, revisa el que lliuren i posa les notes de RA4 i RA5.' : nRev == null ? 'Comprovant què han enviat els equips…' : nRev ? `Tens <b>${nRev} ${nRev === 1 ? 'apartat enviat' : 'apartats enviats'} per revisar</b>.` : nSent ? 'Ho tens tot revisat. Quan els equips enviïn més feina, sortirà aquí.' : 'Encara cap equip ha enviat res per revisar.', a: g0 && nRev ? '<button type="button" class="btn small" data-gotab="revisio">Anar a Revisió</button>' : '' }];
-    const done = steps.filter(x => x.ok).length;
-    if (setupDone()) return ''; // amb el grup ja en marxa, la guia deixa lloc a «Pendent de corregir»
-    return card(`Primers passos · ${done} de 4`, pad(`<ol class="hsteps">${steps.map((x, i) => `<li class="${x.ok ? 'ok' : ''}"><span class="n">${x.ok ? '✓' : i + 1}</span><div><b>${x.t}</b><p>${x.d}</p>${x.a ? `<div class="row" style="margin-top:8px">${x.a}</div>` : ''}</div></li>`).join('')}</ol>`));
+    if (!gs.length) return card('Primers passos · 0 de 4', pad(`<ol class="hsteps">${[
+      { t: 'Crea un grup', d: 'Posa-li nom, tria el cicle i el nombre d\'equips. Si només vols provar l\'eina, crea\'n un d\'exemple.', a: '<button type="button" class="btn small" data-hq="nou">Crear un grup</button>' },
+      { t: 'Dona l\'enllaç a l\'alumnat', d: 'Copia l\'enllaç del grup i comparteix-lo (per exemple al Classroom). Entren amb el compte de l\'institut.' },
+      { t: 'Obre els apartats', d: 'El grup comença amb tot tancat. Tu decideixes què treballa l\'alumnat i quan.' },
+      { t: 'Revisa i qualifica', d: 'Segueix el progrés dels equips, revisa el que lliuren i posa les notes de RA4 i RA5.' }].map(stepLi).join('')}</ol>`));
+    const todo = gs.filter(g => !setupOk(g)); if (!todo.length) return ''; // amb tots els grups en marxa, la guia deixa lloc a «Pendent de corregir»
+    return card('Primers passos', pad(`${todo.length < gs.length ? '<p class="small muted" style="margin:0 0 12px">Només surten els grups que encara no estan en marxa.</p>' : ''}<div class="hgsteps">${todo.map(g => { const s = stepsOf(g), done = s.filter(x => x.ok).length, gc = gcolHex((P(g.cfg) || {}).color);
+      return `<section class="hgs${gc ? ' has-col' : ''}"${gc ? ` style="--gcol:${gc}"` : ''}><div class="hgs-h"><span class="gdot" aria-hidden="true"></span><b>${esc(g.name)}</b><span class="hgs-c">${done} de 3 fets</span></div><ol class="hsteps">${s.map(stepLi).join('')}</ol></section>`; }).join('')}</div>`));
   };
-  const setupDone = () => !!g0 && acc0 > 0 && !!ST[g0.id] && ST[g0.id].alum > 0;
   // Pendent de corregir: apartats enviats i sense revisar, per grups, dels més antics als més nous
   const agoTxt = at => { const d = Math.floor((Date.now() - at) / 864e5); return !at ? '' : d < 1 ? 'avui' : d === 1 ? 'ahir' : d < 30 ? `fa ${d} dies` : new Date(at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }); };
   const PEND_OPEN = new Set();
@@ -5515,8 +5528,8 @@ async function homeView(msg, d) {
   const bindGuide = () => { const box = v.querySelector('#hGuide'), pb = v.querySelector('#hPend'); if (!box) return;
     if (pb) { pb.querySelectorAll('[data-pg]').forEach(b => b.onclick = () => { GOTAB = { gid: b.dataset.pg, tab: 'revisio', team: Number(b.dataset.pt), k: b.dataset.pk }; if (location.hash === '#g=' + b.dataset.pg) route(); else location.hash = '#g=' + b.dataset.pg; });
       pb.querySelectorAll('[data-pmore]').forEach(b => b.onclick = () => { const id = b.dataset.pmore; PEND_OPEN.has(id) ? PEND_OPEN.delete(id) : PEND_OPEN.add(id); paintGuide(); }); }
-    box.querySelectorAll('[data-gotab]').forEach(b => b.onclick = () => { GOTAB = { gid: g0.id, tab: b.dataset.gotab }; location.hash = '#g=' + g0.id; });
-    box.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = () => v.querySelector(`.gcard [data-gcopy="${g0.id}"]`)?.click());
+    box.querySelectorAll('[data-gotab]').forEach(b => b.onclick = () => { const id = b.dataset.gid; GOTAB = { gid: id, tab: b.dataset.gotab }; location.hash = '#g=' + id; });
+    box.querySelectorAll('[data-gcopy]').forEach(b => b.onclick = () => cp(b.dataset.gcopy, b));
     box.querySelectorAll('[data-hq="nou"]').forEach(b => b.onclick = openNew); };
   const paintGuide = () => { const box = v.querySelector('#hGuide'), pb = v.querySelector('#hPend'); if (box) box.innerHTML = guideHtml(); if (pb) pb.innerHTML = pendHtml(); bindGuide(); };
   bindGuide();
