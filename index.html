@@ -1534,7 +1534,7 @@ const PE = (() => {
       label: 'Oficina tècnica de projectes i rehabilitació', short: 'Projectes d\'edificació', rate: 45, role: 'tècnic/a de projectes',
       types: ['Projecte de rehabilitació de façana', 'Informe d\'inspecció tècnica (ITE)', 'Certificat d\'eficiència energètica', 'Pla de seguretat i salut d\'una obra', 'Pressupost i amidaments d\'una reforma', 'Aixecament de plànols d\'un edifici'],
       clients: ['Comunitat de propietaris Rambla 12', 'Ajuntament de Mataró', 'Promotora Llar Nova', 'Constructora Riera', 'Família Puig', 'Parròquia de Santa Maria', 'Immobiliària Llar', 'Hotel Platja Blava', 'Escola Mare de Déu', 'Comunitat Carrer de la Riera', 'Museu de Mataró', 'Cooperativa d\'Habitatge'] },
-    mecanitzat: { group: 'biada', family: 'Fabricació mecànica', cicles: 'CFGS Programació de la producció en fabricació mecànica',
+    mecanitzat: { group: 'biada', family: 'Fabricació mecànica', cicles: 'CFGM Mecanització · CFGS Programació de la producció en fabricació mecànica',
       label: 'Taller de mecanitzat de peces per encàrrec', short: 'Mecanitzat', rate: 40, role: 'tècnic/a de mecanitzat',
       types: ['Sèrie curta de peces CNC', 'Prototip mecànic', 'Utillatge per a una línia', 'Peça de recanvi a mida', 'Motlle per a injecció', 'Programació CNC d\'una sèrie'],
       clients: ['Components Auto Iberia', 'Plàstics Maresme', 'Fundició Riera', 'Gèneres de Punt Mataró SA', 'Integradora Robòtica Costa', 'Taller Nàutic El Balís', 'Fabricant de Maquinària Tèxtil', 'Envasos Blau', 'Startup de Drons', 'Laboratoris Farmacèutics Litoral', 'Equips Mèdics del Maresme', 'Universitat (laboratori)'] },
@@ -1570,7 +1570,7 @@ const PE = (() => {
       label: 'Empresa de domòtica i edificis intel·ligents', short: 'Domòtica', rate: 48, role: 'tècnic/a en domòtica',
       types: ['Domòtica d\'un habitatge', 'Control de llums i persianes', 'Alarma i càmeres connectades', 'Control de la calefacció i l\'aire', 'Botiga connectada', 'Gestió energètica d\'un edifici'],
       clients: ['Família Martí', 'Família López', 'Botiga de Roba Lluna', 'Clínica Dental Somriure', 'Hotel Platja Blava', 'Promotora Llar Nova', 'Residència Gent Gran Maresme', 'Restaurant El Port', 'Despatx d\'Advocats Vila', 'Comunitat Carrer de la Riera', 'Gimnàs Força', 'Immobiliària Llar'] },
-    mantedificis: { group: 'biada', family: 'Edificació i obra civil', cicles: 'CFGB Manteniment i rehabilitació d\'edificis (FP bàsica) · CFGM Obres d\'interior, decoració i rehabilitació',
+    mantedificis: { group: 'biada', family: 'Edificació i obra civil', cicles: 'CFGB Reforma i manteniment d\'edificis (FP bàsica) · CFGM Obres d\'interior, decoració i rehabilitació',
       label: 'Servei de manteniment i petites reparacions', short: 'Manteniment d\'edificis', rate: 35, role: 'operari/ària de manteniment',
       types: ['Reparació d\'una gotera', 'Pintura d\'una escala de veïns', 'Canvi de rajoles trencades', 'Reparació de portes i panys', 'Neteja de baixants i terrats', 'Petites reparacions a domicili'],
       clients: ['Comunitat de propietaris Rambla 12', 'Comunitat Carrer de la Riera', 'Administració de Finques Costa', 'Família Roca', 'Família Garcia', 'Immobiliària Llar', 'Escola de Dansa', 'Perruqueria Tisores', 'Centre Cívic', 'Residència Gent Gran Maresme', 'Família Vidal', 'Parròquia de Santa Maria'] },
@@ -3453,7 +3453,9 @@ const cicleSlug = n => 'c-' + n.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/
     if (FINSEC[ks[0]]) FINSEC[ck] = FINSEC[ks[0]]; if (PISTES[ks[0]]) PISTES[ck] = PISTES[ks[0]]; if (OFERTES[ks[0]]) OFERTES[ck] = OFERTES[ks[0]]; });
 })();
 // Un sector antic (tipus d'empresa concret) passa al primer cicle on surt; els cicles i els «altres sectors» es queden igual
-function cicleKey(k) { const s = PE.SECTORS[k]; if (!s || s.group !== 'biada') return k || ''; const c = secCicles(s)[0]; return c ? cicleSlug(c) : k; }
+// Cicles que han canviat de nom (la clau surt del nom): els grups i equips que tenien l'antic passen al nou
+const CICLE_ALIES = { 'c-cfgb-manteniment-i-rehabilitacio-d-edificis': 'c-cfgb-reforma-i-manteniment-d-edificis' };
+function cicleKey(k) { if (CICLE_ALIES[k]) return CICLE_ALIES[k]; const s = PE.SECTORS[k]; if (!s || s.group !== 'biada') return k || ''; const c = secCicles(s)[0]; return c ? cicleSlug(c) : k; }
 function normSectors() { if (!G) return; const gs = cicleKey(G.sector); if (gs !== G.sector) G.sector = gs; (G.teams || []).forEach(t => { if (t.data && t.data.idea) { const k = cicleKey(t.data.idea.sector); if (k !== t.data.idea.sector) t.data.idea.sector = k; } }); }
 
 // Cost d'una oferta per a un import: quota, cost total (interessos + comissió) i TAE aproximada
@@ -5466,7 +5468,7 @@ const pickedGcol = root => { const b = root.querySelector('.gcol.on'); return b 
 // Emoji del grup (surt gran a la dreta de la targeta). Se'n tria un de la llista o s'escriu el que es vulgui
 const GEMOJIS = ['⚡', '🔌', '💡', '🔧', '🛠️', '⚙️', '🤖', '🚗', '🏍️', '🚆', '⛵', '⚗️', '🎮', '🌐', '🏭', '🔬', '🧪', '🧬', '🏥', '💊', '💻', '📊', '💼', '🏦', '🧾', '📱', '🎨', '🍳', '🌱', '☀️', '🏗️', '🚀', '🎯', '🌟'];
 // Emoji suggerit segons el nom del cicle (es pot canviar). L'ordre compta: «elèctriques i automàtiques» → ⚡
-const GEMO_CIC = [[/electr(ic|iq)/, '⚡'], [/robot|automatitz/, '🤖'], [/motocicl/, '🏍️'], [/ferrovi/, '🚆'], [/carrosser|automoci|vehicle/, '🚗'], [/farmac|biotec/, '🧪'], [/laborat/, '🔬'], [/quimic/, '⚗️'], [/mecatron|electromec/, '⚙️'], [/fabricaci|cad\b|mecanic/, '🏭'], [/administr|gestio|financ/, '💼'], [/obres|edific|projectes|construc/, '🏗️'], [/embarcac|nautic/, '⛵'], [/rehabilit|manteniment/, '🔧'], [/videojoc/, '🎮'], [/web\b|pagines web/, '🌐'], [/disseny|comunicaci/, '🎨'], [/\bapps?\b|mobil/, '📱'], [/informat|sistemes|xarx|program/, '💻'], [/sanit|salut|cura/, '🏥'], [/comer|vend|marqueting/, '📊']];
+const GEMO_CIC = [[/mecanitz/, '🔩'], [/electr(ic|iq)/, '⚡'], [/robot|automatitz/, '🤖'], [/motocicl/, '🏍️'], [/ferrovi/, '🚆'], [/carrosser|automoci|vehicle/, '🚗'], [/farmac|biotec/, '🧪'], [/laborat/, '🔬'], [/quimic/, '⚗️'], [/mecatron|electromec/, '⚙️'], [/fabricaci|cad\b|mecanic/, '🏭'], [/administr|gestio|financ/, '💼'], [/obres|edific|projectes|construc/, '🏗️'], [/embarcac|nautic/, '⛵'], [/rehabilit|manteniment/, '🔧'], [/videojoc/, '🎮'], [/web\b|pagines web/, '🌐'], [/disseny|comunicaci/, '🎨'], [/\bapps?\b|mobil/, '📱'], [/informat|sistemes|xarx|program/, '💻'], [/sanit|salut|cura/, '🏥'], [/comer|vend|marqueting/, '📊']];
 const gemoFor = k0 => { const k = cicleKey(k0), s = PE.SECTORS[k], n = String((s && (s.label || s.cicles)) || CICLES[k] || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (!n) return '';
   const hit = GEMO_CIC.find(([re]) => re.test(n)); return hit ? hit[1] : '🚀'; };
 // Emoji que es mostra: el triat ('' = cap) o, si no se n'ha triat mai cap, el del cicle
