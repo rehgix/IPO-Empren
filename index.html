@@ -4282,8 +4282,9 @@ function vQualificacio(v) {
   v.querySelectorAll('[data-qv]').forEach(b => b.onclick = () => { qView = 'grup'; render(); window.scrollTo(0, 0); });
   v.querySelectorAll('[data-af]').forEach(b => b.onclick = () => { qAct = b.dataset.af; render(); const f = $('.actf-h'); if (f && f.getBoundingClientRect().top < 0) f.scrollIntoView({ block: 'start' }); });
   const aoff = $('#aiOff'), aon = $('#aiOn2');
-  if (aoff) aoff.onclick = () => { aiCfg().enabled = false; manualScope = null; save(); render(); };
-  if (aon) aon.onclick = () => { aiCfg().enabled = true; save(); render(); };
+  // Activar o desactivar la IA es fa des de dins del desplegable: ha de continuar obert i sense moure la pàgina
+  if (aoff) aoff.onclick = () => { QH_OPEN = true; aiCfg().enabled = false; manualScope = null; save(); const y = window.scrollY; render(); window.scrollTo(0, y); };
+  if (aon) aon.onclick = () => { QH_OPEN = true; aiCfg().enabled = true; save(); const y = window.scrollY; render(); window.scrollTo(0, y); };
   const setG = (c, patch) => { const g = t.grades[c] = Object.assign(t.grades[c] || {}, patch), a = G.acts.find(x => x.c === c);
     // Amb la nota es guarda com estava cada apartat: consta com a lliurat mentre l'equip no hi faci canvis
     if ('nota' in patch && a) { g.h = {}; (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) g.h[k] = secHash(t, k); }); }
@@ -4314,7 +4315,9 @@ function vQualificacio(v) {
       aiRead = { team: t.name, codes: mActs.map(a => a.c).filter(c => res[c] && t.ai[c]) }; manualScope = null; qAct = 'tot'; render(); const rb = $('#aiRead'); if (rb) rb.scrollIntoView({ block: 'center' }); };
   }
   const applyAi = codes => { let n = 0; G.acts.forEach(a => { const ai = t.ai[a.c]; if (ai && codes.includes(a.c)) { setG(a.c, Object.assign(aiPatch(a, ai), { comentari: (t.grades[a.c] && t.grades[a.c].comentari) || ai.comentari })); n++; } }); return n; };
-  if ($('#qHelp')) $('#qHelp').addEventListener('toggle', e => { QH_OPEN = e.target.open; });
+  const qh = $('#qHelp'); if (qh) { // recorda si està obert: amb el botó «Obrir/Tancar» i amb qualsevol clic a dins
+    qh.querySelector('summary').addEventListener('click', () => { QH_OPEN = !qh.open; });
+    qh.addEventListener('click', e => { if (!e.target.closest('summary')) QH_OPEN = true; }, true); }
   if ($('#aiReadAll')) $('#aiReadAll').onclick = () => { aiRead.done = applyAi(aiRead.codes) || 0; rerender(); };
   if ($('#aiReadOne')) $('#aiReadOne').onclick = () => { aiRead = null; rerender(); const b = v.querySelector('[data-aiapply]'); if (b) b.closest('.aibox').scrollIntoView({ block: 'center' }); };
   if ($('#aiReadX')) $('#aiReadX').onclick = () => { aiRead = null; rerender(); };
