@@ -1149,6 +1149,9 @@ table.fin{box-shadow:none}
 .gcol[data-col=""]{background:repeating-linear-gradient(45deg,var(--tile) 0 5px,#e7e5e4 5px 7px)}
 .gcol.on{outline:2px solid var(--ink);outline-offset:2px}
 .ckrow{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer}
+.airead{border:2px solid #2563eb;background:#eff6ff;border-radius:20px;padding:18px 20px;margin:14px 0;display:grid;gap:8px}
+.airead p{margin:0}
+.airead.done{border-color:#15803d;background:#f0fdf4}
 .hgsteps{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
 .hgs{display:grid;gap:14px;align-content:start;border:1px solid var(--line);border-left:6px solid var(--gcol,#a8a29e);border-radius:18px;padding:16px 18px;background:var(--tile)}
 .hgs.has-col{background:color-mix(in srgb,var(--gcol) 8%,var(--tile))}
@@ -3894,7 +3897,7 @@ let samplePromise = null;
 const getSample = () => samplePromise || (samplePromise = (window.claude && window.claude.use ? window.claude.use('sample') : Promise.resolve(null)).catch(() => null));
 function aiPrompt(t, list) {
   const sectorL = sectorLabel(t.data.idea.sector);
-  return `IMPORTANT: la teva resposta l'ha de llegir un programa. Respon NOMÉS amb un bloc de codi JSON, sense cap text abans ni després (ni saludes, ni explicacions, ni resums). El format exacte és al final d'aquest missatge.
+  return `IMPORTANT: la teva resposta l'ha de llegir un programa. Respon NOMÉS amb un bloc de codi JSON, sense cap text abans ni després (no saludis ni afegeixis explicacions ni resums). El format exacte és al final d'aquest missatge.
 
 Ets professor/a de Formació Professional a Catalunya i corregeixes el mòdul Itinerari Personal per a l'Ocupabilitat II (IPO II). Un equip d'alumnes de cicles formatius ha desenvolupat un projecte emprenedor${sectorL ? ` del sector «${sectorL}»` : ''}. Avalua cada activitat de la llista amb la seva rúbrica de 5 nivells (0 a 4).
 
@@ -4008,7 +4011,7 @@ async function aiCorrect(t, list, onState) {
 }
 
 /* ---------- Pàgina de qualificació ---------- */
-let aiState = {}, manualScope = null;
+let aiState = {}, manualScope = null, aiRead = null; // aiRead: propostes acabades de llegir, pendents d'aplicar
 // Selector de rúbrica d'una activitat (val per a tots els equips del grup)
 function rubSel(a, attr) {
   const rec = rubRec(a);
@@ -4058,6 +4061,7 @@ function vQualificacio(v) {
   const C = aiCfg(), manual = true;
   const mScope = manualScope && manualScope.team === t.name ? manualScope : null;
   const mActs = mScope ? G.acts.filter(a => mScope.codes.includes(a.c)) : [];
+  const aiReadNow = aiRead && aiRead.team === t.name ? aiRead : null;
   if (qAct !== 'tot' && !G.acts.some(a => a.c === qAct)) qAct = G.acts.length ? G.acts[0].c : 'tot';
   const qShow = a => qAct === 'tot' || a.c === qAct, qi = G.acts.findIndex(a => a.c === qAct), qPrev = G.acts[qi - 1], qNext = G.acts[qi + 1];
   v.innerHTML = `${head(`Qualificació · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`)}
@@ -4066,6 +4070,9 @@ function vQualificacio(v) {
     <div class="row">${C.enabled ? `<button class="btn" id="aiAll" ${busyAll && busyAll.busy ? 'disabled' : ''}>${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/>')}${busyAll && busyAll.busy ? 'Corregint...' : `Corregir amb IA les ${aiActs.length} activitats`}</button>
       <button class="btn ghost" id="aiApplyAll">Aplicar totes les propostes de la IA</button>` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div>
     ${busyAll && busyAll.error ? `<div class="notice">${esc(busyAll.error)}</div>` : ''}
+    ${aiReadNow ? `<div class="airead${aiReadNow.done ? ' done' : ''}" id="aiRead" role="status">${aiReadNow.done
+      ? `<b>✓ Notes posades a ${aiReadNow.done} ${aiReadNow.done === 1 ? 'activitat' : 'activitats'}</b><p>Ja tens la nota, la rúbrica i el comentari de la IA a cada activitat. Els pots canviar a mà si no hi estàs d'acord.</p><div class="row"><button type="button" class="btn ghost small" id="aiReadX">D'acord</button></div>`
+      : `<b>✓ He llegit ${aiReadNow.codes.length} ${aiReadNow.codes.length === 1 ? 'proposta' : 'propostes'} de la IA: ${aiReadNow.codes.map(esc).join(', ')}</b><p><b>Encara no s'han posat les notes.</b> Pots aplicar-les totes de cop o revisar-les una a una (a cada activitat surt el requadre blau «Proposta de la IA» amb el botó «Aplicar la proposta»).</p><div class="row"><button type="button" class="btn" id="aiReadAll">Aplicar totes les propostes</button><button type="button" class="btn ghost" id="aiReadOne">Revisar-les una a una</button></div>`}</div>` : ''}
     ${mScope ? card(`Correcció amb IA · ${mActs.map(a => esc(a.c)).join(', ')}`, pad(`<ol class="steps"><li>Copia la petició i enganxa-la al xat de la IA que vulguis (ChatGPT, Gemini, Copilot...).</li><li>Copia tota la resposta de la IA i enganxa-la a la casella de sota.</li><li>Prem «Llegir la resposta». Després podràs aplicar o no cada proposta.</li></ol>
       <div class="pfield"><label for="mPrompt">Petició per a la IA</label><textarea id="mPrompt" rows="6" readonly>${esc(aiPrompt(t, mActs))}</textarea></div><button type="button" class="btn ghost small" id="mCopy">Copiar la petició</button>
       <div class="pfield" style="margin-top:12px"><label for="mResp">Resposta de la IA</label><textarea id="mResp" rows="6" placeholder="Enganxa aquí la resposta completa"></textarea></div>
@@ -4106,8 +4113,12 @@ function vQualificacio(v) {
     $('#mRead').onclick = () => { const res = normAi(parseLooseJson($('#mResp').value), mActs) || parseAiText($('#mResp').value, mActs); const n = res ? applyAiResult(t, mActs, res, 'de la IA') : 0;
       if (!n) { $('#mMsg').innerHTML = `<div class="notice">No he trobat el codi a la resposta: sembla que la IA ha contestat amb un text. Copia aquest missatge, envia-l'hi al mateix xat i enganxa aquí la nova resposta.<div class="row" style="margin-top:8px"><button type="button" class="btn small" id="mAsk">Copiar el missatge per a la IA</button></div></div>`;
         $('#mAsk').onclick = async () => { const tx = AI_REDO(mActs); try { await navigator.clipboard.writeText(tx); $('#mAsk').textContent = '✓ Missatge copiat'; } catch (e) { prompt('Copia aquest missatge:', tx); } }; return; }
-      manualScope = null; rerender(); };
+      aiRead = { team: t.name, codes: mActs.map(a => a.c).filter(c => res[c] && t.ai[c]) }; manualScope = null; qAct = 'tot'; render(); const rb = $('#aiRead'); if (rb) rb.scrollIntoView({ block: 'center' }); };
   }
+  const applyAi = codes => { let n = 0; G.acts.forEach(a => { const ai = t.ai[a.c]; if (ai && codes.includes(a.c)) { setG(a.c, Object.assign(aiPatch(a, ai), { comentari: (t.grades[a.c] && t.grades[a.c].comentari) || ai.comentari })); n++; } }); return n; };
+  if ($('#aiReadAll')) $('#aiReadAll').onclick = () => { aiRead.done = applyAi(aiRead.codes) || 0; rerender(); };
+  if ($('#aiReadOne')) $('#aiReadOne').onclick = () => { aiRead = null; rerender(); const b = v.querySelector('[data-aiapply]'); if (b) b.closest('.aibox').scrollIntoView({ block: 'center' }); };
+  if ($('#aiReadX')) $('#aiReadX').onclick = () => { aiRead = null; rerender(); };
   $('#aiApplyAll').onclick = () => { G.acts.forEach(a => { const ai = t.ai[a.c]; if (ai) setG(a.c, Object.assign(aiPatch(a, ai), { comentari: (t.grades[a.c] && t.grades[a.c].comentari) || ai.comentari })); }); rerender(); };
   }
   $('#autoAll').onclick = () => { G.acts.forEach(a => { const g = t.grades[a.c]; const al = autoLevel(t, a); if (al !== null && (!g || g.nota === undefined || g.nota === '')) setG(a.c, { nivell: al, nota: LVL_NOTE(al), font: 'auto' }); }); rerender(); };
