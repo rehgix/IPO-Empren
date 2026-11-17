@@ -1,9 +1,9 @@
 <!DOCTYPE html><html lang="ca"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 24 24%22%3E%3Crect width=%2224%22 height=%2224%22 rx=%226%22 fill=%22%23f7a21b%22/%3E%3Cpath d=%22M5 17l4.5-5.5 3.5 2.5 6-7.5%22 fill=%22none%22 stroke=%22%23111%22 stroke-width=%222.4%22 stroke-linecap=%22round%22/%3E%3C/svg%3E">
+<link rel="icon" type="image/png" href="icons/fav-64.png">
 <link rel="preload" href="config.js?v=2" as="script"><link rel="preload" href="fbapi.js?v=2" as="script">
 <title>IPO Emprèn</title>
 <!-- Icona i dades per instal·lar la web a la pantalla d'inici (mòbil, tauleta i ordinador) -->
-<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icons/app-180.png">
 <meta name="apple-mobile-web-app-title" content="IPO Emprèn"><meta name="mobile-web-app-capable" content="yes">
 <meta name="description" content="IPO Emprèn: eina per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut Miquel Biada.">
 <meta name="theme-color" content="#F1F3F8">
@@ -121,14 +121,14 @@ textarea{font-size:13px;min-height:140px}
 
 <div class="app">
   <aside class="side">
-    <div class="brand"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</div>
+    <div class="brand"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</div>
     <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Vista de professor</button><button type="button" data-rs="stu">Vista d'alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
     <div class="side-label" id="navLabel">Secció</div>
     <nav class="nav" id="tabs" role="tablist" aria-label="Seccions"></nav>
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
   </aside>
   <div class="panel"><div class="content tophead" id="topHead" hidden>
-    <div class="tbar"><button type="button" class="railbtn" id="railBtn" aria-controls="tbTabs" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><a class="tbrand" href="#" id="tbBrand" title="Anar a l'inici"><span class="logo"><svg viewBox="0 0 24 24" fill="none" stroke="#111113" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 18l5-6 4 3 7-9"/><path d="M15 6h5v5"/></svg></span>IPO Emprèn</a><span id="tbBack"></span><span class="tsp"></span><span id="tbStu"></span><span id="tbRole"></span></div>
+    <div class="tbar"><button type="button" class="railbtn" id="railBtn" aria-controls="tbTabs" aria-expanded="false" aria-label="Obrir el menú" title="Menú"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2.5"/><path d="M9 4v16"/></svg></button><a class="tbrand" href="#" id="tbBrand" title="Anar a l'inici"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</a><span id="tbBack"></span><span class="tsp"></span><span id="tbStu"></span><span id="tbRole"></span></div>
     <div id="tbGrp"></div><nav class="ttabs" id="tbTabs" aria-label="Seccions"></nav><div class="rail-back" id="railBack"></div><div id="tbSub"></div>
   </div><main class="content" id="view"><div class="cloud-load"><span class="spin"></span> Carregant...</div></main></div>
 </div>
@@ -964,7 +964,7 @@ body::before{background:#F3F1EC}
 :is(.grpbar,.sheet,.list,.stat,.iprog,.istats,.snums div,.stm,.hq,.hqpick,.gcard,.rnav,.notice){box-shadow:0 1px 2px rgba(41,37,36,.05),0 10px 28px -10px rgba(41,37,36,.16)}
 /* Menú lateral (calaix) */
 .brand{border-color:var(--side-2)}
-.logo{background:var(--ink);box-shadow:none;border-radius:11px}
+.logo{background:none;box-shadow:none;border-radius:0}
 .logo svg{stroke:var(--bg)}
 .ghead{color:var(--side-fg)!important;font:650 14px var(--font);padding:8px 12px 4px}
 .ghead svg{display:none}
@@ -1403,9 +1403,12 @@ body:not(.noside) .tbrand{display:none}
 body.has-top #view{padding-top:18px}
 @media (max-width:860px){body.noside .content.tophead{padding-top:16px}body.noside #view{padding-top:14px}}
 .tbar{display:flex;align-items:center;flex-wrap:wrap;gap:10px 12px;min-height:46px;padding-right:58px}
+.hbanner{margin:0 0 22px;border-radius:22px;overflow:hidden;box-shadow:var(--sh-xs)}.hbanner img{display:block;width:100%;height:auto;min-height:90px;object-fit:cover;object-position:center}
+.loginlogo{display:block;width:min(340px,80%);height:auto;margin:0 0 18px}
 .tbrand{display:inline-flex;align-items:center;gap:12px;font-weight:700;font-size:23px;letter-spacing:-.02em;color:var(--ink);text-decoration:none;margin-right:10px;white-space:nowrap}
-.tbrand .logo{width:46px;height:46px;border-radius:13px;background:var(--accent);display:grid;place-items:center}
-.tbrand .logo svg{width:26px;height:26px}
+.tbrand .logo{width:46px;height:46px;background:none;box-shadow:none;display:grid;place-items:center}
+.logo img{width:100%;height:100%;object-fit:contain;display:block}
+body:has(.hbanner) .tbrand{display:none} /* al tauler ja surt el bàner amb el logo */
 .tsp{flex:1}
 .tback,.tchip{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13.5px var(--font);text-decoration:none;cursor:pointer;box-shadow:var(--sh-xs);transition:background var(--t-fast),border-color var(--t-fast)}
 .tback:hover,.tchip:hover{border-color:var(--line-2,#cfd3dd);background:var(--soft)}
@@ -1442,7 +1445,7 @@ body.has-rail .panel{margin-left:88px}
 .tsub button[aria-pressed="true"]{background:#fff;color:var(--ink);font-weight:600;box-shadow:var(--sh-xs)}
 #tbSub:empty{display:none}
 .tbar{}
-@media (max-width:620px){#tbRole{flex:1 1 100%;min-width:0}#tbRole .role{flex-wrap:wrap}#tbRole .rseg{flex:1 1 180px}#tbRole select{flex:1 1 140px;max-width:none;min-width:0}.tbar{padding-right:52px}.tbrand{font-size:18px;gap:9px;margin-right:0}.tbrand .logo{width:38px;height:38px;border-radius:11px}.tbrand .logo svg{width:22px;height:22px}#tbRole .rseg{min-width:0}.tback span{display:none}.tback{padding:8px 10px}}
+@media (max-width:620px){#tbRole{flex:1 1 100%;min-width:0}#tbRole .role{flex-wrap:wrap}#tbRole .rseg{flex:1 1 180px}#tbRole select{flex:1 1 140px;max-width:none;min-width:0}.tbar{padding-right:52px}.tbrand{font-size:18px;gap:9px;margin-right:0}.tbrand .logo{width:38px;height:38px}#tbRole .rseg{min-width:0}.tback span{display:none}.tback{padding:8px 10px}}
 /* Filtre d'activitats (Qualificació i Informes) i pestanyes de Configuració */
 .actf{flex-wrap:wrap;border-radius:20px}
 .actf-h{margin:8px 0 -6px;font-size:15px;font-weight:650;color:var(--muted)}
@@ -4856,7 +4859,7 @@ async function signOutNow(b) {
 }
 function loginView(msg) {
   document.body.classList.add('cloud-msg'); accUpdate();
-  $('#view').innerHTML = `${head('IPO Emprèn · Projecte emprenedor', 'Entra amb el compte de l\'institut')}
+  $('#view').innerHTML = `<img class="loginlogo" src="icons/logo-text.png" alt="IPO Emprèn · Innovació i Emprenedoria" width="577" height="200">${head('IPO Emprèn · Projecte emprenedor', 'Entra amb el compte de l\'institut')}
     <p class="intro muted">Professorat i alumnat entren amb el compte de Google de l'institut. Cada alumne només veu la feina del seu equip.</p>
     ${msg ? `<div class="notice">${msg}</div>` : (() => { let o = ''; try { o = sessionStorage.getItem('ipoOut'); sessionStorage.removeItem('ipoOut'); } catch (e) {} return o ? '<div class="notice info">Has tancat la sessió. Pots tornar a entrar amb el mateix compte o amb un altre.</div>' : ''; })()}
     <div class="row" style="margin-top:16px"><button class="btn" id="gIn">${ico('<circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/>')}Entrar amb Google</button></div>`;
@@ -5595,7 +5598,7 @@ async function homeView(msg, d) {
     return card(`Pendent de corregir${loaded.length === gs.length ? ` · ${all}` : ''}`, pad(`<div class="pd">${blocks}</div>`));
   };
   const guide = `<div data-g="prof" id="hGuide">${guideHtml()}</div><div data-g="prof" id="hPend">${pendHtml()}</div>`;
-  v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
+  v.innerHTML = `${msg ? `<div class="notice info">${msg}</div>` : ''}<div class="hbanner"><img src="icons/banner.jpg" alt="IPO Emprèn · Innovació i Emprenedoria" width="2000" height="241"></div>${head('Tauler del professorat', 'Els meus grups', isAdmin() ? `<a class="btn ghost small" href="#admin">Panell d'administrador${nReq ? ` <span class="pill">${nReq}</span>` : ''}</a>` : '')}
     ${hero}${stats}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length || ok ? `<div class="hsecrow"><h3 class="hsec">Els teus grups</h3>${ok ? `<button type="button" class="btn small" id="ngOpen">${ico('<path d="M12 5v14M5 12h14"/>')}<span>Afegir un grup nou</span></button>` : ''}</div>` : ''}
