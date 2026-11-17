@@ -4062,13 +4062,16 @@ function vQualificacio(v) {
   const mScope = manualScope && manualScope.team === t.name ? manualScope : null;
   const mActs = mScope ? G.acts.filter(a => mScope.codes.includes(a.c)) : [];
   const aiReadNow = aiRead && aiRead.team === t.name ? aiRead : null;
+  // propostes de la IA que encara no s'han posat com a nota (si la nota és la de la IA, ja està aplicada)
+  const aiPend = G.acts.filter(a => { const ai = t.ai[a.c], g = t.grades[a.c] || {}; return ai && !(g.font === 'ia' && g.nota === ai.nota); }).map(a => a.c);
+  const aiBusy = !!(mScope || aiReadNow); // amb la finestreta oberta o l'avís blau, els botons de la IA sobren
   if (qAct !== 'tot' && !G.acts.some(a => a.c === qAct)) qAct = G.acts.length ? G.acts[0].c : 'tot';
   const qShow = a => qAct === 'tot' || a.c === qAct, qi = G.acts.findIndex(a => a.c === qAct), qPrev = G.acts[qi - 1], qNext = G.acts[qi + 1];
   v.innerHTML = `${head(`Qualificació · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`)}
     ${teamTabs()}
     <div class="aipick">${C.enabled ? `<div class="aipick-h"><span><b>Correcció amb IA</b> <span class="muted small">Funciona amb la IA que facis servir habitualment (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="linkbtn small muted" id="aiOff">Desactivar la IA</button></div><p class="small muted" style="margin:0">Prem «Corregir amb IA» i l'eina et prepararà una petició amb la feina de l'equip i els criteris de cada activitat. La copies a la IA, enganxes aquí la resposta i decideixes quines propostes aplicar.</p>` : `<div class="aipick-h"><span><b>La correcció amb IA està desactivada.</b> <span class="muted small">Funciona amb la IA que facis servir (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="btn small" id="aiOn2">Activar la IA</button></div>`}</div>
-    <div class="row">${C.enabled ? `<button class="btn" id="aiAll" ${busyAll && busyAll.busy ? 'disabled' : ''}>${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/>')}${busyAll && busyAll.busy ? 'Corregint...' : `Corregir amb IA les ${aiActs.length} activitats`}</button>
-      <button class="btn ghost" id="aiApplyAll">Aplicar totes les propostes de la IA</button>` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div>
+    <div class="row">${C.enabled && !aiBusy ? `<button class="btn" id="aiAll" ${busyAll && busyAll.busy ? 'disabled' : ''}>${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/>')}${busyAll && busyAll.busy ? 'Corregint...' : `Corregir amb IA les ${aiActs.length} activitats`}</button>
+      ${aiPend.length ? `<button class="btn ghost" id="aiApplyAll">Aplicar ${aiPend.length === 1 ? 'la proposta de la IA pendent' : aiPend.length + ' propostes de la IA pendents'}</button>` : ''}` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div>
     ${busyAll && busyAll.error ? `<div class="notice">${esc(busyAll.error)}</div>` : ''}
     ${aiReadNow ? `<div class="airead${aiReadNow.done ? ' done' : ''}" id="aiRead" role="status">${aiReadNow.done
       ? `<b>✓ Notes posades a ${aiReadNow.done} ${aiReadNow.done === 1 ? 'activitat' : 'activitats'}</b><p>Ja tens la nota, la rúbrica i el comentari de la IA a cada activitat. Els pots canviar a mà si no hi estàs d'acord.</p><div class="row"><button type="button" class="btn ghost small" id="aiReadX">D'acord</button></div>`
@@ -4106,7 +4109,7 @@ function vQualificacio(v) {
   const openManual = codes => { manualScope = { team: t.name, codes }; render(); window.scrollTo(0, 0); };
   v.querySelectorAll('[data-aigo]').forEach(b => b.onclick = () => { const a = G.acts.find(x => x.c === b.dataset.aigo), key = t.name + a.c; if (manual) return openManual([a.c]); aiCorrect(t, [a], s => { aiState[key] = s.done ? {} : s; if (tab === 'qualificacio') rerender(); }); });
   if (!C.enabled) { /* sense IA */ } else {
-  $('#aiAll').onclick = () => { if (manual) return openManual(aiActs.map(a => a.c)); const key = '__all' + t.name; aiCorrect(t, aiActs, s => { aiState[key] = s.done ? {} : s; if (tab === 'qualificacio') rerender(); }); };
+  if ($('#aiAll')) $('#aiAll').onclick = () => { if (manual) return openManual(aiActs.map(a => a.c)); const key = '__all' + t.name; aiCorrect(t, aiActs, s => { aiState[key] = s.done ? {} : s; if (tab === 'qualificacio') rerender(); }); };
   if (mScope) {
     $('#mCopy').onclick = async () => { const x = $('#mPrompt'); try { await navigator.clipboard.writeText(x.value); $('#mCopy').textContent = 'Copiat'; } catch (e) { x.select(); $('#mCopy').textContent = 'Text seleccionat: prem Ctrl+C'; } };
     $('#mClose').onclick = () => { manualScope = null; rerender(); };
@@ -4119,7 +4122,7 @@ function vQualificacio(v) {
   if ($('#aiReadAll')) $('#aiReadAll').onclick = () => { aiRead.done = applyAi(aiRead.codes) || 0; rerender(); };
   if ($('#aiReadOne')) $('#aiReadOne').onclick = () => { aiRead = null; rerender(); const b = v.querySelector('[data-aiapply]'); if (b) b.closest('.aibox').scrollIntoView({ block: 'center' }); };
   if ($('#aiReadX')) $('#aiReadX').onclick = () => { aiRead = null; rerender(); };
-  $('#aiApplyAll').onclick = () => { G.acts.forEach(a => { const ai = t.ai[a.c]; if (ai) setG(a.c, Object.assign(aiPatch(a, ai), { comentari: (t.grades[a.c] && t.grades[a.c].comentari) || ai.comentari })); }); rerender(); };
+  if ($('#aiApplyAll')) $('#aiApplyAll').onclick = () => { G.acts.forEach(a => { const ai = t.ai[a.c]; if (ai && aiPend.includes(a.c)) setG(a.c, Object.assign(aiPatch(a, ai), { comentari: (t.grades[a.c] && t.grades[a.c].comentari) || ai.comentari })); }); rerender(); };
   }
   $('#autoAll').onclick = () => { G.acts.forEach(a => { const g = t.grades[a.c]; const al = autoLevel(t, a); if (al !== null && (!g || g.nota === undefined || g.nota === '')) setG(a.c, { nivell: al, nota: LVL_NOTE(al), font: 'auto' }); }); rerender(); };
 }
