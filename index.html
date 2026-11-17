@@ -1139,7 +1139,16 @@ table.fin{box-shadow:none}
 .hsecrow{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:14px}.hsecrow .hsec{margin:0}
 .ngdlg .bkbox{width:min(660px,100%)}.ngdlg .pfield{margin:0}
 .glist{gap:16px}
-.gcard{border:0;border-radius:28px;background:var(--tile);padding:22px 24px}
+.gcard{border:0;border-radius:28px;background:var(--tile);padding:22px 24px;cursor:pointer}
+.gcard.has-col{background:color-mix(in srgb,var(--gcol) 15%,var(--tile))}
+.gcard.has-col .gbar{background:color-mix(in srgb,var(--gcol) 22%,transparent)}
+.gcard.has-col .gbar span{background:var(--gcol)}
+.gdot{display:inline-block;width:12px;height:12px;border-radius:50%;background:var(--gcol);margin-right:8px;vertical-align:middle}
+.gcols{display:flex;flex-wrap:wrap;gap:10px;margin-top:6px}
+.gcol{width:36px;height:36px;border-radius:50%;border:1px solid var(--line-2,#d6d3d1);background:var(--tile);cursor:pointer;padding:0;box-shadow:inset 0 0 0 2px var(--tile)}
+.gcol[data-col=""]{background:repeating-linear-gradient(45deg,var(--tile) 0 5px,#e7e5e4 5px 7px)}
+.gcol.on{outline:2px solid var(--ink);outline-offset:2px}
+.ckrow{display:flex;align-items:center;gap:10px;font-weight:500;cursor:pointer}
 .gcard:hover{box-shadow:var(--sh-float);border:0}
 .gcard b{font-size:20px;letter-spacing:-.02em}
 .gbar{height:10px}
@@ -4505,7 +4514,7 @@ function teamFromDoc(d) {
   return normTeam(t);
 }
 const groupFields = () => {
-  const cfg = {}; ['sector', 'acts', 'rubs', 'evalV', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
+  const cfg = {}; ['sector', 'color', 'acts', 'rubs', 'evalV', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
@@ -5353,6 +5362,19 @@ async function homeFetch() {
   if (dead.length) { await Promise.all(dead.map(g => deleteGroupDeep(g.id).catch(() => {}))); gs = gs.filter(g => !dead.includes(g)); }
   return { email: USER.email, gs, listErr, ok, req, nReq };
 }
+// Colors que es poden donar a cada grup (a la targeta del tauler). «' '» = sense color
+const GCOLS = [{ k: '', h: '', n: 'Cap color' }, { k: 'taronja', h: '#e08a0b', n: 'Taronja' }, { k: 'verd', h: '#15803d', n: 'Verd' }, { k: 'blau', h: '#2563eb', n: 'Blau' }, { k: 'lila', h: '#7c3aed', n: 'Lila' }, { k: 'rosa', h: '#c2185b', n: 'Rosa' }, { k: 'turquesa', h: '#0e7490', n: 'Turquesa' }, { k: 'vermell', h: '#dc2626', n: 'Vermell' }];
+const gcolHex = k => { const c = GCOLS.find(x => x.k === k && x.h); return c ? c.h : ''; };
+const gcolsHtml = cur => `<div class="gcols" role="radiogroup" aria-label="Color del grup">${GCOLS.map(c => `<button type="button" class="gcol${c.k === (cur || '') ? ' on' : ''}" role="radio" aria-checked="${c.k === (cur || '')}" data-col="${c.k}" title="${c.n}" aria-label="${c.n}" style="${c.h ? 'background:' + c.h : ''}"></button>`).join('')}</div>`;
+const bindGcols = root => root.querySelectorAll('.gcol').forEach(b => b.onclick = () => root.querySelectorAll('.gcol').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); }));
+const pickedGcol = root => { const b = root.querySelector('.gcol.on'); return b ? b.dataset.col : ''; };
+// Passa tots els equips del grup que tenien l'anterior cicle (o cap) al nou. Es fa abans de desar el grup: si falla, es pot tornar a provar
+async function moveTeamsCycle(gid, old, sec) {
+  const teams = await FB.list('groups/' + gid + '/teams');
+  for (const t of teams) { const d = Object.assign({}, t.data || {}), idea = P(d.idea); if (!idea) continue;
+    if (idea.sector && idea.sector !== old) continue; if (idea.sector === sec) continue;
+    idea.sector = sec; d.idea = J(idea); await FB.update('groups/' + gid + '/teams/' + t.id, { data: d }); }
+}
 // HOMEC: l'últim tauler carregat. En tornar-hi es mostra a l'instant i s'actualitza per darrere
 let HOMEC = null, HOME_SEQ = 0;
 async function homeView(msg, d) {
@@ -5360,7 +5382,7 @@ async function homeView(msg, d) {
   const v = $('#view'), hseq = ++HOME_SEQ, rseq = ROUTE_SEQ;
   if (!d && HOMEC && HOMEC.email === USER.email) { d = HOMEC;
     homeFetch().then(n => { if (n.listErr || !USER || n.email !== USER.email) return; n.st = d.st; n.tot = d.tot; const same = J([n.gs, n.ok, n.req, n.nReq]) === J([d.gs, d.ok, d.req, d.nReq]); HOMEC = n;
-      const busy = ($('#ngName') && $('#ngName').value) || v.querySelector('[data-gdelbox] .notice') || v.querySelector('[data-grenbox] input') || ($('#hqPick') && !$('#hqPick').hidden); // no es redibuixa si estàs fent alguna cosa
+      const busy = ($('#ngName') && $('#ngName').value) || v.querySelector('[data-gdelbox] .notice') || document.querySelector('.bkdlg') || ($('#hqPick') && !$('#hqPick').hidden); // no es redibuixa si estàs fent alguna cosa
       if (!same && hseq === HOME_SEQ && rseq === ROUTE_SEQ && !busy) homeView(msg, n); }).catch(() => {}); }
   if (!d) { v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>'; d = await homeFetch(); if (hseq !== HOME_SEQ || rseq !== ROUTE_SEQ) return; if (!d.listErr) HOMEC = d; }
   let gs = d.gs.slice(); const { listErr, ok, req, nReq } = d, ST = d.st = d.st || {};
@@ -5416,17 +5438,18 @@ async function homeView(msg, d) {
     ${hero}${stats}
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length || ok ? `<div class="hsecrow"><h3 class="hsec">Els teus grups</h3>${ok ? `<button type="button" class="btn small" id="ngOpen">${ico('<path d="M12 5v14M5 12h14"/>')}<span>Afegir un grup nou</span></button>` : ''}</div>` : ''}
-    ${gs.length ? `<div class="glist">${gs.map(g => `<div class="gcard" data-gid="${esc(g.id)}">
-        <a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a>
+    ${gs.length ? `<div class="glist">${gs.map(g => { const gc = gcolHex((P(g.cfg) || {}).color); return `<div class="gcard${gc ? ' has-col' : ''}" data-gid="${esc(g.id)}"${gc ? ` style="--gcol:${gc}"` : ''}>
+        <a class="gtitle" href="#g=${esc(g.id)}">${gc ? '<span class="gdot" aria-hidden="true"></span>' : ''}<b>${esc(g.name)}</b></a>
         <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
-        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gren="${esc(g.id)}">Canviar el nom</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
-        <div data-grenbox></div><div data-gdelbox></div></div>`).join('')}</div>` + guide : (ok ? '<p class="muted">Encara no tens cap grup. Crea\'n un amb el botó «Afegir un grup nou».</p>' : '') + guide}
+        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gedit="${esc(g.id)}">Editar</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
+        <div data-gdelbox></div></div>`; }).join('')}</div>` + guide : (ok ? '<p class="muted">Encara no tens cap grup. Crea\'n un amb el botó «Afegir un grup nou».</p>' : '') + guide}
     ${!ok ? reqCard(req) : ''}`;
   // Finestra per crear un grup nou
   const ngForm = `<b>Crear un grup nou</b><div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" maxlength="100" required placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
+      <div class="pfield"><label>Color del grup</label><div class="help">Es veurà a la targeta del tauler. El pots canviar després amb «Editar».</div>${gcolsHtml('taronja')}</div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
@@ -5440,12 +5463,13 @@ async function homeView(msg, d) {
       const name = nm || 'Grup d\'exemple';
       let g = example ? exampleGroup() : newGroup(name, Array.from({ length: n }, (_, i) => 'Equip ' + (i + 1)), sector);
       if (example) { g.name = name; g.join = false; delete g.example; } // grup d'exemple: l'alumnat no pot entrar-hi
+      else g.color = pickedGcol(document) || ''; // color triat a la finestra de crear
       G = g; ensureIds(); ensureEval();
       const gid = await createGroupDoc(); HOMEC = null; ngClose && ngClose();
       location.hash = 'g=' + gid;
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
-  let ngClose = null; const openNew = () => { if (!ok || $('#ngName')) return; ngClose = bkDialog(ngForm, o => { o.classList.add('ngdlg'); $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); $('#ngName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); mk(false); } }; setTimeout(() => $('#ngName').focus(), 50); }); };
+  let ngClose = null; const openNew = () => { if (!ok || $('#ngName')) return; ngClose = bkDialog(ngForm, o => { o.classList.add('ngdlg'); bindGcols(o); $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); $('#ngName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); mk(false); } }; setTimeout(() => $('#ngName').focus(), 50); }); };
   if (ok) $('#ngOpen').onclick = openNew; else bindReq();
   bkHome(v, ok || gs.length > 0);
   if (homeNew) { homeNew = false; openNew(); }
@@ -5459,17 +5483,30 @@ async function homeView(msg, d) {
     box.innerHTML = '<div class="hqp-t">Per a quin grup vols l\'enllaç?</div>' + gs.map(g => `<button type="button" class="hqp" data-pid="${esc(g.id)}"><span>${esc(g.name)}</span><span class="s"></span></button>`).join('');
     box.hidden = false; box.querySelectorAll('[data-pid]').forEach(b => b.onclick = () => cp(b.dataset.pid, b.querySelector('.s')));
   };
-  // Canviar el nom d'un grup ja creat (no pot quedar buit)
-  v.querySelectorAll('[data-gren]').forEach(b => b.onclick = () => { const box = b.closest('.gcard').querySelector('[data-grenbox]'), g = gs.find(x => x.id === b.dataset.gren);
-    box.innerHTML = `<div class="pfield"><label for="rn_${esc(g.id)}">Nou nom del grup</label><input type="text" id="rn_${esc(g.id)}" maxlength="100" value="${esc(g.name)}"></div><div data-rnmsg></div><div class="row"><button type="button" class="btn small" data-ryes>Desar el nom</button><button type="button" class="btn ghost small" data-rno>Cancel·lar</button></div>`;
-    const inp = box.querySelector('input'), msg = box.querySelector('[data-rnmsg]'), yes = box.querySelector('[data-ryes]'); inp.focus(); inp.select();
-    const go = async () => { const nn = inp.value.trim().slice(0, 100);
-      if (!nn) { msg.innerHTML = '<div class="notice">El nom del grup no pot quedar buit.</div>'; inp.focus(); return; }
-      if (nn === g.name) { box.innerHTML = ''; return; }
-      yes.disabled = true;
-      try { await FB.update('groups/' + g.id, { name: nn }); HOMEC = null; homeView('Nom del grup canviat.'); } catch (err) { yes.disabled = false; msg.innerHTML = '<div class="notice">No s\'ha pogut canviar el nom. Torna-ho a provar.</div>'; } };
-    yes.onclick = go; box.querySelector('[data-rno]').onclick = () => { box.innerHTML = ''; };
-    inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); go(); } else if (e.key === 'Escape') box.innerHTML = ''; }; });
+  // Editar un grup: nom, color, cicle i entrada lliure (el nom, abans, es canviava aquí mateix)
+  const gEdit = (g) => { const cfg = P(g.cfg) || {};
+    const form = `<b>Editar el grup</b>
+      <div class="pfield"><label for="geName">Nom del grup</label><input type="text" id="geName" maxlength="100" value="${esc(g.name)}"></div>
+      <div class="pfield"><label>Color del grup</label><div class="help">Es veurà a la targeta del tauler.</div>${gcolsHtml(cfg.color)}</div>
+      <div class="pfield"><label for="geSector">Cicle del grup</label><div class="help">Si el canvies, també canvia als equips que tenien l'anterior. Els que en tenen un altre el conserven.</div><select class="field-sel" id="geSector">${secGroups(cfg.sector)}</select></div>
+      <div class="pfield"><label class="ckrow"><input type="checkbox" id="geJoin" ${g.join !== false ? 'checked' : ''}> Deixar que l'alumnat entri amb l'enllaç del grup</label></div>
+      <div id="geMsg"></div><div class="row"><button class="btn" id="geGo">Desar els canvis</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
+    let close = null;
+    const save = async () => { const nn = $('#geName').value.trim().slice(0, 100), msg = $('#geMsg'), go = $('#geGo');
+      if (!nn) { msg.innerHTML = '<div class="notice">El nom del grup no pot quedar buit.</div>'; $('#geName').focus(); return; }
+      go.disabled = true; msg.innerHTML = '';
+      try { // primer els equips (si cal) i després el grup: si falla a mig camí, tornar-ho a desar ho acaba
+        const oldSec = cfg.sector, sec = $('#geSector').value;
+        if (sec && sec !== oldSec) await moveTeamsCycle(g.id, oldSec, sec);
+        const c = Object.assign({}, cfg, { color: pickedGcol(document), sector: sec || oldSec });
+        await FB.update('groups/' + g.id, { name: nn, join: $('#geJoin').checked, cfg: J(c) });
+        HOMEC = null; close && close(); homeView('Grup actualitzat.');
+      } catch (err) { console.warn(err); go.disabled = false; msg.innerHTML = '<div class="notice">No s\'ha pogut desar. Torna-ho a provar.</div>'; } };
+    close = bkDialog(form, o => { o.classList.add('ngdlg'); bindGcols(o); $('#geGo').onclick = save; $('#geName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }; setTimeout(() => $('#geName').focus(), 50); });
+  };
+  v.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => { const g = gs.find(x => x.id === b.dataset.gedit); if (g) gEdit(g); });
+  // Tota la targeta és un enllaç al grup (els botons i els camps de dins fan la seva acció)
+  v.querySelectorAll('.gcard').forEach(c => c.onclick = e => { if (e.target.closest('button,a,input,select,textarea,label')) return; location.hash = 'g=' + c.dataset.gid; });
   v.querySelectorAll('[data-gdel]').forEach(b => b.onclick = () => { const card = b.closest('.gcard'), box = card.querySelector('[data-gdelbox]'), g = gs.find(x => x.id === b.dataset.gdel);
     box.innerHTML = `<div class="notice">Segur que vols esborrar «${esc(g.name)}» i tota la feina dels equips? No es pot desfer. <button class="btn small" data-yes>Sí, esborrar</button> <button class="btn ghost small" data-no>Cancel·lar</button></div>`;
     box.querySelector('[data-no]').onclick = () => { box.innerHTML = ''; };
