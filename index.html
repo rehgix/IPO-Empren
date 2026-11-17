@@ -2205,7 +2205,7 @@ function segBtnUpdate() {
 }
 /* ---------- Capçalera del professorat: pestanyes de dalt (substitueixen el menú lateral) ---------- */
 const isProfUser = () => !CLOUD || !!(ME && ME.isProf);
-const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Notes'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
+const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Avaluar'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
 const tabBtn = (k, l, on, n, sh) => `<button type="button" data-ptab="${k}" aria-selected="${on}" title="${esc(l)}" aria-label="${esc(l)}">${nic(k)}<span class="tl">${sh || l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
 // Menú lateral (barra d'icones amb nom): en pantalles petites s'obre amb el botó de dalt a l'esquerra
 const railSet = on => { document.body.classList.toggle('railopen', on); const b = $('#railBtn'); b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', on ? 'Tancar el menú' : 'Obrir el menú'); };
