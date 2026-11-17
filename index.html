@@ -1161,6 +1161,18 @@ table.fin{box-shadow:none}
 .gemo.on{outline:2px solid var(--ink);outline-offset:1px;background:var(--soft)}
 .gemoown{display:flex;align-items:center;gap:10px;margin-top:10px}
 .gemoown label{white-space:nowrap;margin:0}
+.gemoown input{cursor:pointer}
+.emopick{margin-top:10px;border:1px solid var(--line);border-radius:16px;background:var(--tile);box-shadow:var(--sh-sm,0 4px 14px rgba(0,0,0,.08));padding:10px;display:grid;gap:8px}
+.emopick[hidden]{display:none}
+.emopick-h{display:flex;gap:8px;align-items:center}
+.emopick-h .emoq{flex:1;min-width:0}
+.emotabs{display:flex;gap:4px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:6px}
+.emotab{width:36px;height:34px;border:0;border-radius:10px;background:none;font-size:19px;cursor:pointer;padding:0;opacity:.6}
+.emotab.on,.emotab:hover{background:var(--soft);opacity:1}
+.emogrid{display:flex;flex-wrap:wrap;gap:2px;max-height:240px;overflow:auto;align-content:flex-start}
+.emocat{width:100%;margin:2px 4px 4px;font-size:12px;font-weight:600;color:var(--muted,#78716c)}
+.emoit{width:40px;height:40px;border:0;border-radius:10px;background:none;font-size:24px;line-height:1;cursor:pointer;padding:0}
+.emoit:hover,.emoit:focus-visible{background:var(--soft)}
 .pfield .gemoown input,.gemoown input{width:80px;flex:none;font-size:20px;text-align:center}
 @media (max-width:620px){.gemoji{font-size:38px;top:16px;right:16px}.gcard .gtitle,.gcard .gmeta{padding-right:48px}}
 .hgsteps{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
@@ -5460,14 +5472,42 @@ const gemoFor = k0 => { const k = cicleKey(k0), s = PE.SECTORS[k], n = String((s
 const gemoOf = cfg => cfg && cfg.emoji !== undefined && cfg.emoji !== null ? gemoClean(cfg.emoji) : gemoFor(cfg && cfg.sector);
 const gemoClean = x => { const t = String(x || '').trim(); if (!t) return ''; const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter('ca', { granularity: 'grapheme' }).segment(t)].map(x => x.segment) : [...t]; return seg.slice(0, 2).join('').slice(0, 16); };
 const gemoHtml = cur => `<div class="gemos" role="radiogroup" aria-label="Emoji del grup"><button type="button" class="gemo none${!cur ? ' on' : ''}" data-emo="" aria-label="Cap emoji" title="Cap emoji">Cap</button>${GEMOJIS.map(e => `<button type="button" class="gemo${e === cur ? ' on' : ''}" data-emo="${e}" aria-label="${e}">${e}</button>`).join('')}</div>
-  <div class="gemoown"><label for="gemoIn" class="small muted">O escriu-ne un altre:</label><input type="text" id="gemoIn" maxlength="16" placeholder="😀" value="${cur && !GEMOJIS.includes(cur) ? esc(cur) : ''}"></div>`;
+  <div class="gemoown"><label for="gemoIn" class="small muted">O escriu-ne un altre:</label><input type="text" id="gemoIn" maxlength="16" placeholder="😀" title="Fes-hi clic per veure tots els emojis" value="${cur && !GEMOJIS.includes(cur) ? esc(cur) : ''}"></div>${emoPickHtml()}`;
 const bindGemo = root => { const btns = root.querySelectorAll('.gemo'), inp = root.querySelector('#gemoIn'), mark = b => btns.forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
-  btns.forEach(b => b.onclick = () => { mark(b); if (inp) inp.value = ''; }); if (inp) inp.oninput = () => mark(inp.value.trim() ? null : root.querySelector('.gemo.none')); };
+  btns.forEach(b => b.onclick = () => { mark(b); if (inp) inp.value = ''; }); if (inp) inp.oninput = () => mark(inp.value.trim() ? null : root.querySelector('.gemo.none')); bindEmoPick(root); };
 const gemoAuto = (root, sel) => { const se = root.querySelector(sel); if (!se) return; let manual = false;
   root.querySelectorAll('.gemo').forEach(b => b.addEventListener('click', () => { manual = true; })); const inp = root.querySelector('#gemoIn'); if (inp) inp.addEventListener('input', () => { manual = true; });
   const put = () => { if (manual) return; const e = gemoFor(se.value), b = [...root.querySelectorAll('.gemo')].find(x => x.dataset.emo === e);
     root.querySelectorAll('.gemo').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); if (inp) inp.value = b || !e ? '' : e; };
   se.addEventListener('change', put); put(); };
+// Tots els emojis del selector, per categories. Cada un porta paraules en català per al cercador
+const EMOCAT = [
+  ['😀', 'Cares', '😀 riure content|😃 content|😄 riure|😁 somriure|😆 riure|😅 suar|🤣 riure|😂 llàgrimes riure|🙂 somriure|😉 picar ullet|😊 content vergonya|😇 àngel|🥰 amor|😍 enamorat|🤩 estrelles|😘 petó|😋 bo menjar|😛 llengua|😜 broma|🤪 boig|🤓 empollon ulleres|😎 ulleres sol guai|🥳 festa|😏 murri|🤔 pensar|🤨 dubte|😐 seriós|😶 callat|🙄 ulls|😬 tensió|😌 tranquil|😴 dormir son|🤯 cap explota|🤠 vaquer|😮 sorpresa|😲 sorpresa|🥺 pena|😢 plorar|😭 plorar|😤 enfadat|😡 enfadat|🤬 renegar|😱 por|😨 por|🤗 abraçada|🤭 riure|🤫 silenci|🤐 secret|🥶 fred|🥵 calor|😷 malalt mascareta|🤒 malalt|🤖 robot|👻 fantasma|💀 calavera|👽 extraterrestre|🤡 pallasso|😺 gat|💩 caca'],
+  ['👩‍🏫', 'Persones i feines', '👋 hola mà|👍 bé ok|👎 malament|👏 aplaudir|🙌 celebrar|🤝 acord tracte|💪 força|✌️ pau victòria|🤞 sort|👌 perfecte|☝️ un|✍️ escriure|🧠 cervell idea|👀 mirar ulls|👤 persona|👥 equip grup persones|👩‍🏫 professora|👨‍🏫 professor|🧑‍🎓 estudiant alumne|👩‍🎓 estudiant|👨‍🎓 estudiant|🧑‍💼 oficina empresa|👩‍💼 empresària|👨‍💼 empresari|🧑‍🔧 mecànic|👩‍🔧 mecànica|👨‍🔧 mecànic electricista|🧑‍🏭 fàbrica operari|👷 obra construcció|🧑‍🔬 científic laboratori|👩‍🔬 científica|🧑‍💻 informàtic programador|👩‍💻 informàtica|🧑‍⚕️ sanitari metge|👩‍⚕️ metgessa infermera|🧑‍🍳 cuiner|👩‍🍳 cuinera|🧑‍🌾 pagès|🧑‍🎨 artista|🧑‍🚀 astronauta|🧑‍✈️ pilot|🧑‍🚒 bomber|👮 policia|🕵️ detectiu|🦸 superheroi|🧙 mag|🙋 pregunta|🙆 ok|🙅 no|🏃 córrer|🚶 caminar|🧍 dret'],
+  ['🌱', 'Natura', '🐶 gos|🐱 gat|🐭 ratolí|🐰 conill|🦊 guineu|🐻 ós|🐼 panda|🐨 coala|🐯 tigre|🦁 lleó|🐮 vaca|🐷 porc|🐸 granota|🐵 mona|🐔 gallina|🐧 pingüí|🐦 ocell|🦅 àliga|🦉 mussol|🦄 unicorn|🐝 abella|🦋 papallona|🐞 marieta|🐢 tortuga|🐍 serp|🐙 pop|🐬 dofí|🐳 balena|🦈 tauró|🐟 peix|🐘 elefant|🦒 girafa|🐎 cavall|🐑 ovella|🌱 planta brot|🌿 herba|🍀 trèvol sort|🌳 arbre|🌲 avet|🌴 palmera|🌵 cactus|🌻 gira-sol|🌹 rosa|🌸 flor|🌷 tulipa|🍁 fulla tardor|🍄 bolet|🌍 món terra|🌎 món|🌙 lluna|⭐ estrella|🌟 estrella brillant|☀️ sol|⛅ núvol|🌧️ pluja|⛈️ tempesta|❄️ neu|🌈 arc de sant martí|🔥 foc|💧 aigua gota|🌊 onada mar|♻️ reciclar'],
+  ['🍳', 'Menjar', '🍎 poma|🍊 taronja|🍋 llimona|🍌 plàtan|🍉 síndria|🍇 raïm|🍓 maduixa|🍒 cireres|🍑 préssec|🍍 pinya|🥑 alvocat|🍅 tomàquet|🥕 pastanaga|🌽 blat de moro|🥦 bròquil|🥔 patata|🍞 pa|🥐 croissant|🧀 formatge|🥚 ou|🍳 cuinar paella|🥓 bacó|🍗 pollastre|🍔 hamburguesa|🍟 patates|🍕 pizza|🌭 frankfurt|🥪 entrepà|🌮 taco|🍝 pasta|🍜 sopa|🍣 sushi|🍦 gelat|🍩 dònut|🍪 galeta|🎂 pastís aniversari|🍰 pastís|🍫 xocolata|🍬 caramel|🍯 mel|☕ cafè|🍵 te|🥤 refresc|🍷 vi|🍺 cervesa|🥂 brindis|🍽️ restaurant plat'],
+  ['⚽', 'Activitats', '⚽ futbol|🏀 bàsquet|🏈 rugbi|⚾ beisbol|🎾 tennis|🏐 vòlei|🏓 ping-pong|🏸 bàdminton|🥊 boxa|🥋 arts marcials|⛳ golf|⛸️ patinar|🎿 esquí|🏂 surf neu|🏋️ gimnàs pes|🚴 bicicleta|🏊 nedar|🏄 surf|🧗 escalar|🏆 trofeu guanyar|🥇 medalla or primer|🥈 plata|🥉 bronze|🏅 medalla|🎖️ medalla|🎯 diana objectiu|🎮 videojoc|🕹️ joc|🎲 dau|🧩 trencaclosques|♟️ escacs|🎨 art pintura|🎭 teatre|🎬 cinema|🎤 cantar micròfon|🎧 música auriculars|🎼 música|🎹 piano|🎸 guitarra|🥁 bateria|🎻 violí|🎺 trompeta|🎉 festa|🎊 festa|🎈 globus|🎁 regal|🎟️ entrada'],
+  ['🚀', 'Viatges i llocs', '🚗 cotxe|🚕 taxi|🚙 tot terreny|🚌 autobús|🚎 tramvia|🏎️ cotxe carreres|🚓 policia|🚑 ambulància|🚒 bombers|🚐 furgoneta|🛻 pick-up|🚚 camió|🚛 tràiler|🚜 tractor|🏍️ moto|🛵 escúter|🚲 bicicleta|🛴 patinet|🚆 tren|🚇 metro|🚊 tramvia|🚝 monorail|✈️ avió|🛫 enlairar|🚁 helicòpter|🚀 coet|🛸 ovni|⛵ vaixell vela|🚤 llanxa|🛥️ iot|🚢 vaixell|⚓ àncora port|⛽ benzinera|🚧 obres|🚦 semàfor|🗺️ mapa|🧭 brúixola|🏔️ muntanya|🏖️ platja|🏕️ càmping|🏠 casa|🏡 casa jardí|🏘️ barri cases|🏢 oficina edifici|🏬 botiga centre comercial|🏭 fàbrica indústria|🏗️ grua construcció|🏥 hospital|🏦 banc|🏨 hotel|🏪 botiga|🏫 escola institut|🏛️ museu|⛪ església|🏰 castell|🗼 torre|🌉 pont|🌆 ciutat'],
+  ['💡', 'Objectes', '⌚ rellotge|📱 mòbil|💻 ordinador portàtil|🖥️ ordinador|⌨️ teclat|🖱️ ratolí|🖨️ impressora|💾 disquet|💿 disc|📷 càmera foto|🎥 vídeo càmera|📺 televisió|📻 ràdio|🎙️ micròfon podcast|⏰ despertador|⏳ temps|🔋 bateria|🔌 endoll electricitat|💡 bombeta idea|🔦 llanterna|🕯️ espelma|🧯 extintor|💸 diners|💵 bitllet|💶 euro|💳 targeta|💰 diners bossa|🪙 moneda|💎 diamant|⚖️ balança justícia|🧰 caixa eines|🔧 clau anglesa|🔨 martell|⚒️ eines|🛠️ eines|⛏️ pic|🔩 cargol|⚙️ engranatge|🧱 maó|⛓️ cadena|🧲 imant|🔬 microscopi laboratori|🔭 telescopi|🧪 tub assaig química|🧫 placa petri|🧬 adn|🌡️ termòmetre|💊 pastilla farmàcia|💉 xeringa|🩺 estetoscopi|🩹 tireta|🧹 escombra neteja|🧺 cistell|🧻 paper|🧼 sabó|🛒 carro compra|🛍️ bosses compra|🎒 motxilla|📦 paquet caixa|✉️ carta|📧 correu|📨 missatge|📝 nota escriure|✏️ llapis|✒️ ploma|🖊️ bolígraf|🖍️ cera|📁 carpeta|📂 carpeta|📅 calendari|📆 calendari|📇 fitxer|📈 gràfic pujar|📉 gràfic baixar|📊 gràfic barres|📋 llista|📌 xinxeta|📍 lloc|📎 clip|📏 regle|📐 escaire|✂️ tisores|🗂️ arxiu|🗃️ arxiu|🗄️ arxivador|🗑️ paperera|🔒 tancat|🔓 obert|🔑 clau|🗝️ clau|📚 llibres|📖 llibre|📓 llibreta|📒 llibreta|📃 document|📄 document|📑 documents|🧾 factura rebut|📜 pergamí|📰 diari|🏷️ etiqueta|🔖 marcador|💼 maletí empresa|🎓 graduació|👔 corbata|👕 samarreta|👗 vestit|👟 sabatilla|👓 ulleres|⛑️ casc|🦺 armilla seguretat'],
+  ['❤️', 'Símbols', '❤️ cor amor|🧡 cor taronja|💛 cor groc|💚 cor verd|💙 cor blau|💜 cor lila|🖤 cor negre|🤍 cor blanc|💔 cor trencat|💯 cent|✅ fet correcte|☑️ marcat|✔️ correcte|❌ error|❎ no|➕ més|➖ menys|❓ pregunta|❗ exclamació|⚠️ alerta perill|🚫 prohibit|⛔ prohibit|♻️ reciclar|⚡ llamp electricitat|💥 explosió|✨ brillantor|💫 estel|💬 conversa|💭 pensament|🔔 campana|📣 megàfon|📢 anunci|🔊 so|🎵 nota musical|➡️ dreta|⬅️ esquerra|⬆️ amunt|⬇️ avall|🔄 repetir|🔝 top|🆕 nou|🆗 ok|🆒 guai|🔴 vermell|🟠 taronja|🟡 groc|🟢 verd|🔵 blau|🟣 lila|⚫ negre|⚪ blanc|🟥 quadrat vermell|🟩 quadrat verd|🟦 quadrat blau|🔶 rombe|🔷 rombe|⭕ cercle|🔆 brillantor|💲 dòlar|©️ copyright|®️ registrat|™️ marca|ℹ️ informació|🅰️ a|🔤 lletres|🔢 números|#️⃣ coixinet|⭐ estrella|🌟 estrella|🏁 meta|🚩 bandera'],
+  ['🏳️', 'Banderes', '🏁 meta|🚩 bandera|🏳️ bandera blanca|🏴 bandera negra|🏳️‍🌈 arc de sant martí|🇪🇸 espanya|🇫🇷 frança|🇮🇹 itàlia|🇵🇹 portugal|🇩🇪 alemanya|🇬🇧 regne unit anglès|🇺🇸 estats units|🇯🇵 japó|🇨🇳 xina|🇲🇦 marroc|🇧🇷 brasil|🇦🇷 argentina|🇲🇽 mèxic|🇪🇺 europa unió europea|🇺🇳 nacions unides']
+].map(([ico, n, s]) => ({ ico, n, list: s.split('|').map(x => { const i = x.indexOf(' '); return { e: x.slice(0, i), k: x.slice(i + 1) }; }) }));
+// Finestreta amb tots els emojis: s'obre en fer clic a «O escriu-ne un altre»; cercador i pestanyes per categoria
+const emoPickHtml = () => `<div class="emopick" hidden role="dialog" aria-label="Tots els emojis"><div class="emopick-h"><input type="search" class="emoq" placeholder="Cerca (p. ex. cotxe, llibre, cor)" aria-label="Cerca un emoji"><button type="button" class="btn ghost small emox">Tancar</button></div>
+  <div class="emotabs" role="tablist">${EMOCAT.map((c, i) => `<button type="button" class="emotab${i ? '' : ' on'}" data-cat="${i}" title="${esc(c.n)}" aria-label="${esc(c.n)}">${c.ico}</button>`).join('')}</div><div class="emogrid"></div></div>`;
+const bindEmoPick = (root, onPick) => { const pk = root.querySelector('.emopick'), inp = root.querySelector('#gemoIn'); if (!pk || !inp) return;
+  const grid = pk.querySelector('.emogrid'), q = pk.querySelector('.emoq'); let cat = 0;
+  const nrm = x => x.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const draw = () => { const t = nrm(q.value.trim()), list = t ? EMOCAT.flatMap(c => c.list).filter((x, i, a) => nrm(x.k).includes(t) && a.findIndex(y => y.e === x.e) === i) : EMOCAT[cat].list;
+    grid.innerHTML = (t ? '' : `<p class="emocat">${esc(EMOCAT[cat].n)}</p>`) + (list.length ? list.map(x => `<button type="button" class="emoit" data-e="${x.e}" title="${esc(x.k)}" aria-label="${esc(x.k)}">${x.e}</button>`).join('') : '<p class="small muted">No n\'he trobat cap. Prova una altra paraula.</p>');
+    pk.querySelectorAll('.emotab').forEach(b => b.classList.toggle('on', !t && +b.dataset.cat === cat)); };
+  const open = () => { if (!pk.hidden) return; pk.hidden = false; q.value = ''; draw(); setTimeout(() => q.focus(), 30); };
+  const close = () => { pk.hidden = true; };
+  inp.addEventListener('click', open); inp.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+  pk.querySelector('.emox').onclick = close; q.oninput = draw;
+  pk.querySelectorAll('.emotab').forEach(b => b.onclick = () => { cat = +b.dataset.cat; q.value = ''; draw(); grid.scrollTop = 0; });
+  grid.onclick = e => { const b = e.target.closest('.emoit'); if (!b) return; inp.value = b.dataset.e; inp.dispatchEvent(new Event('input')); close(); onPick && onPick(b.dataset.e); };
+  root.addEventListener('keydown', e => { if (e.key === 'Escape' && !pk.hidden) { e.stopPropagation(); close(); inp.focus(); } }); };
 const pickedGemo = root => { const inp = root.querySelector('#gemoIn'), own = inp && gemoClean(inp.value); if (own) return own; const b = root.querySelector('.gemo.on'); return b ? b.dataset.emo : ''; };
 // Passa tots els equips del grup que tenien l'anterior cicle (o cap) al nou. Es fa abans de desar el grup: si falla, es pot tornar a provar
 async function moveTeamsCycle(gid, old, sec) {
@@ -5477,7 +5517,7 @@ async function moveTeamsCycle(gid, old, sec) {
     idea.sector = sec; d.idea = J(idea); await FB.update('groups/' + gid + '/teams/' + t.id, { data: d }); }
 }
 // HOMEC: l'últim tauler carregat. En tornar-hi es mostra a l'instant i s'actualitza per darrere
-let HOMEC = null, HOME_SEQ = 0;
+let HOMEC = null, HOME_SEQ = 0; const EMO_MIG = new Set();
 async function homeView(msg, d) {
   bareView();
   const v = $('#view'), hseq = ++HOME_SEQ, rseq = ROUTE_SEQ;
@@ -5488,6 +5528,9 @@ async function homeView(msg, d) {
   if (!d) { v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>'; d = await homeFetch(); if (hseq !== HOME_SEQ || rseq !== ROUTE_SEQ) return; if (!d.listErr) HOMEC = d; }
   let gs = d.gs.slice(); const { listErr, ok, req, nReq } = d, ST = d.st = d.st || {};
   HOME = { email: USER.email, ok, nReq, groups: gs.length > 0 }; homeNav('grups');
+  // Grups creats abans que hi hagués emojis: s'hi desa el del seu cicle (una sola vegada; es torna a llegir el grup abans de desar)
+  gs.forEach(g => { const c = P(g.cfg); if (!c || c.emoji != null || EMO_MIG.has(g.id) || !gemoFor(c.sector)) return; EMO_MIG.add(g.id);
+    FB.get('groups/' + g.id).then(x => { const cc = x && P(x.cfg); if (!cc || cc.emoji != null) return; cc.emoji = gemoFor(cc.sector); return FB.update('groups/' + g.id, { cfg: J(cc) }); }).catch(e => console.warn(e)); });
   gs.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
   const sectors = Object.entries(PE.SECTORS);
   if (!ok && !gs.length) { // Alumne o professor encara sense permís
