@@ -1152,6 +1152,17 @@ table.fin{box-shadow:none}
 .airead{border:2px solid #2563eb;background:#eff6ff;border-radius:20px;padding:18px 20px;margin:14px 0;display:grid;gap:8px}
 .airead p{margin:0}
 .airead.done{border-color:#15803d;background:#f0fdf4}
+.gcard{position:relative}
+.gemoji{position:absolute;top:18px;right:22px;font-size:52px;line-height:1;pointer-events:none;user-select:none}
+.gcard .gtitle,.gcard .gmeta{padding-right:64px}
+.gemos{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.gemo{width:40px;height:40px;border-radius:12px;border:1px solid var(--line);background:var(--tile);font-size:22px;line-height:1;cursor:pointer;padding:0}
+.gemo.none{font-size:12px;font-weight:600;color:var(--muted,#78716c);width:auto;padding:0 10px}
+.gemo.on{outline:2px solid var(--ink);outline-offset:1px;background:var(--soft)}
+.gemoown{display:flex;align-items:center;gap:10px;margin-top:10px}
+.gemoown label{white-space:nowrap;margin:0}
+.pfield .gemoown input,.gemoown input{width:80px;flex:none;font-size:20px;text-align:center}
+@media (max-width:620px){.gemoji{font-size:38px;top:16px;right:16px}.gcard .gtitle,.gcard .gmeta{padding-right:48px}}
 .hgsteps{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
 .hgs{display:grid;gap:14px;align-content:start;border:1px solid var(--line);border-left:6px solid var(--gcol,#a8a29e);border-radius:18px;padding:16px 18px;background:var(--tile)}
 .hgs.has-col{background:color-mix(in srgb,var(--gcol) 8%,var(--tile))}
@@ -4585,7 +4596,7 @@ function teamFromDoc(d) {
   return normTeam(t);
 }
 const groupFields = () => {
-  const cfg = {}; ['sector', 'color', 'acts', 'rubs', 'evalV', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
+  const cfg = {}; ['sector', 'color', 'emoji', 'acts', 'rubs', 'evalV', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
   const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
@@ -5439,6 +5450,25 @@ const gcolHex = k => { const c = GCOLS.find(x => x.k === k && x.h); return c ? c
 const gcolsHtml = cur => `<div class="gcols" role="radiogroup" aria-label="Color del grup">${GCOLS.map(c => `<button type="button" class="gcol${c.k === (cur || '') ? ' on' : ''}" role="radio" aria-checked="${c.k === (cur || '')}" data-col="${c.k}" title="${c.n}" aria-label="${c.n}" style="${c.h ? 'background:' + c.h : ''}"></button>`).join('')}</div>`;
 const bindGcols = root => root.querySelectorAll('.gcol').forEach(b => b.onclick = () => root.querySelectorAll('.gcol').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); }));
 const pickedGcol = root => { const b = root.querySelector('.gcol.on'); return b ? b.dataset.col : ''; };
+// Emoji del grup (surt gran a la dreta de la targeta). Se'n tria un de la llista o s'escriu el que es vulgui
+const GEMOJIS = ['⚡', '🔌', '💡', '🔧', '🛠️', '⚙️', '🤖', '🚗', '🏍️', '🚆', '⛵', '⚗️', '🎮', '🌐', '🏭', '🔬', '🧪', '🧬', '🏥', '💊', '💻', '📊', '💼', '🏦', '🧾', '📱', '🎨', '🍳', '🌱', '☀️', '🏗️', '🚀', '🎯', '🌟'];
+// Emoji suggerit segons el nom del cicle (es pot canviar). L'ordre compta: «elèctriques i automàtiques» → ⚡
+const GEMO_CIC = [[/electr(ic|iq)/, '⚡'], [/robot|automatitz/, '🤖'], [/motocicl/, '🏍️'], [/ferrovi/, '🚆'], [/carrosser|automoci|vehicle/, '🚗'], [/farmac|biotec/, '🧪'], [/laborat/, '🔬'], [/quimic/, '⚗️'], [/mecatron|electromec/, '⚙️'], [/fabricaci|cad\b|mecanic/, '🏭'], [/administr|gestio|financ/, '💼'], [/obres|edific|projectes|construc/, '🏗️'], [/embarcac|nautic/, '⛵'], [/rehabilit|manteniment/, '🔧'], [/videojoc/, '🎮'], [/web\b|pagines web/, '🌐'], [/disseny|comunicaci/, '🎨'], [/\bapps?\b|mobil/, '📱'], [/informat|sistemes|xarx|program/, '💻'], [/sanit|salut|cura/, '🏥'], [/comer|vend|marqueting/, '📊']];
+const gemoFor = k0 => { const k = cicleKey(k0), s = PE.SECTORS[k], n = String((s && (s.label || s.cicles)) || CICLES[k] || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, ''); if (!n) return '';
+  const hit = GEMO_CIC.find(([re]) => re.test(n)); return hit ? hit[1] : '🚀'; };
+// Emoji que es mostra: el triat ('' = cap) o, si no se n'ha triat mai cap, el del cicle
+const gemoOf = cfg => cfg && cfg.emoji !== undefined && cfg.emoji !== null ? gemoClean(cfg.emoji) : gemoFor(cfg && cfg.sector);
+const gemoClean = x => { const t = String(x || '').trim(); if (!t) return ''; const seg = typeof Intl !== 'undefined' && Intl.Segmenter ? [...new Intl.Segmenter('ca', { granularity: 'grapheme' }).segment(t)].map(x => x.segment) : [...t]; return seg.slice(0, 2).join('').slice(0, 16); };
+const gemoHtml = cur => `<div class="gemos" role="radiogroup" aria-label="Emoji del grup"><button type="button" class="gemo none${!cur ? ' on' : ''}" data-emo="" aria-label="Cap emoji" title="Cap emoji">Cap</button>${GEMOJIS.map(e => `<button type="button" class="gemo${e === cur ? ' on' : ''}" data-emo="${e}" aria-label="${e}">${e}</button>`).join('')}</div>
+  <div class="gemoown"><label for="gemoIn" class="small muted">O escriu-ne un altre:</label><input type="text" id="gemoIn" maxlength="16" placeholder="😀" value="${cur && !GEMOJIS.includes(cur) ? esc(cur) : ''}"></div>`;
+const bindGemo = root => { const btns = root.querySelectorAll('.gemo'), inp = root.querySelector('#gemoIn'), mark = b => btns.forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); });
+  btns.forEach(b => b.onclick = () => { mark(b); if (inp) inp.value = ''; }); if (inp) inp.oninput = () => mark(inp.value.trim() ? null : root.querySelector('.gemo.none')); };
+const gemoAuto = (root, sel) => { const se = root.querySelector(sel); if (!se) return; let manual = false;
+  root.querySelectorAll('.gemo').forEach(b => b.addEventListener('click', () => { manual = true; })); const inp = root.querySelector('#gemoIn'); if (inp) inp.addEventListener('input', () => { manual = true; });
+  const put = () => { if (manual) return; const e = gemoFor(se.value), b = [...root.querySelectorAll('.gemo')].find(x => x.dataset.emo === e);
+    root.querySelectorAll('.gemo').forEach(x => { x.classList.toggle('on', x === b); x.setAttribute('aria-checked', x === b); }); if (inp) inp.value = b || !e ? '' : e; };
+  se.addEventListener('change', put); put(); };
+const pickedGemo = root => { const inp = root.querySelector('#gemoIn'), own = inp && gemoClean(inp.value); if (own) return own; const b = root.querySelector('.gemo.on'); return b ? b.dataset.emo : ''; };
 // Passa tots els equips del grup que tenien l'anterior cicle (o cap) al nou. Es fa abans de desar el grup: si falla, es pot tornar a provar
 async function moveTeamsCycle(gid, old, sec) {
   const teams = await FB.list('groups/' + gid + '/teams');
@@ -5516,7 +5546,7 @@ async function homeView(msg, d) {
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length || ok ? `<div class="hsecrow"><h3 class="hsec">Els teus grups</h3>${ok ? `<button type="button" class="btn small" id="ngOpen">${ico('<path d="M12 5v14M5 12h14"/>')}<span>Afegir un grup nou</span></button>` : ''}</div>` : ''}
     ${gs.length ? `<div class="glist">${gs.map(g => { const gc = gcolHex((P(g.cfg) || {}).color); return `<div class="gcard${gc ? ' has-col' : ''}" data-gid="${esc(g.id)}"${gc ? ` style="--gcol:${gc}"` : ''}>
-        <a class="gtitle" href="#g=${esc(g.id)}">${gc ? '<span class="gdot" aria-hidden="true"></span>' : ''}<b>${esc(g.name)}</b></a>
+        ${gemoOf(P(g.cfg) || {}) ? `<span class="gemoji" aria-hidden="true">${esc(gemoOf(P(g.cfg) || {}))}</span>` : ''}<a class="gtitle" href="#g=${esc(g.id)}">${gc ? '<span class="gdot" aria-hidden="true"></span>' : ''}<b>${esc(g.name)}</b></a>
         <span class="small muted">Curs ${esc(g.course || '')}</span>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
@@ -5527,6 +5557,7 @@ async function homeView(msg, d) {
   const ngForm = `<b>Crear un grup nou</b><div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" maxlength="100" required placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label>Color del grup</label><div class="help">Es veurà a la targeta del tauler. El pots canviar després amb «Editar».</div>${gcolsHtml('taronja')}</div>
+      <div class="pfield"><label>Emoji del grup</label><div class="help">Sortirà gran a la dreta de la targeta. Te'n proposem un segons el cicle; el pots canviar.</div>${gemoHtml('')}</div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
@@ -5540,13 +5571,13 @@ async function homeView(msg, d) {
       const name = nm || 'Grup d\'exemple';
       let g = example ? exampleGroup() : newGroup(name, Array.from({ length: n }, (_, i) => 'Equip ' + (i + 1)), sector);
       if (example) { g.name = name; g.join = false; delete g.example; } // grup d'exemple: l'alumnat no pot entrar-hi
-      else g.color = pickedGcol(document) || ''; // color triat a la finestra de crear
+      else { g.color = pickedGcol(document) || ''; g.emoji = pickedGemo(document); } // color i emoji triats a la finestra de crear
       G = g; ensureIds(); ensureEval();
       const gid = await createGroupDoc(); HOMEC = null; ngClose && ngClose();
       location.hash = 'g=' + gid;
     } catch (e) { console.warn(e); $('#ngMsg').innerHTML = `<div class="notice">No s'ha pogut crear el grup. Torna-ho a provar.<br><span class="small muted">Codi: ${esc((e && (e.code || e.message)) || 'desconegut')}</span></div>`; btns.forEach(b => { b.disabled = false; }); }
   };
-  let ngClose = null; const openNew = () => { if (!ok || $('#ngName')) return; ngClose = bkDialog(ngForm, o => { o.classList.add('ngdlg'); bindGcols(o); $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); $('#ngName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); mk(false); } }; setTimeout(() => $('#ngName').focus(), 50); }); };
+  let ngClose = null; const openNew = () => { if (!ok || $('#ngName')) return; ngClose = bkDialog(ngForm, o => { o.classList.add('ngdlg'); bindGcols(o); bindGemo(o); gemoAuto(o, '#ngSector'); $('#ngGo').onclick = () => mk(false); $('#ngEx').onclick = () => mk(true); $('#ngName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); mk(false); } }; setTimeout(() => $('#ngName').focus(), 50); }); };
   if (ok) $('#ngOpen').onclick = openNew; else bindReq();
   bkHome(v, ok || gs.length > 0);
   if (homeNew) { homeNew = false; openNew(); }
@@ -5565,6 +5596,7 @@ async function homeView(msg, d) {
     const form = `<b>Editar el grup</b>
       <div class="pfield"><label for="geName">Nom del grup</label><input type="text" id="geName" maxlength="100" value="${esc(g.name)}"></div>
       <div class="pfield"><label>Color del grup</label><div class="help">Es veurà a la targeta del tauler.</div>${gcolsHtml(cfg.color)}</div>
+      <div class="pfield"><label>Emoji del grup</label><div class="help">Sortirà gran a la dreta de la targeta.</div>${gemoHtml(gemoOf(cfg))}</div>
       <div class="pfield"><label for="geSector">Cicle del grup</label><div class="help">Si el canvies, també canvia als equips que tenien l'anterior. Els que en tenen un altre el conserven.</div><select class="field-sel" id="geSector">${secGroups(cfg.sector)}</select></div>
       <div class="pfield"><label class="ckrow"><input type="checkbox" id="geJoin" ${g.join !== false ? 'checked' : ''}> Deixar que l'alumnat entri amb l'enllaç del grup</label></div>
       <div id="geMsg"></div><div class="row"><button class="btn" id="geGo">Desar els canvis</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
@@ -5575,11 +5607,11 @@ async function homeView(msg, d) {
       try { // primer els equips (si cal) i després el grup: si falla a mig camí, tornar-ho a desar ho acaba
         const oldSec = cfg.sector, sec = $('#geSector').value;
         if (sec && sec !== oldSec) await moveTeamsCycle(g.id, oldSec, sec);
-        const c = Object.assign({}, cfg, { color: pickedGcol(document), sector: sec || oldSec });
+        const c = Object.assign({}, cfg, { color: pickedGcol(document), emoji: pickedGemo(document), sector: sec || oldSec });
         await FB.update('groups/' + g.id, { name: nn, join: $('#geJoin').checked, cfg: J(c) });
         HOMEC = null; close && close(); homeView('Grup actualitzat.');
       } catch (err) { console.warn(err); go.disabled = false; msg.innerHTML = '<div class="notice">No s\'ha pogut desar. Torna-ho a provar.</div>'; } };
-    close = bkDialog(form, o => { o.classList.add('ngdlg'); bindGcols(o); $('#geGo').onclick = save; $('#geName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }; setTimeout(() => $('#geName').focus(), 50); });
+    close = bkDialog(form, o => { o.classList.add('ngdlg'); bindGcols(o); bindGemo(o); if (cfg.emoji == null) gemoAuto(o, '#geSector'); $('#geGo').onclick = save; $('#geName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }; setTimeout(() => $('#geName').focus(), 50); });
   };
   v.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => { const g = gs.find(x => x.id === b.dataset.gedit); if (g) gEdit(g); });
   // Tota la targeta és un enllaç al grup (els botons i els camps de dins fan la seva acció)
