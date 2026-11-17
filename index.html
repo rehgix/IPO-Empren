@@ -1479,14 +1479,16 @@ body.has-top #view{padding-top:18px}
 .logo img{width:100%;height:100%;object-fit:contain;display:block}
 body:has(.hbanner) .tbrand{display:none} /* al tauler ja surt el bàner amb el logo */
 .tsp{flex:1}
-.tback,.tchip{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--line);background:var(--bg);color:var(--ink);font:600 13.5px var(--font);text-decoration:none;cursor:pointer;box-shadow:var(--sh-xs);transition:background var(--t-fast),border-color var(--t-fast)}
-.tback:hover,.tchip:hover{border-color:var(--line-2,#cfd3dd);background:var(--soft)}
-.tchip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+/* Botons de la capçalera: negres, com l'apartat triat del menú, perquè destaquin sobre el fons */
+.tback,.tchip{display:inline-flex;align-items:center;gap:7px;padding:8px 14px;border-radius:999px;border:1px solid var(--ink);background:var(--ink);color:#fff;font:600 13.5px var(--font);text-decoration:none;cursor:pointer;box-shadow:0 6px 14px -6px rgba(15,18,34,.55);transition:background var(--t-fast),border-color var(--t-fast)}
+.tback:hover,.tchip:hover{border-color:#2A3044;background:#2A3044}
+.tchip.on{background:var(--pri);color:var(--pri-fg);border-color:var(--pri)}
 .tback svg,.tchip svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-.tchip .dcount{min-width:22px;padding:1px 7px;border-radius:99px;font-size:12px;text-align:center;background:var(--accent-soft,#fff6e6);color:var(--accent-ink,#b45309);font-variant-numeric:tabular-nums}
+.tchip .dcount{min-width:22px;padding:1px 7px;border-radius:99px;font-size:12px;text-align:center;background:var(--pri);color:var(--pri-fg);font-variant-numeric:tabular-nums}
+.tchip.on .dcount{background:var(--pri-fg);color:#fff}
 #tbRole .role{display:flex;align-items:center;gap:8px}
-#tbRole .rseg{background:#E6E8EF;min-width:270px}#tbRole .rseg button{white-space:nowrap}
-#tbRole .rseg button{color:var(--muted)}#tbRole .rseg button[aria-pressed="true"]{background:#fff;color:var(--ink)}
+#tbRole .rseg{background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink);min-width:270px}#tbRole .rseg button{white-space:nowrap}
+#tbRole .rseg button{color:var(--ink-2)}#tbRole .rseg button[aria-pressed="true"]{background:var(--ink);color:#fff}
 #tbRole select{width:auto;max-width:200px;padding:8px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13.5px}
 /* Barra lateral del professorat: 88 px, icona a dalt i una paraula a sota */
 .ttabs{display:none}
