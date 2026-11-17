@@ -3801,8 +3801,8 @@ const L_IDEA = ['Sector', 'Nom', 'Activitat', 'Element diferenciador', 'Expectat
 const L_GC = ['Why · Per a què', 'How · Com', 'What · Què', 'Motivació extrínseca', 'Motivació intrínseca', 'Motivació transcendent'];
 // «lock»: activitat independent que es tanca quan té nota (la resta forma part del projecte global, que es valora al final)
 const ACTS_DEFAULT = [
-  { c: 'Pt3', n: 'Design Thinking intercicles', ra: 'RA4', w: 30, ext: false, ca: '4.1 · 4.2 · 4.7 · 4.8 · 4.9 · 5.4', ev: [], lock: true, rub: 'r2_Pt3',
-    crit: 'Dossier en paper del repte de Design Thinking: empatitzar, definir, idear, prototipar i testejar (exposició de 3 minuts amb el prototip), més el document individual de cada alumne i la seva participació en el treball d\'equip.' },
+  // Pt3 es fa en un dossier en paper: només té la casella de la nota (sense rúbrica ni IA), com les proves
+  { c: 'Pt3', n: 'Design Thinking intercicles (en paper)', ra: 'RA4', w: 30, ext: true, ca: '4.1 · 4.2 · 4.7 · 4.8 · 4.9 · 5.4', ev: [], lock: true },
   { c: 'Pt4', n: 'Carpeta d\'aprenentatge i presentació de la idea de negoci', ra: 'RA4', w: 10, ext: false, ca: '4.2', ev: [['idea', L_IDEA]], rub: 'r2_Pt4',
     crit: 'L\'equip crea la seva carpeta d\'aprenentatge a la web i presenta la idea de negoci en un pitch d\'uns 3 minuts: l\'activitat (producte o servei) i el sector, l\'element diferenciador respecte a la competència i l\'expectativa de benefici.' },
   { c: 'Pt5', n: 'Canvas de la meva idea de negoci', ra: 'RA4', w: 10, ext: false, ca: '4.3 · 5.5', ev: [['lean']], rub: 'r_Pt5',
@@ -3841,17 +3841,6 @@ const rb = (id, n, cs) => ({ id, n, crit: cs.map(([k, t, ...d]) => ({ k, t, w: 1
 const rbw = (id, n, cs, ind = []) => ({ id, n, crit: cs.map(([k, t, w, ...d]) => Object.assign({ k, t, w, d: d.length > 4 ? d : d.concat(R0) }, ind.includes(k) ? { ind: true } : {})) });
 const RUBS_DEFAULT = [
   rb('r_gen', 'Rúbrica general (un sol criteri)', [['gen', 'Qualitat global de la feina', 'Compleix tots els criteris amb qualitat, concreció, coherència entre apartats i aportacions pròpies ben argumentades.', 'Compleix tots els criteris, però algun apartat és poc concret o poc argumentat.', 'Compleix una part dels criteris; hi ha apartats incomplets, genèrics o poc coherents.', 'Feina molt incompleta o superficial.']]),
-  rbw('r2_Pt3', 'Pt3 · Design Thinking intercicles (dossier, exposició i document individual)', [
-    ['emp', 'Empatitzar: persona usuària i mapa d\'empatia', 10, 'Defineix bé a qui volen ajudar i quina necessitat té, i omple els sis requadres del mapa d\'empatia amb idees concretes i creïbles.', 'Persona i necessitat definides i mapa d\'empatia complet, amb algun requadre genèric.', 'Mapa d\'empatia incomplet o amb respostes molt generals.', 'Només uns quants apunts, sense posar-se a la pell de la persona usuària.'],
-    ['def', 'Definir: necessitats i declaració de necessitat', 10, 'Recull cinc necessitats detectades i les resumeix en una declaració clara amb l\'estructura «persona usuària + necessitat + motiu».', 'Necessitats recollides i declaració correcta, però poc concreta en algun dels tres elements.', 'Poques necessitats o declaració que no segueix l\'estructura.', 'Declaració confusa o sense relació amb el mapa d\'empatia.'],
-    ['ide', 'Idear: valoració de les idees i idea guanyadora', 10, 'Valoren sis idees amb els quatre criteris, sumen bé els punts i expliquen la idea guanyadora amb detall (què és, com funciona i qui la farà servir).', 'Taula de valoració completa i idea guanyadora explicada, amb algun aspecte poc detallat.', 'Taula incompleta o idea guanyadora explicada de manera molt breu.', 'Tria la idea sense valorar-la amb els criteris.'],
-    ['pro', 'Prototipar: prototip en paper', 15, 'El prototip mostra clarament com funciona la solució, està ben treballat i tot l\'equip el sap explicar.', 'El prototip s\'entén, però hi falta algun detall de com funciona.', 'Prototip molt senzill o que costa d\'entendre sense explicació.', 'Prototip gairebé sense fer o que no té relació amb la idea triada.'],
-    ['com', 'Testejar: comunicació i estructura de l\'exposició', 10, 'L\'exposició és clara, lògica i convincent: respon les cinc preguntes del guió (per a qui, què, com, on i per què), ensenya el prototip i respecta els 3 minuts.', 'La presentació està ben estructurada, amb alguna pregunta del guió poc explicada o un petit desajust de temps.', 'La idea s\'entén, però l\'estructura és feble o no es respecta el temps.', 'L\'exposició és desorganitzada i costa d\'entendre la proposta.'],
-    ['via', 'Viabilitat i aplicabilitat de la proposta', 10, 'La idea és totalment realista, detallada i pràctica.', 'La idea és realista, tot i que es pot millorar.', 'La idea és viable, però li falta concreció.', 'La idea és poc realista.'],
-    ['inn', 'Innovació i creativitat', 10, 'La proposta és molt original.', 'La proposta introdueix elements creatius.', 'La proposta té alguns elements originals, però la idea ja s\'ha vist en contextos semblants.', 'La proposta és una idea que ja existeix i no aporta res original.'],
-    ['sos', 'Sostenibilitat', 5, 'La sostenibilitat forma part de la proposta i la relaciona amb els ODS del repte.', 'Té en compte la sostenibilitat.', 'Poc sostenible.', 'Gens sostenible.'],
-    ['ind', 'Document individual', 10, 'Document individual complet: cinc necessitats detectades, sis idees al Crazy 6\'s i les tres preguntes de la valoració respostes amb reflexió pròpia.', 'Document complet, amb alguna resposta de la valoració poc argumentada.', 'Document incomplet: falten necessitats, idees o alguna pregunta de la valoració.', 'Document gairebé buit o amb respostes d\'una sola paraula.', 'No ha lliurat el document individual.'],
-    ['par', 'Participació en el treball d\'equip', 10, 'Participa activament en totes les fases, compleix el seu rol i ajuda els companys.', 'Participa en la majoria de fases i compleix el seu rol.', 'Participa poc o només quan se li demana.', 'Gairebé no participa o dificulta la feina de l\'equip.', 'No ha participat en el treball.']], ['ind', 'par']),
   rbw('r2_Pt4', 'Pt4 · Presentació de la idea de negoci (pitch de 3 minuts)', [
     ['act', 'Activitat i sector', 20, 'Expliquen amb claredat quin producte o servei ofereixen, a qui va dirigit i la relació amb el seu cicle.', 'L\'activitat s\'entén, amb algun aspecte poc concret.', 'Activitat explicada de manera general.', 'No queda clar què fa l\'empresa.'],
     ['dif', 'Element diferenciador', 20, 'Diferència clara i creïble respecte a la competència, explicada amb exemples.', 'Element diferenciador correcte però poc argumentat.', 'Element diferenciador genèric («més bo», «més barat»).', 'No es diferencia de la competència.'],
@@ -3882,6 +3871,17 @@ const RUBS_DEFAULT = [
 ];
 // Rúbriques de la versió anterior: ja no es poden triar, però serveixen per ensenyar el detall de les notes que es van posar amb elles
 const RUBS_OLD = [
+  rbw('r2_Pt3', 'Pt3 · Design Thinking intercicles (dossier, exposició i document individual)', [
+    ['emp', 'Empatitzar: persona usuària i mapa d\'empatia', 10, 'Defineix bé a qui volen ajudar i quina necessitat té, i omple els sis requadres del mapa d\'empatia amb idees concretes i creïbles.', 'Persona i necessitat definides i mapa d\'empatia complet, amb algun requadre genèric.', 'Mapa d\'empatia incomplet o amb respostes molt generals.', 'Només uns quants apunts, sense posar-se a la pell de la persona usuària.'],
+    ['def', 'Definir: necessitats i declaració de necessitat', 10, 'Recull cinc necessitats detectades i les resumeix en una declaració clara amb l\'estructura «persona usuària + necessitat + motiu».', 'Necessitats recollides i declaració correcta, però poc concreta en algun dels tres elements.', 'Poques necessitats o declaració que no segueix l\'estructura.', 'Declaració confusa o sense relació amb el mapa d\'empatia.'],
+    ['ide', 'Idear: valoració de les idees i idea guanyadora', 10, 'Valoren sis idees amb els quatre criteris, sumen bé els punts i expliquen la idea guanyadora amb detall (què és, com funciona i qui la farà servir).', 'Taula de valoració completa i idea guanyadora explicada, amb algun aspecte poc detallat.', 'Taula incompleta o idea guanyadora explicada de manera molt breu.', 'Tria la idea sense valorar-la amb els criteris.'],
+    ['pro', 'Prototipar: prototip en paper', 15, 'El prototip mostra clarament com funciona la solució, està ben treballat i tot l\'equip el sap explicar.', 'El prototip s\'entén, però hi falta algun detall de com funciona.', 'Prototip molt senzill o que costa d\'entendre sense explicació.', 'Prototip gairebé sense fer o que no té relació amb la idea triada.'],
+    ['com', 'Testejar: comunicació i estructura de l\'exposició', 10, 'L\'exposició és clara, lògica i convincent: respon les cinc preguntes del guió (per a qui, què, com, on i per què), ensenya el prototip i respecta els 3 minuts.', 'La presentació està ben estructurada, amb alguna pregunta del guió poc explicada o un petit desajust de temps.', 'La idea s\'entén, però l\'estructura és feble o no es respecta el temps.', 'L\'exposició és desorganitzada i costa d\'entendre la proposta.'],
+    ['via', 'Viabilitat i aplicabilitat de la proposta', 10, 'La idea és totalment realista, detallada i pràctica.', 'La idea és realista, tot i que es pot millorar.', 'La idea és viable, però li falta concreció.', 'La idea és poc realista.'],
+    ['inn', 'Innovació i creativitat', 10, 'La proposta és molt original.', 'La proposta introdueix elements creatius.', 'La proposta té alguns elements originals, però la idea ja s\'ha vist en contextos semblants.', 'La proposta és una idea que ja existeix i no aporta res original.'],
+    ['sos', 'Sostenibilitat', 5, 'La sostenibilitat forma part de la proposta i la relaciona amb els ODS del repte.', 'Té en compte la sostenibilitat.', 'Poc sostenible.', 'Gens sostenible.'],
+    ['ind', 'Document individual', 10, 'Document individual complet: cinc necessitats detectades, sis idees al Crazy 6\'s i les tres preguntes de la valoració respostes amb reflexió pròpia.', 'Document complet, amb alguna resposta de la valoració poc argumentada.', 'Document incomplet: falten necessitats, idees o alguna pregunta de la valoració.', 'Document gairebé buit o amb respostes d\'una sola paraula.', 'No ha lliurat el document individual.'],
+    ['par', 'Participació en el treball d\'equip', 10, 'Participa activament en totes les fases, compleix el seu rol i ajuda els companys.', 'Participa en la majoria de fases i compleix el seu rol.', 'Participa poc o només quan se li demana.', 'Gairebé no participa o dificulta la feina de l\'equip.', 'No ha participat en el treball.']], ['ind', 'par']),
   rb('r_Pt3', 'Pt3 · Design Thinking intercicles', [
     ['emp', 'Empatitzar', 'Buyer persona i mapa d\'empatia complets, concrets i basats en persones reals.', 'Buyer persona i mapa d\'empatia complets, amb algun apartat genèric.', 'Buyer persona o mapa d\'empatia incomplets.', 'Només uns quants trets, sense relació amb persones reals.'],
     ['ent', 'Entrevistes de problema', 'Tres o més entrevistes amb preguntes obertes i aprenentatges clars que canvien la idea.', 'Tres entrevistes, amb aprenentatges poc desenvolupats.', 'Menys de tres entrevistes o sense aprenentatges.', 'Una entrevista superficial.'],
@@ -3968,14 +3968,14 @@ const gcls = x => x === null || x === undefined || x === '' || isNaN(x) ? 'g-non
 const f1 = x => x === null || x === undefined || x === '' || isNaN(x) ? '—' : Number(x).toLocaleString('ca-ES', { maximumFractionDigits: 2 });
 function ensureEval() {
   aiCfg();
-  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 4; }
+  if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 5; }
   if (!Array.isArray(G.rubs)) G.rubs = JSON.parse(JSON.stringify(RUBS_DEFAULT));
-  if (G.evalV !== 4) evalMigrate();
+  if (G.evalV !== 5) evalMigrate();
   G.teams.forEach(t => { t.grades = t.grades || {}; t.ai = t.ai || {}; });
 }
 // Grups creats amb la versió anterior: passen a les activitats i rúbriques noves (es respecten els pesos, les activitats afegides i les rúbriques pròpies)
 function evalMigrate() {
-  if (G.evalV !== 3) {
+  if (!(G.evalV >= 3)) {
     const old = RUBS_OLD.map(r => r.id);
     G.rubs = G.rubs.filter(r => !old.includes(r.id) && !(G.evalV === 2 && r.id === 'r2_Pt6')); // la de Pt6 de la versió 2 parlava de l'anàlisi de l'entorn
     RUBS_DEFAULT.forEach((r, i) => { if (!G.rubs.some(x => x.id === r.id)) G.rubs.splice(Math.min(i, G.rubs.length), 0, JSON.parse(JSON.stringify(r))); });
@@ -3985,7 +3985,9 @@ function evalMigrate() {
   }
   // v4: a Pt3, el document individual i la participació es marquen alumne per alumne
   const p3 = G.rubs.find(r => r.id === 'r2_Pt3'); if (p3) p3.crit.forEach(c => { if (c.k === 'ind' || c.k === 'par') c.ind = true; });
-  G.evalV = 4;
+  // v5: Pt3 es fa en paper: només nota (es conserven les notes ja posades); la seva rúbrica surt de la llista
+  if (!(G.evalV >= 5)) { G.rubs = G.rubs.filter(r => r.id !== 'r2_Pt3'); const a = G.acts.find(x => x.c === 'Pt3'); if (a) { a.ext = true; delete a.rub; a.crit = ''; a.ev = []; if (/^Design Thinking intercicles$/.test(a.n)) a.n = 'Design Thinking intercicles (en paper)'; } }
+  G.evalV = 5;
 }
 // Feina de l'equip per a una activitat: [{title, pairs:[[label, text]]}]
 function actEvidence(t, a) {
