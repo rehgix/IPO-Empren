@@ -1175,6 +1175,25 @@ table.fin{box-shadow:none}
 .emoit:hover,.emoit:focus-visible{background:var(--soft)}
 .pfield .gemoown input,.gemoown input{width:80px;flex:none;font-size:20px;text-align:center}
 @media (max-width:620px){.gemoji{font-size:38px;top:16px;right:16px}.gcard .gtitle,.gcard .gmeta{padding-right:48px}}
+.repbox{margin:-6px 0 4px;border:1px solid var(--line);border-radius:16px;background:var(--tile);padding:0 16px}
+.repbox>summary{cursor:pointer;padding:12px 0;font-weight:600;font-size:14px;color:var(--ink);list-style:none;display:flex;align-items:center;gap:8px}
+.repbox>summary::-webkit-details-marker{display:none}
+.repbox>summary::before{content:'💬';font-size:16px}
+.repbox[open]>summary{border-bottom:1px solid var(--line);margin-bottom:12px}
+.rep-f{display:grid;gap:8px;padding-bottom:14px}
+.rep-f textarea{width:100%;min-height:64px;height:auto}
+.cv{display:grid;gap:8px;margin-bottom:12px}
+.cv-i{max-width:88%;padding:10px 12px;border-radius:14px;border:1px solid var(--line);background:var(--soft)}
+.cv-i.prof{justify-self:start;border-top-left-radius:4px}
+.cv-i.stu{justify-self:end;background:#eff6ff;border-color:#bfdbfe;border-top-right-radius:4px}
+.cv-i.new{box-shadow:0 0 0 2px #2563eb}
+.cv-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px}
+.cv-d{margin-left:auto;color:var(--muted,#78716c);font-size:11.5px}
+.cv-i p{margin:6px 0 0;font-size:14px;white-space:pre-wrap;overflow-wrap:anywhere}
+.rconv{display:grid;gap:6px;margin:4px 0 10px}
+.rconv>p{margin:0}
+.repdot{display:inline-block;width:9px;height:9px;border-radius:50%;background:#dc2626;vertical-align:middle;margin-left:4px}
+.bp-e{padding:16px;margin:0}
 .hgsteps{display:grid;gap:14px;grid-template-columns:repeat(auto-fill,minmax(min(300px,100%),1fr))}
 .hgs{display:grid;gap:14px;align-content:start;border:1px solid var(--line);border-left:6px solid var(--gcol,#a8a29e);border-radius:18px;padding:16px 18px;background:var(--tile)}
 .hgs.has-col{background:color-mix(in srgb,var(--gcol) 8%,var(--tile))}
@@ -2030,22 +2049,52 @@ function notifs(t) {
     l.forEach(e => { if (e && typeof e === 'object') out.push({ k: s.k, l: s.l, at: Number(e.at) || 0, s: String(e.s || ''), c: String(e.c || '') }); }); });
   return out.sort((a, b) => b.at - a.at);
 }
+/* ---------- Respostes de l'alumnat als comentaris del professor ----------
+   Es desen a data._meta.rep[apartat][id] = { at, c, n } (l'alumnat sempre pot desar _meta, també amb l'apartat tancat).
+   El professor marca com a llegides les d'un apartat amb review._vist[apartat] = data (al seu document de revisió). */
+const repsOf = (t, k) => { const r = ((t.data._meta || {}).rep || {})[k]; return isObj(r) ? Object.values(r).filter(x => isObj(x) && filled(x.c)).map(x => ({ at: Number(x.at) || 0, c: String(x.c).slice(0, 1000), n: nomBo(x.n) })).sort((a, b) => a.at - b.at) : []; };
+const myNom = t => { const m = (t.members || []).find(m => ME && m.uid && m.uid === ME.uid); return nomBo(m && m.name) || String((ME && ME.email) || 'Alumne/a').split('@')[0]; };
+function addRep(t, k, c) {
+  const me = t.data._meta = isObj(t.data._meta) ? t.data._meta : { sent: {} }, rp = me.rep = isObj(me.rep) ? me.rep : {}, m = rp[k] = isObj(rp[k]) ? rp[k] : {};
+  const ids = Object.keys(m).sort((a, b) => (m[a].at || 0) - (m[b].at || 0)); while (ids.length >= 30) delete m[ids.shift()]; // màxim 30 respostes per apartat
+  m[newId('r')] = { at: Date.now(), c: String(c).trim().slice(0, 1000), n: myNom(t) }; t.updated = Date.now(); save();
+}
+// Conversa d'un apartat: comentaris del professor (historial) i respostes de l'equip, per ordre
+function convo(t, k) {
+  const r = t.review[k] || {}, log = Array.isArray(r.log) && r.log.length ? r.log : (r.status || filled(r.comment) ? [{ at: r.at || 0, s: r.status, c: r.comment }] : []);
+  return [...log.filter(e => e && typeof e === 'object' && (e.s || filled(e.c))).map(e => ({ at: Number(e.at) || 0, p: true, s: String(e.s || ''), c: String(e.c || '') })), ...repsOf(t, k).map(x => Object.assign({ p: false }, x))].sort((a, b) => a.at - b.at);
+}
+const cvDate = at => at ? new Date(at).toLocaleString('ca-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+const convoHtml = (t, k, nouDes) => { const l = convo(t, k); if (!l.length) return '';
+  return `<div class="cv">${l.map(x => { const nw = !x.p && nouDes != null && x.at > nouDes; return `<div class="cv-i ${x.p ? 'prof' : 'stu'}${nw ? ' new' : ''}"><div class="cv-h"><b>${x.p ? esc(PR('El')) : esc(x.n || 'Alumne/a')}</b>${x.p && x.s ? `<span class="wsbadge ${x.s === 'millorar' || x.s === 'correcte' ? x.s : 'sent'}">${nTxt(x.s)}</span>` : ''}${nw ? '<span class="pill">Nova</span>' : ''}<span class="cv-d">${cvDate(x.at)}</span></div>${x.c ? `<p>${esc(x.c)}</p>` : ''}</div>`; }).join('')}</div>`; };
+// Respostes que el professor encara no ha llegit (d'un equip)
+const repNew = t => { const v = isObj(t.review._vist) ? t.review._vist : {}; return PROG.flatMap(s => repsOf(t, s.k).filter(x => x.at > (Number(v[s.k]) || 0)).map(x => Object.assign({ k: s.k, l: s.l }, x))); };
+// Totes les respostes noves que veu el professor: les del grup obert (al moment) i les dels altres grups (del tauler)
+function profReps() {
+  const here = inGrp() && (role === 'prof' || (ME && ME.isProf)) && !stuView() ? G.teams.flatMap((t, i) => repNew(t).map(x => Object.assign(x, { ti: i, team: projName(t), gid: GID || '', gn: G.name }))) : null;
+  const st = (HOMEC && HOMEC.st) || {}, gs = HOMEC && Array.isArray(HOMEC.gs) ? HOMEC.gs : [];
+  const other = gs.filter(g => !(here && g.id === GID)).flatMap(g => ((st[g.id] || {}).reps || []).map(x => Object.assign({}, x, { gid: g.id, gn: g.name })));
+  return [...(here || []), ...other].sort((a, b) => b.at - a.at);
+}
 const seenKey = () => 'ipoSeen:' + (GID || 'demo') + ':' + (T() ? T().id : '') + ':' + (USER ? USER.email : '');
 const seenGet = () => { try { return Number(localStorage.getItem(seenKey())) || 0; } catch (e) { return 0; } };
 const seenSet = () => { try { localStorage.setItem(seenKey(), String(Date.now())); } catch (e) {} };
 const nTxt = s => s === 'millorar' ? 'A millorar' : s === 'correcte' ? 'Correcte' : 'Comentari';
+// La campaneta del professor surt al tauler i dins dels grups (no a la «Vista d'alumne»)
+const inGrp = () => location.hash.startsWith('#g=') && !!G && !!GID;
+const profBellOn = () => !!(CLOUD && USER && (inGrp() ? isProfUser() && role === 'prof' : HOME && (HOME.ok || HOME.groups)));
 function bellUpdate() {
-  let b = $('#bellBtn'); const t = stuView();
-  if (!t) { if (b) b.hidden = true; $('#bellPop') && $('#bellPop').remove(); return; }
+  let b = $('#bellBtn'); const t = stuView(), pf = !t && profBellOn();
+  if (!t && !pf) { if (b) b.hidden = true; $('#bellPop') && $('#bellPop').remove(); return; }
   if (!b) { document.body.insertAdjacentHTML('beforeend', `<button type="button" class="bellbtn" id="bellBtn" aria-haspopup="dialog" aria-expanded="false">${ico('<path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>')}<span class="belln" hidden></span></button>`); b = $('#bellBtn'); b.onclick = bellToggle; }
   b.hidden = false;
-  const seen = seenGet(), n = notifs(t).filter(x => x.at > seen).length, c = b.querySelector('.belln');
+  const seen = seenGet(), n = pf ? profReps().length : notifs(t).filter(x => x.at > seen).length, c = b.querySelector('.belln');
   c.hidden = !n; c.textContent = n > 9 ? '9+' : n;
-  b.setAttribute('aria-label', n ? `Notificacions: ${n} de noves` : 'Notificacions'); b.title = 'Notificacions';
+  b.setAttribute('aria-label', n ? `Notificacions: ${n} de noves` : 'Notificacions'); b.title = pf ? 'Respostes de l\'alumnat' : 'Notificacions';
 }
 function bellToggle() {
   const old = $('#bellPop'), b = $('#bellBtn'); if (old) { old.remove(); b.setAttribute('aria-expanded', 'false'); return; }
-  const t = stuView(); if (!t) return;
+  const t = stuView(); if (!t) return profBell(b);
   const seen = seenGet(), l = notifs(t);
   document.body.insertAdjacentHTML('beforeend', `<div class="bellpop" id="bellPop" role="dialog" aria-label="Notificacions"><div class="bp-h"><b>Notificacions</b><span class="small muted">Comentaris ${PR('del')}</span></div>
     <div class="bp-l">${l.length ? l.map(x => `<button type="button" class="bp-i ${x.at > seen ? 'new' : ''}" data-nk="${esc(x.k)}"><span class="bp-t"><span class="wsbadge ${x.s === 'millorar' || x.s === 'correcte' ? x.s : 'sent'}">${nTxt(x.s)}</span><b>${esc(x.l)}</b></span>${x.c ? `<span class="bp-c">${esc(x.c)}</span>` : ''}${x.at ? `<span class="bp-d">${new Date(x.at).toLocaleString('ca-ES', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>` : ''}</button>`).join('') : `<p class="small muted" style="margin:0;padding:8px 4px">Encara no hi ha cap comentari ${PR('del')}.</p>`}</div></div>`);
@@ -2053,6 +2102,18 @@ function bellToggle() {
   const pop = $('#bellPop');
   pop.querySelectorAll('[data-nk]').forEach(x => x.onclick = () => { pop.remove(); b.setAttribute('aria-expanded', 'false'); go(x.dataset.nk); });
   setTimeout(() => document.addEventListener('click', function off(e) { if (!pop.isConnected) return document.removeEventListener('click', off); if (!pop.contains(e.target) && !b.contains(e.target)) { pop.remove(); b.setAttribute('aria-expanded', 'false'); document.removeEventListener('click', off); } }), 0);
+}
+// Campaneta del professor: respostes de l'alumnat encara no llegides; en clicar, s'obre l'apartat a «Revisió dels projectes»
+function profBell(b) {
+  const l = profReps(), many = new Set(l.map(x => x.gid)).size > 1 || !G;
+  document.body.insertAdjacentHTML('beforeend', `<div class="bellpop" id="bellPop" role="dialog" aria-label="Respostes de l'alumnat"><div class="bp-h"><b>Respostes de l'alumnat</b><span class="small muted">${l.length ? l.length + ' sense llegir' : ''}</span></div>
+    <div class="bp-l">${l.length ? l.map((x, i) => `<button type="button" class="bp-i new" data-ri="${i}"><span class="bp-t">${many ? `<span class="wsbadge sent">${esc(x.gn || '')}</span>` : ''}<b>${esc(x.team)} · ${esc(x.l)}</b></span><span class="bp-c"><b>${esc(x.n || 'Alumne/a')}:</b> ${esc(x.c)}</span><span class="bp-d">${cvDate(x.at)}</span></button>`).join('') : '<p class="bp-e small muted">No hi ha cap resposta nova. Quan l\'alumnat contesti els teus comentaris, sortirà aquí.</p>'}</div></div>`);
+  b.setAttribute('aria-expanded', 'true');
+  const pop = $('#bellPop'), shut = () => { pop.remove(); b.setAttribute('aria-expanded', 'false'); };
+  pop.querySelectorAll('[data-ri]').forEach(x => x.onclick = () => { const r = l[+x.dataset.ri]; shut();
+    if (G && GID && r.gid === GID && location.hash.startsWith('#g=')) { role = 'prof'; tab = 'revisio'; profTeam = r.ti; revFilter = 'tots'; revHide = false; revK = r.k; render(); window.scrollTo(0, 0); return; }
+    GOTAB = { gid: r.gid, tab: 'revisio', team: r.ti, k: r.k }; if (location.hash === '#g=' + r.gid) route(); else location.hash = '#g=' + r.gid; });
+  setTimeout(() => document.addEventListener('click', function off(e) { if (!pop.isConnected) return document.removeEventListener('click', off); if (!pop.contains(e.target) && !b.contains(e.target)) { shut(); document.removeEventListener('click', off); } }), 0);
 }
 // Finestra en entrar: el que cal millorar (amb el comentari) i el que falta enviar
 function stuWelcome() {
@@ -2190,18 +2251,27 @@ function lockedPage(v, k) {
       <div class="row stepnav">${prev && prev.k !== 'inici' ? `<button class="btn ghost" data-go="${prev.k}">← ${prev.l}</button>` : '<span></span>'}<button class="btn" data-go="inici">Tornar a l'inici</button></div>`;
   }
 }
+// Conversa amb el professor a la pàgina de l'apartat i quadre per respondre (només l'alumnat; el professor contesta des de «Revisió»)
+const canRep = () => role !== 'prof' && !(CLOUD && ME && ME.isProf);
+let REP_OPEN = null;
+const repBoxHtml = (t, k) => { const l = convo(t, k), nr = repsOf(t, k).length; if (!canRep() && !nr) return '';
+  return `<details class="repbox"${nr || REP_OPEN === k ? ' open' : ''}><summary>${nr ? `Conversa amb ${esc(PR('el'))} (${l.length})` : `Respondre ${esc(PR('al'))}`}</summary>${nr ? convoHtml(t, k) : ''}
+    ${canRep() ? `<div class="rep-f"><textarea id="repTx" rows="2" maxlength="1000" data-allow-paste="1" placeholder="Escriviu la resposta: un dubte, què heu canviat, per què ho heu fet així..." aria-label="Resposta ${esc(PR('al'))}"></textarea><div class="row"><button type="button" class="btn small" id="repGo">Enviar la resposta</button><span class="small muted" id="repMsg" role="status"></span></div></div>` : ''}</details>`; };
+function bindRepBox(t, k) { const go = $('#repGo'), tx = $('#repTx'); if (!go || !tx) return;
+  go.onclick = () => { const c = tx.value.trim(); if (!c) { tx.focus(); return; } addRep(t, k, c); REP_OPEN = k; const y = window.scrollY; render(); window.scrollTo(0, y); const m = $('#repMsg'); if (m) m.textContent = `✓ Resposta enviada. ${PR('El')} la veurà a les seves notificacions.`; };
+  tx.onkeydown = e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) go.click(); }; }
 function pageBody(v, k, intro, body, opts = {}) {
   const s = sec(k), t = T(), vis = ALL.filter(x => !amagat(x.k)), i = vis.findIndex(x => x.k === k), prev = vis[i - 1], next = vis[i + 1];
   const ac = access(k);
   const rv = t.review[k];
   const [d, n] = s.p ? s.p(t) : [0, 0];
   v.innerHTML = `${flashHtml()}${head(`${esc(s.gl)}${s.ca ? ' · ' + s.ca : ''}${s.act ? ' · ' + s.act : ''}${s.p ? ` · <span id="secProg">${Math.min(d, n)} de ${n} apartats</span>` : ''}`, s.l, opts.actions || '')}
-    ${rv && (rv.comment || rv.status) ? `<div class="notice ${rv.status === 'correcte' ? 'info' : ''}"><b>${rv.status === 'correcte' ? 'Revisat ' + PR('pel') + ': correcte.' : rv.status === 'millorar' ? PR('El') + ' us demana millores.' : 'Comentari ' + PR('del') + '.'}</b> ${esc(rv.comment || '')}</div>` : ''}
+    ${rv && (rv.comment || rv.status) ? `<div class="notice ${rv.status === 'correcte' ? 'info' : ''}"><b>${rv.status === 'correcte' ? 'Revisat ' + PR('pel') + ': correcte.' : rv.status === 'millorar' ? PR('El') + ' us demana millores.' : 'Comentari ' + PR('del') + '.'}</b> ${esc(rv.comment || '')}</div>${repBoxHtml(t, k)}` : ''}
     ${intro ? `<div class="intro muted">${intro}</div>` : ''}
     <div class="${opts.aside ? 'dec-layout' : ''}"><div id="pageBody" style="display:grid;gap:20px;min-width:0">${body}</div>${opts.aside ? '<aside class="sheet forecast" id="pageAside" aria-live="polite"></aside>' : ''}</div>
     ${s.p && !(CLOUD && ME && ME.isProf) ? `<div id="sendBarWrap">${sendBarHtml(t, s, ac)}</div>` : ''}
     <div class="row stepnav">${prev && prev.k !== 'inici' ? `<button class="btn ghost" data-go="${prev.k}">← ${prev.l}</button>` : '<span></span>'}${next ? `<button class="btn" data-go="${next.k}">${next.l} →</button>` : ''}</div>`;
-  bindSendBar();
+  bindSendBar(); bindRepBox(t, k);
   if (opts.aside) { liveFn = () => opts.aside(t); opts.aside(t); }
   if (ac === 'readonly') {
     $('#pageBody').parentElement.insertAdjacentHTML('beforebegin', CLOUD && ME && ME.isProf ? '<div class="notice info">' + (tancatProf(k) ? '<b>Apartat tancat: l\'alumnat no el veu.</b> ' : '') + 'Vista del professor: veus la feina de l\'equip tal com la tenen ells, però no la pots modificar. Els comentaris es fan a «Revisió dels projectes».</div>' : `<div class="notice">${secOv(t, k) === 'x' ? 'Aquest apartat ja està avaluat: podeu consultar la feina, però ja no la podeu modificar.' : 'Aquest apartat està tancat per a l\'edició: podeu consultar la feina, però ja no la podeu modificar.'}</div>`);
@@ -5541,7 +5611,7 @@ async function homeView(msg, d) {
       if (!same && hseq === HOME_SEQ && rseq === ROUTE_SEQ && !busy) homeView(msg, n); }).catch(() => {}); }
   if (!d) { v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant els teus grups...</div>'; d = await homeFetch(); if (hseq !== HOME_SEQ || rseq !== ROUTE_SEQ) return; if (!d.listErr) { HOMEC = d; homeSave(); } }
   let gs = d.gs.slice(); const { listErr, ok, req, nReq } = d, ST = d.st = d.st || {};
-  HOME = { email: USER.email, ok, nReq, groups: gs.length > 0 }; homeNav('grups');
+  HOME = { email: USER.email, ok, nReq, groups: gs.length > 0 }; homeNav('grups'); bellUpdate();
   // Grups creats abans que hi hagués emojis: s'hi desa el del seu cicle (una sola vegada; es torna a llegir el grup abans de desar)
   gs.forEach(g => { const c = P(g.cfg); if (!c || c.emoji != null || EMO_MIG.has(g.id) || !gemoFor(c.sector)) return; EMO_MIG.add(g.id);
     FB.get('groups/' + g.id).then(x => { const cc = x && P(x.cfg); if (!cc || cc.emoji != null) return; cc.emoji = gemoFor(cc.sector); return FB.update('groups/' + g.id, { cfg: J(cc) }); }).catch(e => console.warn(e)); });
@@ -5705,8 +5775,9 @@ async function homeView(msg, d) {
         ST[g.id].pend = pend.sort((a, b) => a.at - b.at);
         ST[g.id].sent = ts.reduce((a, t) => a + PROG.filter(s => { const o = (t.ov || {})[s.k] || ''; return o === 'x' || (o[0] === 'g' && !sentOf(t, s.k) && o.slice(1) === secHash(t, s.k)) || ['sent', 'correcte'].includes(workState(t, s)); }).length, 0);
         ST[g.id].rev = pend.length;
+        ST[g.id].reps = ts.flatMap(t => repNew(t).map(x => Object.assign(x, { ti: ids.indexOf(t.id), team: projName(t) })));
       } catch (e) { ST[g.id].err = true; }
-      paintGuide();
+      paintGuide(); bellUpdate();
       card.querySelector('[data-st="alum"]').textContent = mem.length;
       card.querySelector('[data-st="prog"]').textContent = Math.round(pr * 100) + ' %';
       card.querySelector('[data-st="bar"]').style.width = Math.round(pr * 100) + '%';
@@ -6013,7 +6084,7 @@ function suggest(t, r) {
 function raGrade(t, ra) { const rows = RUBRIC.filter(r => r.ra === ra), ls = rows.map(r => t.evals.levels[r.id]); if (ls.some(x => x === undefined)) return null; return ls.reduce((a, b) => a + b, 0) / rows.length / 4 * 10; }
 const fmt1 = x => x === null ? '—' : x.toLocaleString('ca-ES', { maximumFractionDigits: 1 });
 // Pestanyes d'equips (com a Revisió) i filtre d'activitats, per mirar-ho d'un en un
-function teamTabs() { return `<div class="rtabs" role="tablist" aria-label="Equips">${G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('')}</div>`; }
+function teamTabs() { return `<div class="rtabs" role="tablist" aria-label="Equips">${G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}${repNew(x).length ? ' <span class="repdot" title="Respostes noves de l\'equip"></span>' : ''}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('')}</div>`; }
 function bindTeamTabs(v) { v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); }); }
 const actPills = (cur, extra) => `<div class="rfilters actf" role="group" aria-label="Activitat">${extra.concat(G.acts.map(a => [a.c, a.c, a.n])).map(([k, l, ti]) => `<button type="button" class="${cur === k ? 'on' : ''}" data-af="${esc(k)}"${ti ? ` title="${esc(ti)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
 let qAct = null, infAct = 'resum'; // activitat que es mira a Qualificació i a Informes
@@ -6119,7 +6190,7 @@ function revLog(t, k) {
 // L'equip ha de millorar l'apartat i encara no l'ha tornat a enviar (encara que ja hi estigui fent canvis)
 const milPending = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'millorar' && workState(t, s) !== 'sent' && !(se && r.at && se.at > r.at); };
 const okDone = (t, s) => { const r = t.review[s.k], se = sentOf(t, s.k); return !!r && r.status === 'correcte' && !(se && r.at && se.at > r.at); };
-let revFilter = 'tots', revK = null, revHide = true; // filtre, apartat que es mira i si s'amaguen els que estan sense fer
+let REV_SEEN = {}, revFilter = 'tots', revK = null, revHide = true; // filtre, apartat que es mira i si s'amaguen els que estan sense fer
 const REV_QUICK = ['Molt bé!', 'Concreteu-ho més.', 'Falta justificar-ho.', 'Reviseu l\'ortografia.', 'Connecteu-ho amb el vostre sector.'];
 function vRevisio(v) {
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
@@ -6128,7 +6199,6 @@ function vRevisio(v) {
   const is = (s, f) => { const w = ws(s), st = (t.review[s.k] || {}).status; return w === f || (w === 'edit' && (f === 'millorar' || f === 'correcte') && st === f); };
   const cnt = w => PROG.filter(s => is(s, w)).length;
   const show = s => revFilter === 'tots' || is(s, revFilter);
-  const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
   const groups = SECS.filter(g => g[0] !== 'lliura');
   const dot = s => ws(s);
   const hideN = s => revHide && ws(s) === 'none' && !(t.review[s.k] || {}).status;
@@ -6137,6 +6207,10 @@ function vRevisio(v) {
   const pos = list.findIndex(s => s.k === revK), prv = list[pos - 1], nxt = list[pos + 1];
   const nav = groups.map(([gk, gl, , items]) => { const ss = items.map(([k]) => sec(k)).filter(s => s.p && list.includes(s)); if (!ss.length) return ''; return `<div class="rnav-g" data-g="${gk}"><span>${esc(gl)}</span>${ss.map(s => `<button type="button" class="rnav-i ${s.k === revK ? 'on' : ''}" data-jump="${s.k}" ${s.k === revK ? 'aria-current="true"' : ''}><i class="rdot ${dot(s)}"></i>${esc(s.l)}</button>`).join('')}</div>`; }).join('') || '<p class="small muted" style="padding:4px 8px;margin:0">Cap apartat amb aquest filtre.</p>';
   const pager = list.length ? `<div class="rpager">${prv ? `<button type="button" class="btn ghost" data-jump="${prv.k}">← <span>${esc(prv.l)}</span></button>` : '<span></span>'}<span class="rpos">${pos + 1} de ${list.length}</span>${nxt ? `<button type="button" class="btn" data-jump="${nxt.k}"><span>${esc(nxt.l)}</span> →</button>` : '<span></span>'}</div>` : '';
+  // L'apartat que es mira: les respostes noves queden llegides. Mentre s'hi és, continuen marcades «Nova» (REV_SEEN guarda l'anterior)
+  if (revK && repNew(t).some(x => x.k === revK)) { const vs = t.review._vist = isObj(t.review._vist) ? t.review._vist : {}; REV_SEEN = { [t.id + revK]: Number(vs[revK]) || 0 }; vs[revK] = Date.now(); save(); setTimeout(bellUpdate, 0); }
+  else if (!((t.id + revK) in REV_SEEN)) REV_SEEN = {};
+  const tabs = G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}${repNew(x).length ? ' <span class="repdot" title="Respostes noves de l\'equip"></span>' : ''}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('');
   const cards = list.filter(s => s.k === revK).map(s => {
     const rv = t.review[s.k] || {}, ss = secState(t, s), [d, n] = s.p(t), w = ws(s), se = sentOf(t, s.k);
     return `<section class="rcard st-${w}" id="rv-${s.k}" data-g="${s.g}">
@@ -6146,6 +6220,8 @@ function vRevisio(v) {
       <footer class="rrev">
         <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">${ico('<path d="M20 6L9 17l-5-5"/>')}Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">${ico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>')}A millorar</button></div>
         <div class="rquick">${REV_QUICK.map(q => `<button type="button" data-q="${s.k}">${esc(q)}</button>`).join('')}</div>
+        ${repsOf(t, s.k).length ? `<div class="rconv"><p class="small"><b>Conversa amb l'equip</b></p>${convoHtml(t, s.k, REV_SEEN[t.id + s.k] != null ? REV_SEEN[t.id + s.k] : Number((isObj(t.review._vist) ? t.review._vist : {})[s.k]) || 0)}
+          <div class="rep-f"><textarea rows="2" maxlength="1000" data-prep="${s.k}" placeholder="Respondre a l'equip (ho veuran a la pàgina de l'apartat i a la seva campaneta)" aria-label="Respondre a l'equip"></textarea><div class="row"><button type="button" class="btn small" data-prepgo="${s.k}">Respondre a l'equip</button></div></div></div>` : ''}
         <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip (el veuran a la pàgina d'aquest apartat)">${esc(rv.comment || '')}</textarea>
       </footer></section>`;
   }).join('') + pager || `<div class="notice info">No hi ha cap apartat amb aquest filtre.${revHide && PROG.some(s => show(s) && hideN(s)) ? ' Els apartats sense fer estan amagats.' : ''}</div>`;
@@ -6162,6 +6238,10 @@ function vRevisio(v) {
     <div class="rlayout"><nav class="rnav" aria-label="Apartats"><label class="rhide"><input type="checkbox" id="rHide" ${revHide ? 'checked' : ''}><span>Amaga els apartats sense fer</span></label>${nav}</nav><div class="rcards">${cards}</div></div>`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); window.scrollTo(0, 0); });
+  // Resposta del professor dins de la conversa: passa a ser el comentari de l'apartat i queda a l'historial (sempre com a missatge nou)
+  v.querySelectorAll('[data-prepgo]').forEach(b => b.onclick = () => { const k = b.dataset.prepgo, tx = v.querySelector(`[data-prep="${k}"]`), c = tx.value.trim(); if (!c) { tx.focus(); return; }
+    const r = t.review[k] = t.review[k] || {}; r.comment = c; const l = Array.isArray(r.log) ? r.log : (r.log = []); l.push({ at: Date.now(), s: r.status || '', c }); if (l.length > 20) l.splice(0, l.length - 20);
+    save(); rr(); toast('Resposta enviada a l\'equip.'); });
   v.querySelectorAll('[data-rf]').forEach(b => b.onclick = () => { revFilter = b.dataset.rf; rr(); });
   v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { revK = b.dataset.jump; render(); const l = $('.rlayout'); if (l && l.getBoundingClientRect().top < 0) l.scrollIntoView({ block: 'start' }); });
   $('#rHide').onchange = e => { revHide = e.target.checked; rr(); };
