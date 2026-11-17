@@ -6,7 +6,7 @@ const ROOT = path.resolve(__dirname, '..'), ORIGIN = 'https://ipo.test/';
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.woff2': 'font/woff2', '.css': 'text/css' };
 const KEYS = ['idea','empatia','entrevistes','definir','prototip','micro','pestel','dafo','lean','sost','ebc','agents','juridica','fiscal','inversio','finan','prestec','treso','viab','marca','pitch','p7','_meta','_who'];
 const exp = Date.now() + 100 * 864e5;
-let DB, DOWN = false, LOG = [];
+let DB, DOWN = false, LOG = [], OPEN = [];
 function reset() { DOWN = false; LOG = []; DB = {
   'groups/g1': { name: 'Grup', profs: ['prof@biada.net'], owner: 'u1', teamIds: ['t1'], teamList: [{ id: 't1', name: 'Equip 1' }], expiresAt: exp, cfg: '{}' },
   'groups/g1/teams/t1': { name: 'Equip 1', members: '[]', data: {}, updated: 1, expiresAt: exp },
@@ -24,6 +24,8 @@ function ruleStu(uid, o) { // regles de l'alumnat (resum fidel de firestore.rule
       else if (k === 'members') { if (!win('members')) return 'equip tancat'; } else if (!['delivered', 'updated'].includes(k)) return 'camp no permès ' + k; }
     return ''; }
   if (f) { if (o.op === 'del') return ''; if (!/^(u[12]?[0-9]|l[0-4])$/.test(f[2])) return 'nom d\'arxiu ' + f[2]; if (String(o.data.data).length >= 1e6) return 'arxiu massa gran'; return ''; }
+  const lk = /^groups\/g1\/teams\/(\w+)\/locks\/(\w+)$/.exec(o.path);
+  if (lk) return lk[2] === uid && mem && mem.team === lk[1] && (o.op === 'del' || Object.keys(o.data).every(k => ['f', 'n', 'at', 'expiresAt'].includes(k))) ? '' : 'bloqueig no permès';
   if (/^groups\/g1\/members\//.test(o.path)) return '';
   return 'ruta no permesa ' + o.path;
 }
@@ -47,7 +49,7 @@ const MOCK = `window.makeFB = function(){ const U = JSON.parse(localStorage.getI
  return { onUser(cb){ setTimeout(() => cb(U), 10); return () => {}; }, async signIn(){}, signOut(){}, get: p => c('get', p), set: (p, d) => c('set', p, d), update: (p, d) => c('update', p, d), del: p => c('del', p),
   list: p => c('list', p), listenDoc: (p, cb) => listen(p, cb), listenCol: (p, cb) => listen(p + '/*', cb), batch: ops => { echo(ops); return c('batch', ops); }, async driveToken(e){ return { token: 'T', email: e }; } }; };`;
 async function student(browser, uid, n) {
-  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }), page = await ctx.newPage(); page.errs = [];
+  const ctx = await browser.newContext({ viewport: { width: 1280, height: 900 } }), page = await ctx.newPage(); page.errs = []; OPEN.push(ctx);
   page.on('pageerror', e => page.errs.push(String(e).slice(0, 200)));
   page.on('dialog', d => d.accept());
   await page.exposeFunction('__srv', (...a) => srv(...a));
@@ -70,7 +72,7 @@ const res = []; const ok = (name, cond, extra = '') => { res.push((cond ? 'OK   
 (async () => {
   const browser = await chromium.launch();
   const only = process.argv[2];
-  const T = async (name, fn) => { if (only && !name.startsWith(only)) return; reset(); try { await fn(); } catch (e) { ok(name, false, 'excepció: ' + String(e).slice(0, 300)); } };
+  const T = async (name, fn) => { if (only && !name.startsWith(only)) return; reset(); try { await fn(); } catch (e) { ok(name, false, 'excepció: ' + String(e).slice(0, 300)); } for (const c of OPEN.splice(0)) await c.close().catch(() => {}); };
   await T('1 escriu i es desa', async () => {
     const a = await student(browser, 's1', 1); await goTab(a, 'idea');
     const paths = await a.evaluate(() => [...document.querySelectorAll('#view [data-path]')].filter(e => /TEXTAREA|INPUT/.test(e.tagName) && e.type !== 'checkbox' && e.type !== 'radio').map(e => e.dataset.path));
@@ -93,14 +95,14 @@ const res = []; const ok = (name, cond, extra = '') => { res.push((cond ? 'OK   
     const d = dbData('idea') || {}; paths.slice(0, 3).forEach((pt, i) => ok('2' + 'abc'[i] + ' text de l\'alumne ' + (i + 1) + ' (mateix apartat, camps diferents)', d[pt.split('.')[1]] === txt[i], JSON.stringify(d[pt.split('.')[1]])));
     const mm = JSON.parse(DB['groups/g1/teams/t1'].members); ok('2 (informatiu, al cap de 3 s) els tres queden apuntats a la fitxa de l\'equip', ['s1','s2','s3'].every(u => mm.some(m => m.uid === u)), mm.map(m => m.name + ':' + m.uid).join(','));
     // Ara cadascú en un apartat diferent
-    const tabs = ['dafo', 'pestel', 'micro']; const got = [];
+    const tabs = ['pitch', 'juridica', 'p7']; const got = [];
     await Promise.all([a, b, c].map(async (p, i) => { await goTab(p, tabs[i]); await p.waitForTimeout(300); const sel = '#view textarea[data-path], #view textarea[data-list], #view input[type=text][data-path]'; if (!await p.locator(sel).count()) { got[i] = null; return; } await type(p, sel, 'Feina de ' + tabs[i], 50); got[i] = await p.locator(sel).first().evaluate(e => e.dataset.path || `${e.dataset.list}.${e.dataset.idx}.${e.dataset.key}`); }));
     await a.waitForTimeout(3000);
     const getP = (o, p) => p.split('.').reduce((x, k) => x == null ? x : x[k], o);
     tabs.forEach((t, i) => { if (!got[i]) return ok('2 apartat ' + t, false, 'no hi ha cap camp'); const v = getP({ [got[i].split('.')[0]]: dbData(got[i].split('.')[0]) }, got[i]); ok('2 apartats diferents: ' + t, v === 'Feina de ' + t, got[i] + '=' + JSON.stringify(v)); });
     // I els altres ho veuen
-    await goTab(b, 'dafo'); await b.waitForTimeout(800);
-    ok('2 el company veu la feina dels altres', (await b.evaluate(() => [...document.querySelectorAll('#view textarea, #view input')].map(e => e.value).join('|'))).includes('Feina de dafo'));
+    await goTab(b, 'pitch'); await b.waitForTimeout(800);
+    ok('2 el company veu la feina dels altres', (await b.evaluate(() => [...document.querySelectorAll('#view textarea, #view input')].map(e => e.value).join('|'))).includes('Feina de pitch'));
     { const mm = JSON.parse(DB['groups/g1/teams/t1'].members); ok('2 (al final) els tres queden apuntats a la fitxa de l\'equip', ['s1','s2','s3'].every(u => mm.some(m => m.uid === u)) && mm.length === 3, mm.map(m => m.name + ':' + m.uid).join(',')); }
     ok('2 sense errors de programa', ![a, b, c].some(p => p.errs.length), [a, b, c].map(p => p.errs.join('|')).join(' '));
     for (const p of [a, b, c]) await p.context().close();
@@ -119,12 +121,13 @@ const res = []; const ok = (name, cond, extra = '') => { res.push((cond ? 'OK   
     await type(a, sel, 'Tanco de pressa', 5); await a.waitForTimeout(150);
     await a.close({ runBeforeUnload: false }); await new Promise(r => setTimeout(r, 1500));
     ok('4a tancar la pestanya just després d\'escriure (menys d\'1 segon)', (dbData(s) || {})[f] === 'Tanco de pressa', JSON.stringify((dbData(s) || {})[f]));
+    delete DB['groups/g1/teams/t1/locks/s1']; // en un navegador de veritat, la pestanya deixa anar el camp en tancar-se
     const b = await student(browser, 's2', 2); await goTab(b, 'idea'); await type(b, sel, 'Canvio de pagina', 5);
     await b.evaluate(() => { location.hash = ''; }); await b.waitForTimeout(2500);
     ok('4b sortir del grup just després d\'escriure', (dbData(s) || {})[f] === 'Tanco de pressaCanvio de pagina' || (dbData(s) || {})[f] === 'Canvio de pagina', JSON.stringify((dbData(s) || {})[f])); await b.context().close();
   });
   await T('5 apartat tancat pel professor', async () => {
-    DB['groups/g1'].w = { dafo: { f: 9e15, u: 9e15 } }; DB['groups/g1'].cfg = JSON.stringify({ access: { dafo: { state: 'closed' } } });
+    DB['groups/g1'].w = { pitch: { f: 9e15, u: 9e15 } }; DB['groups/g1'].cfg = JSON.stringify({ access: { pitch: { state: 'closed' } } });
     const a = await student(browser, 's1', 1); await goTab(a, 'idea'); await type(a, '#view textarea[data-path]', 'Idea amb DAFO tancat'); await a.waitForTimeout(2200);
     ok('5 amb un altre apartat tancat, la resta es desa', JSON.stringify(dbData('idea') || {}).includes('Idea amb DAFO tancat'), LOG.slice(-3).join(' ; ')); await a.context().close();
   });
@@ -132,8 +135,8 @@ const res = []; const ok = (name, cond, extra = '') => { res.push((cond ? 'OK   
     // El grup diu (w) que «idea» està tancat però la configuració que veu l'alumne diu que és obert: què passa amb la resta de feina?
     DB['groups/g1'].w = { idea: { f: 9e15, u: 9e15 } };
     const a = await student(browser, 's1', 1); await goTab(a, 'idea'); await type(a, '#view textarea[data-path]', 'Text rebutjat'); await a.waitForTimeout(1800);
-    await goTab(a, 'dafo'); await a.waitForTimeout(300); await type(a, '#view textarea', 'DAFO bo'); await a.waitForTimeout(2500);
-    ok('6 si un apartat és rebutjat, la resta es desa igualment', JSON.stringify(dbData('dafo') || {}).includes('DAFO bo'), LOG.filter(x => /REBUTJAT/.test(x)).slice(-1)[0] || '');
+    await goTab(a, 'p7'); await a.waitForTimeout(300); await type(a, '#view textarea', 'P7 bo'); await a.waitForTimeout(2500);
+    ok('6 si un apartat és rebutjat, la resta es desa igualment', JSON.stringify(dbData('p7') || {}).includes('P7 bo'), LOG.filter(x => /REBUTJAT/.test(x)).slice(-1)[0] || '');
     await goTab(a, 'idea'); ok('6 el text rebutjat continua a la pantalla de l\'alumne (no desapareix)', await a.locator('[data-path="idea.activitat"]').inputValue() === 'Text rebutjat');
     const pill = await a.locator('#syncPill').textContent(); ok('6 l\'alumne veu que una part no s\'ha desat', /no s'ha pogut desar/.test(pill), pill); await a.context().close();
   });
@@ -168,6 +171,42 @@ const res = []; const ok = (name, cond, extra = '') => { res.push((cond ? 'OK   
     const a = await student(browser, 's1', 1); await goTab(a, 'idea');
     await a.evaluate(() => { const e = document.querySelector('[data-path="idea.activitat"]'); e.value = 'Bloquejo la tauleta'; e.dispatchEvent(new Event('input', { bubbles: true })); Object.defineProperty(document, 'visibilityState', { get: () => 'hidden' }); document.dispatchEvent(new Event('visibilitychange')); });
     await a.waitForTimeout(300); ok('11 en amagar la pàgina es desa a l\'instant', (dbData('idea') || {}).activitat === 'Bloquejo la tauleta', JSON.stringify((dbData('idea') || {}).activitat)); await a.context().close();
+  });
+  await T('12 camp bloquejat mentre un company hi escriu', async () => {
+    const [a, b] = await Promise.all([student(browser, 's1', 1), student(browser, 's2', 2)]); await goTab(a, 'idea'); await goTab(b, 'idea');
+    const fa = a.locator('[data-path="idea.activitat"]'), fb = b.locator('[data-path="idea.activitat"]');
+    await fa.click(); await fa.pressSequentially('Escric jo', { delay: 30 }); await b.waitForTimeout(1500);
+    const st = await fb.evaluate(e => ({ ro: e.readOnly, tag: e.nextElementSibling && e.nextElementSibling.textContent }));
+    ok('12a el company veu el camp bloquejat amb el nom', st.ro && /Anna Prova està escrivint/.test(st.tag || ''), JSON.stringify(st));
+    await fb.click(); await fb.press('x'); await b.waitForTimeout(300);
+    ok('12b el company no hi pot escriure', await fb.inputValue() === 'Escric jo', JSON.stringify(await fb.inputValue()));
+    await type(b, '[data-path="idea.diferenciador"]', 'Jo en un altre', 20); await b.waitForTimeout(1800);
+    ok('12c el company pot escriure en un altre camp', (dbData('idea') || {}).diferenciador === 'Jo en un altre');
+    await a.locator('[data-path="idea.benefici"]').click(); await b.waitForTimeout(1500);
+    ok('12d en sortir del camp, es desbloqueja', !(await fb.evaluate(e => e.readOnly)));
+    await fb.click(); await fb.press('End'); await fb.pressSequentially(' i ara jo', { delay: 20 }); await b.waitForTimeout(2200);
+    ok('12e un cop lliure, el company hi pot escriure', (dbData('idea') || {}).activitat === 'Escric jo i ara jo', JSON.stringify((dbData('idea') || {}).activitat));
+    ok('12f sense errors de programa', !a.errs.length && !b.errs.length, a.errs.concat(b.errs).join(' | '));
+    await a.context().close(); await b.context().close();
+  });
+  await T('13 deixa d\'escriure sense sortir del camp', async () => {
+    const [a, b] = await Promise.all([student(browser, 's1', 1), student(browser, 's2', 2)]); await goTab(a, 'idea'); await goTab(b, 'idea');
+    await type(a, '[data-path="idea.activitat"]', 'Paro de cop', 20); await b.waitForTimeout(1500);
+    const fb = b.locator('[data-path="idea.activitat"]'); const r1 = await fb.evaluate(e => e.readOnly);
+    await b.waitForTimeout(16500); const r2 = await fb.evaluate(e => e.readOnly);
+    ok('13 als 15 s sense escriure, es desbloqueja sol', r1 && !r2, JSON.stringify([r1, r2]));
+    await a.context().close(); await b.context().close();
+  });
+  await T('14 xarxa de seguretat', async () => {
+    const [a, b] = await Promise.all([student(browser, 's1', 1), student(browser, 's2', 2)]); await goTab(a, 'idea'); await goTab(b, 'idea'); await a.waitForTimeout(1200);
+    const put = (p, v) => p.evaluate(v => { const e = document.querySelector('[data-path="idea.activitat"]'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.blur(); }, v);
+    await Promise.all([put(a, 'Versio de la Anna'), put(b, 'Versio del Biel')]); await a.waitForTimeout(4500);
+    const v = (dbData('idea') || {}).activitat, loser = v === 'Versio de la Anna' ? b : a, lost = v === 'Versio de la Anna' ? 'Versio del Biel' : 'Versio de la Anna';
+    const dlg = await loser.evaluate(() => { const d = document.querySelector('.bkdlg .recbox'); return d ? [...d.querySelectorAll('textarea')].map(x => x.value).join('|') : ''; });
+    ok('14a qui perd veu el seu text per recuperar-lo', dlg.includes(lost), JSON.stringify({ v, dlg }));
+    await loser.evaluate(() => { const b = document.querySelector('[data-rec]'); if (b) b.click(); }); await loser.waitForTimeout(2500);
+    const v2 = (dbData('idea') || {}).activitat; ok('14b «Afegir-lo» posa els dos textos al camp', v2.includes(lost) && v2.includes(v), JSON.stringify(v2));
+    await a.context().close(); await b.context().close();
   });
   await browser.close(); console.log(res.join('\n'));
   if (res.some(r => r.startsWith('FALLA') && !/informatiu|^FALLA 4a/.test(r))) process.exit(1);

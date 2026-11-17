@@ -835,6 +835,9 @@ a.btn{text-decoration:none}
 .whochips.mini{display:flex;gap:4px;margin-top:4px}
 .whochips.mini .whochip{font-size:11px;padding:1px 7px;gap:4px}
 .whochips.mini .whochip::before{width:6px;height:6px}
+.flock{background:var(--bg2,#f4f4f5)!important;color:var(--mut,#71717a)!important;cursor:not-allowed;box-shadow:inset 0 0 0 2px #f59e0b55}
+.flock-tag{display:inline-flex;align-items:center;gap:6px;margin:6px 0 2px;font-size:12px;font-weight:600;padding:3px 10px;border-radius:999px;color:#92400e;background:#fef3c7}
+.recbox{display:grid;gap:12px;margin:12px 0;text-align:left}.recbox textarea{width:100%;min-height:80px;font:inherit;font-size:14px}.recbox small{font-weight:600}
 .whot{background:color-mix(in srgb,var(--wc) 13%,transparent);box-shadow:inset 0 -2px 0 color-mix(in srgb,var(--wc) 70%,transparent);border-radius:3px}
 
 /* ================= SISTEMA DE DISSENY v2 =================
@@ -2195,7 +2198,7 @@ function render() {
   else (VIEWS[tab] || (() => { v.innerHTML = ''; }))(v);
   topGroup();
   updateTeamBanner();
-  if (CLOUD) cloudAfterRender(v);
+  if (CLOUD) { cloudAfterRender(v); applyLocks(); }
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
   navSave(); bellUpdate(); segBtnUpdate();
 }
@@ -4823,7 +4826,7 @@ window.addEventListener('beforeunload', e => { if (CLOUD && (syncT || syncBusy))
 // Si es canvia de pestanya, es bloqueja la tauleta o es tanca la pàgina, s'envia de seguida el que quedava per desar (sense esperar el segon de marge)
 const flushNow = () => { if (CLOUD && syncT && ME && G && GID) { clearTimeout(syncT); syncT = null; cloudPush(); } };
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') flushNow(); });
-window.addEventListener('pagehide', flushNow);
+window.addEventListener('pagehide', () => { flushNow(); if (myLock) lockSet(''); });
 
 /* ---------- Desar ---------- */
 function cloudSave() { if (!ME || !GID) return true; syncStatus('pending'); clearTimeout(syncT); syncT = setTimeout(() => { syncT = null; cloudPush(); }, 1000); return true; }
@@ -4905,7 +4908,7 @@ async function profPush() {
 }
 
 /* ---------- Canvis que arriben d'altres persones ---------- */
-const typing = () => { const a = document.activeElement; return a && $('#view').contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'file', 'button'].includes(a.type)) || a.tagName === 'SELECT'); };
+const typing = () => { const a = document.activeElement; return a && !a.readOnly && $('#view').contains(a) && (a.tagName === 'TEXTAREA' || (a.tagName === 'INPUT' && !['checkbox', 'radio', 'file', 'button'].includes(a.type)) || a.tagName === 'SELECT'); };
 function softRender() { clearTimeout(rT); rT = setTimeout(() => { if (typing() || syncT || syncBusy) { pendRender = true; renderSide(); return; } pendRender = false; const y = window.scrollY; render(); window.scrollTo(0, y); }, 250); }
 document.addEventListener('focusout', () => { if (pendRender) setTimeout(softRender, 50); });
 async function needFiles(t, ids) {
@@ -4929,7 +4932,9 @@ function applyTeamDoc(d) {
     if (TOUCH) TOUCH.add(k);
     const lv = packSection(t, k), pv = PREV[k]; delete PREV[k];
     // Un company ha desat alhora sense haver rebut el meu últim canvi i l'ha trepitjat: es torna a posar allà on ell no ha tocat res
-    const back = !ME.isProf && lv === s.data[k] && pv && Date.now() - pv.at < 6000 && pv.b !== undefined ? J(restore3(P(pv.b), P(lv), P(sv))) : null;
+    const near = !ME.isProf && lv === s.data[k] && pv && Date.now() - pv.at < 15000 && pv.b !== undefined;
+    const back = near ? J(restore3(P(pv.b), P(lv), P(sv))) : null;
+    if (near) { const lost = []; lost3(P(pv.b), P(lv), P(sv), k, lost); if (lost.length) recLost(lost); } // el mateix camp alhora: el meu text no es perd
     if (back && back !== J(P(sv))) { keepLocalFiles(t); unpackSection(t, k, back); redo = true; }
     else if (lv === s.data[k]) unpackSection(t, k, sv);
     else { keepLocalFiles(t); unpackSection(t, k, J(merge3(P(s.data[k]), P(lv), P(sv)))); } // l'equip ha canviat el mateix apartat alhora: es fusionen els canvis
@@ -4942,8 +4947,85 @@ function applyTeamDoc(d) {
   if (!ME.isProf) claimRow();
   s.files = fileIdsOf(d);
   normTeam(t);
-  if (ch) { softRender(); needFiles(t, s.files); }
+  if (ch) { softRender(); needFiles(t, s.files); if (!ME.isProf) applyLocks(); }
   if (redo) save();
+}
+/* ---------- Camps ocupats: mentre un alumne escriu en un camp, els companys de l'equip no hi poden escriure ----------
+   Cada alumne té un document a teams/{equip}/locks/{uid}: { f: camp, n: nom, at: hora }. Es deixa anar en sortir del camp o als 15 s sense escriure. */
+const LOCK_IDLE = 15000; let LOCKS = {}, myLock = null, myLockAt = 0, lockT = null, lockSweep = null;
+const fieldKey = el => el.dataset.path || (el.dataset.list ? `${el.dataset.list}.${el.dataset.idx}.${el.dataset.key}` : el.dataset.member ? `members.${el.dataset.idx}.${el.dataset.member}` : '');
+const lockOn = () => !!(CLOUD && FB && USER && ME && !ME.isProf && ME.teamId && GID && GROUP && role !== 'prof');
+function lockSet(k) {
+  if (!lockOn()) { myLock = null; return; }
+  clearTimeout(lockT); if (k) lockT = setTimeout(() => lockSet(''), LOCK_IDLE);
+  const now = Date.now(); if (k === (myLock || '') && (!k || now - myLockAt < 5000)) return; // mentre escriu, es renova cada 5 s
+  const path = gpath('teams', ME.teamId, 'locks', USER.uid);
+  if (k !== myLock) myLockAt = now; myLock = k || null;
+  (k ? FB.set(path, { f: k, n: nomBo(USER.name) || String(ME.email || '').split('@')[0], at: now, expiresAt: { __ts: GROUP.expiresAt } }) : FB.del(path)).catch(e => console.warn(e));
+  if (k) myLockAt = now; applyLocks();
+}
+function listenLocks(tid) {
+  LOCKS = {}; clearInterval(lockSweep);
+  UNSUB.push(FB.listenCol(gpath('teams', tid, 'locks'), list => { const now = Date.now(), nx = {};
+    list.forEach(d => { if (!USER || d.id === USER.uid || !d.f) return; const o = LOCKS[d.id], at = Number(d.at) || 0;
+      nx[d.id] = { f: String(d.f), n: String(d.n || 'Un company'), at, seen: o && o.at === at && o.f === d.f ? o.seen : now }; });
+    LOCKS = nx; applyLocks(); }, () => {}));
+  lockSweep = setInterval(applyLocks, 2000);
+}
+// Camps ocupats per un company (si dos l'agafen alhora, se'l queda qui ha començat abans)
+function lockedBy() {
+  const now = Date.now(), by = {};
+  Object.keys(LOCKS).forEach(u => { const l = LOCKS[u];
+    if (now - l.seen > LOCK_IDLE + 5000 || Math.abs(now - l.at) > 6e5) return; // ja no escriu o és d'un altre dia
+    if (l.f === myLock && (myLockAt < l.at || (myLockAt === l.at && USER.uid < u))) return;
+    if (!by[l.f] || l.at < by[l.f].at) by[l.f] = l; });
+  return by;
+}
+function applyLocks() {
+  const v = $('#view'); if (!v) return; const by = lockOn() ? lockedBy() : {};
+  const t = lockOn() ? T() : null, cur = k => { const x = k.startsWith('members.') ? getP({ members: t.members }, k) : getP(t.data, k); return x == null ? '' : String(x); };
+  v.querySelectorAll('textarea, input').forEach(el => { if (!isTextBox(el)) return;
+    const k = fieldKey(el), l = k && by[k], tag = el.nextElementSibling && el.nextElementSibling.classList.contains('flock-tag') ? el.nextElementSibling : null;
+    if (l) {
+      if (!el.classList.contains('flock')) { el._ro0 = el.readOnly; el.classList.add('flock'); el.readOnly = true; }
+      if (t && el.value !== cur(k)) el.value = cur(k); // es veu en directe el que escriu el company
+      const txt = '🔒 ' + l.n + ' està escrivint aquí';
+      if (!tag) el.insertAdjacentHTML('afterend', `<span class="flock-tag" role="status">${esc(txt)}</span>`); else if (tag.textContent !== txt) tag.textContent = txt;
+    } else if (el.classList.contains('flock')) { el.classList.remove('flock'); el.readOnly = !!el._ro0; if (tag) tag.remove(); if (t && el.value !== cur(k)) { el.value = cur(k); el._pv = el.value; } } // en alliberar-se, el camp mostra el text del company abans d'escriure-hi
+  });
+}
+const lockMsg = el => toast((el.dataset.lockBy || (el.nextElementSibling && el.nextElementSibling.textContent.replace(/^🔒 | està escrivint aquí$/g, '')) || 'Un company') + ' està escrivint en aquest camp. Espera que acabi o escriu en un altre.');
+// Es bloqueja en començar a escriure (no només per entrar-hi) i es deixa anar en sortir del camp
+$('#view').addEventListener('input', e => { const el = e.target; if (!lockOn() || !isTextBox(el) || el.classList.contains('flock') || access(tab) !== 'open') return; const k = fieldKey(el); if (k) lockSet(k); });
+$('#view').addEventListener('focusout', () => { if (!myLock) return; setTimeout(() => { const a = document.activeElement; if (!(a && isTextBox(a) && $('#view').contains(a) && fieldKey(a) === myLock)) lockSet(''); }, 150); });
+$('#view').addEventListener('keydown', e => { const el = e.target; if (el && el.classList && el.classList.contains('flock') && (e.key.length === 1 || e.key === 'Backspace' || e.key === 'Delete' || e.key === 'Enter')) { e.preventDefault(); if (!lockMsg.t || Date.now() - lockMsg.t > 2500) { lockMsg.t = Date.now(); lockMsg(el); } } }, true);
+$('#view').addEventListener('focusin', e => { const el = e.target; if (el && el.classList && el.classList.contains('flock')) lockMsg(el); });
+
+/* ---------- Xarxa de seguretat: si dos alumnes desen el mateix camp alhora, el text de qui «perd» no desapareix ---------- */
+function lost3(b, l, r, p, out) {
+  if (J(l) === J(b) || J(r) === J(b) || J(l) === J(r)) return;
+  if (isObj(b) && isObj(l) && isObj(r)) { Object.keys(l).forEach(k => lost3(b[k], l[k], r[k], p + '.' + k, out)); return; }
+  if (Array.isArray(b) && Array.isArray(l) && Array.isArray(r) && b.length === l.length && l.length === r.length) { l.forEach((x, i) => lost3(b[i], x, r[i], p + '.' + i, out)); return; }
+  if (typeof l === 'string' && l.trim() && !(typeof r === 'string' && r.includes(l.trim()))) out.push({ p, v: l });
+}
+let RECOV = [], recClose = null, recKeep = false;
+function fieldLabel(p) {
+  const el = [...$('#view').querySelectorAll('textarea, input')].find(x => fieldKey(x) === p), f = el && el.closest('.pfield, label, .field, td, .card');
+  const lb = f && (f.querySelector('label') || f.querySelector('h4, h3, b'));
+  const s = sec(p.split('.')[0]); return ((lb && lb.textContent.trim()) || (el && (el.getAttribute('aria-label') || el.placeholder)) || '').slice(0, 80) || (s ? s.l : p);
+}
+function recLost(list) {
+  list.forEach(x => { if (!RECOV.some(y => y.p === x.p && y.v === x.v)) RECOV.push(Object.assign({ l: fieldLabel(x.p) }, x)); });
+  if (recClose) { recKeep = true; recClose(); recKeep = false; }
+  recClose = bkDialog(`<div class="bkic">${ico('<path d="M12 9v4"/><path d="M12 17h.01"/><circle cx="12" cy="12" r="10"/>')}</div><b>Un company ha canviat el mateix camp alhora que tu</b>
+    <p class="small muted">S'ha quedat el text del company. Per no perdre res, aquí tens el que havies escrit tu:</p>
+    <div class="recbox">${RECOV.map((x, i) => `<div><small>${esc(x.l)}</small><textarea readonly data-allow-paste="1">${esc(x.v)}</textarea>${access(x.p.split('.')[0]) === 'open' || access(tab) === 'open' ? `<button type="button" class="btn ghost small" data-rec="${i}">Afegir-lo al final del camp</button>` : ''}</div>`).join('')}</div>
+    <div class="row"><button type="button" class="btn" data-bkclose>Tancar</button></div>`,
+    (o, close) => o.querySelectorAll('[data-rec]').forEach(b => b.onclick = () => { const x = RECOV[+b.dataset.rec], t = T(); if (!x || !t) return;
+      const cur = getP(t.data, x.p), nv = typeof cur === 'string' && cur.trim() ? (cur.includes(x.v) ? cur : cur + '\n' + x.v) : x.v;
+      trackEdit(t, x.p, cur, nv); setP(t.data, x.p, nv); t.updated = Date.now(); save(); b.replaceWith(Object.assign(document.createElement('span'), { className: 'small muted', textContent: '✓ Afegit' }));
+      const y = window.scrollY; render(); window.scrollTo(0, y); }),
+    () => { recClose = null; if (!recKeep) RECOV = []; });
 }
 function keepLocalFiles(t) { const fs = teamFiles(t); FILES[t.id] = FILES[t.id] || {}; Object.keys(fs).forEach(id => { FILES[t.id][id] = fs[id].data; }); }
 function fileIdsOf(d) { const pr = P((d.data || {}).prototip) || {}, mk = P((d.data || {}).marca) || {}; return (pr.fitxers || []).concat(mk.esbossos || []).map(f => f.id).filter(Boolean).concat(String(mk.logo || '').startsWith('file:') ? [mk.logo.slice(5)] : []); }
@@ -4971,7 +5053,7 @@ function applyGroup(g) {
   Object.assign(G, groupToG(g), { teams: G.teams });
   if (was !== sig()) { if (!ME.isProf) claimRow(); softRender(); if (ME.teamId) listenGrades(); }
 }
-function stopListen() { UNSUB.forEach(u => { try { u(); } catch (e) {} }); UNSUB = []; }
+function stopListen() { UNSUB.forEach(u => { try { u(); } catch (e) {} }); UNSUB = []; clearInterval(lockSweep); }
 let gradesUnsub = null;
 function listenGrades() {
   if (gradesUnsub) { try { gradesUnsub(); } catch (e) {} gradesUnsub = null; }
@@ -5059,6 +5141,7 @@ function navLoad() { try { const n = JSON.parse(localStorage.getItem('empren-nav
 async function route(retry = 0) {
   const seq = ++ROUTE_SEQ;
   if (syncT) { clearTimeout(syncT); syncT = null; if (ME && G && GID) cloudPush(); } // abans de recarregar res, s'envia el que quedava per desar
+  if (myLock) lockSet(''); LOCKS = {};
   stopListen(); syncStatus('idle'); topOff();
   if (location.hash === '#admin') return isAdmin() ? adminView() : homeView();
   if (location.hash === '#config') return homeConfig();
@@ -5173,7 +5256,7 @@ async function openStudent(tid) {
   UNSUB.push(FB.listenDoc(gpath('teams', tid), x => x ? applyTeamDoc(Object.assign({ id: tid }, x)) : route(), () => route()));
   UNSUB.push(FB.listenDoc(gpath('teams', tid, 'prof', 'review'), x => applyProf(tid, 'review', x), () => {}));
   UNSUB.push(FB.listenDoc(gpath('members', USER.uid), x => { if (!x || x.team !== tid) route(); }, () => {}));
-  listenGrades();
+  listenGrades(); listenLocks(tid);
 }
 function joinView(g, m) {
   JCFG = P(g.cfg) || {};

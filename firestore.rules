@@ -155,6 +155,17 @@ service cloud.firestore {
           allow delete: if isProf(gid) || (inTeam(gid, tid) && filesOpen(gid, tid));
           allow create, update: if isProf(gid) || (inTeam(gid, tid) && studentFileOk(gid, tid, fid));
         }
+        // CAMPS OCUPATS: cada alumne marca el camp on escriu (els companys no hi poden escriure mentre tant)
+        match /locks/{uid} {
+          allow read: if isProf(gid) || inTeam(gid, tid);
+          allow delete: if isProf(gid) || (inTeam(gid, tid) && request.auth.uid == uid);
+          allow create, update: if inTeam(gid, tid) && request.auth.uid == uid
+            && request.resource.data.keys().hasOnly(['f', 'n', 'at', 'expiresAt'])
+            && request.resource.data.f is string && request.resource.data.f.size() <= 200
+            && request.resource.data.n is string && request.resource.data.n.size() <= 150
+            && request.resource.data.at is number
+            && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt <= grp(gid).expiresAt;
+        }
         match /prof/{part} {
           allow read: if isProf(gid)
             || (inTeam(gid, tid) && (part == 'review' || (part == 'grades' && grp(gid).showGrades == true)));
