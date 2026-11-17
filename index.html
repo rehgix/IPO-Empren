@@ -3943,6 +3943,17 @@ function applyAiResult(t, list, res, source) {
 }
 // Missatge curt per quan la IA contesta amb text en lloc del codi
 const AI_REDO = list => `Torna'm la correcció només com a bloc de codi \`\`\`json, amb una clau per activitat (${list.map(a => `"${a.c}"`).join(', ')}) i el format que t'he demanat al final del missatge anterior. No escriguis res fora del bloc.`;
+// Les IA no sempre fan servir la forma demanada: accepta llistes («avaluacions»...), embolcalls i noms alternatius dels camps
+function normAi(res, list) {
+  if (!res || typeof res !== 'object') return null;
+  const codeOf = x => { const v = String(x || '').trim().toLowerCase(); return (list.find(a => a.c.toLowerCase() === v) || list.slice().sort((a, b) => b.c.length - a.c.length).find(a => new RegExp('^' + a.c + '\\b', 'i').test(v)) || {}).c; };
+  const pick = (o, ks) => { for (const k of ks) if (o[k] !== undefined) return o[k]; };
+  const one = o => o && typeof o === 'object' ? { rubrica: pick(o, ['rubrica', 'rúbrica', 'criteris', 'criteria', 'rubric']), nivell: pick(o, ['nivell', 'nivell_general', 'nivellGeneral', 'level']), nota: pick(o, ['nota', 'nota_final', 'grade', 'score']), fortaleses: pick(o, ['fortaleses', 'punts_forts', 'strengths']), millores: pick(o, ['millores', 'propostes_millora', 'improvements']), comentari: pick(o, ['comentari', 'comentari_equip', 'comment', 'feedback']) } : null;
+  const out = {}, walk = (o, d) => { if (!o || typeof o !== 'object' || d > 3) return;
+    if (Array.isArray(o)) { o.forEach(x => { const c = x && typeof x === 'object' && codeOf(pick(x, ['activitat', 'codi', 'id', 'activity', 'code'])); if (c) out[c] = one(x); else walk(x, d + 1); }); return; }
+    Object.keys(o).forEach(k => { const c = codeOf(k); if (c && o[k] && typeof o[k] === 'object' && !Array.isArray(o[k])) out[c] = one(o[k]); else walk(o[k], d + 1); }); };
+  walk(res, 0); return Object.keys(out).length ? out : null;
+}
 // Si la IA contesta amb text (com fa Gemini a vegades), en treu els nivells, la nota i el comentari de cada activitat
 function parseAiText(txt, list) {
   const s = String(txt || '').replace(/\r/g, '').replace(/\*\*|__|^#+\s*/gm, ''), out = {};
@@ -4075,7 +4086,7 @@ function vQualificacio(v) {
   if (mScope) {
     $('#mCopy').onclick = async () => { const x = $('#mPrompt'); try { await navigator.clipboard.writeText(x.value); $('#mCopy').textContent = 'Copiat'; } catch (e) { x.select(); $('#mCopy').textContent = 'Text seleccionat: prem Ctrl+C'; } };
     $('#mClose').onclick = () => { manualScope = null; rerender(); };
-    $('#mRead').onclick = () => { const res = parseLooseJson($('#mResp').value) || parseAiText($('#mResp').value, mActs); const n = res ? applyAiResult(t, mActs, res, 'de la IA') : 0;
+    $('#mRead').onclick = () => { const res = normAi(parseLooseJson($('#mResp').value), mActs) || parseAiText($('#mResp').value, mActs); const n = res ? applyAiResult(t, mActs, res, 'de la IA') : 0;
       if (!n) { $('#mMsg').innerHTML = `<div class="notice">No he trobat el codi a la resposta: sembla que la IA ha contestat amb un text. Copia aquest missatge, envia-l'hi al mateix xat i enganxa aquí la nova resposta.<div class="row" style="margin-top:8px"><button type="button" class="btn small" id="mAsk">Copiar el missatge per a la IA</button></div></div>`;
         $('#mAsk').onclick = async () => { const tx = AI_REDO(mActs); try { await navigator.clipboard.writeText(tx); $('#mAsk').textContent = '✓ Missatge copiat'; } catch (e) { prompt('Copia aquest missatge:', tx); } }; return; }
       manualScope = null; rerender(); };
