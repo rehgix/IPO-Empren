@@ -335,6 +335,14 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .rrow.rind .rcell{padding:7px 10px}.rrow.rind .rct{padding:7px 2px 7px 12px;align-content:center}
 .rindn{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 0;font-size:13px}
 .rcell.sel .rl{color:#1e3a8a}
+/* Rúbrica compacta del professor */
+.rcomp .rrow{align-items:center;grid-template-columns:minmax(150px,1.6fr) repeat(5,minmax(0,1fr))}.rcomp .rcell{height:auto;padding:9px 6px;place-items:center;text-align:center;border-radius:10px;background:#ffffff;border:1px solid var(--line)}
+.rcomp .rcell .rl{font-size:12.5px;color:#344054}.rcomp .rcell:hover{background:#eef3ff;border-color:#93a8d8}
+.rcomp .rcell.sel,.rcomp .rcell.sel:hover{background:#1e3a8a;border-color:#1e3a8a;box-shadow:none}.rcomp .rcell.sel .rl{color:#ffffff}
+.rcomp .rrow + .rrow:not(.rind){border-top:1px solid var(--line);padding-top:8px}
+.rlvd{grid-column:2 / -1;font-size:13px;line-height:1.45;color:#1e293b;background:#eef3ff;border-radius:10px;padding:8px 11px}
+.rdet{grid-column:2 / -1}.rdet summary{cursor:pointer;color:var(--muted)}.rdet p{margin:6px 0}
+@media (max-width:760px){.rcomp .rrow{grid-template-columns:repeat(5,minmax(0,1fr))}.rcomp .rct,.rcomp .rlvd,.rcomp .rdet{grid-column:1 / -1}.rcomp .rcell .rl{font-size:11px}}
 .rcell .aisug{position:absolute;top:-8px;right:8px;font:700 9px var(--font);font-style:normal;background:var(--blue);color:#ffffff;border-radius:6px;padding:1px 5px}
 .rubai{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:13px}
 .rubai li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:3px 0}
@@ -1301,8 +1309,9 @@ body.navopen{overflow:hidden}
   .content{padding-top:76px}
 }
 .rv-c{border:1px solid var(--line);border-radius:14px;padding:12px;margin:10px 0}.rv-c h4{margin:0 0 8px;font-size:15px}
-.rv-l{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.rv-l div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4}.rv-l b{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
-@media (max-width:820px){.rv-l{grid-template-columns:1fr}}
+.rv-l{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}.rv-l.rv-5{grid-template-columns:repeat(5,minmax(0,1fr))}.rv-l div.on{background:#dbeafe;box-shadow:inset 0 0 0 2px #1e3a8a}.rv-l div.on b{color:#1e3a8a}
+.pagerubs{display:grid;gap:16px;margin-top:20px}.rv-rub{margin:8px 0}.rv-l div{background:var(--soft);border-radius:10px;padding:8px 10px;font-size:13px;line-height:1.4}.rv-l b{display:block;font-size:11px;color:var(--muted);margin-bottom:2px}
+@media (max-width:820px){.rv-l,.rv-l.rv-5{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.side,.side-back,.navbtn i{transition:none}.side.open > *,.side.open .ngroup{animation:none}}
 .banchead{display:flex;align-items:center;gap:12px}.banchead > div{display:grid;gap:4px;justify-items:start;min-width:0}.banclogo{flex:none;border-radius:12px;box-shadow:0 1px 3px rgba(15,18,34,.12)}
 .whatis{font-size:14px;line-height:1.55;color:var(--ink-2,var(--ink));background:var(--soft);border-radius:14px;padding:12px 14px;margin-bottom:14px}
@@ -2291,6 +2300,7 @@ function pageBody(v, k, intro, body, opts = {}) {
     ${intro ? `<div class="intro muted">${intro}</div>` : ''}
     <div class="${opts.aside ? 'dec-layout' : ''}"><div id="pageBody" style="display:grid;gap:20px;min-width:0">${body}</div>${opts.aside ? '<aside class="sheet forecast" id="pageAside" aria-live="polite"></aside>' : ''}</div>
     ${s.p && !(CLOUD && ME && ME.isProf) ? `<div id="sendBarWrap">${sendBarHtml(t, s, ac)}</div>` : ''}
+    ${pageRubs(k)}
     <div class="row stepnav">${prev && prev.k !== 'inici' ? `<button class="btn ghost" data-go="${prev.k}">← ${prev.l}</button>` : '<span></span>'}${next ? `<button class="btn" data-go="${next.k}">${next.l} →</button>` : ''}</div>`;
   bindSendBar(); bindRepBox(t, k);
   if (opts.aside) { liveFn = () => opts.aside(t); opts.aside(t); }
@@ -4138,13 +4148,26 @@ function rubSel(a, attr) {
 }
 // Rúbrica per corregir: una fila per criteri i una casella per nivell
 function rubGrid(a, r, rl, airl, ri, ms) {
-  const pes = r.crit.some(c => Number(c.w) !== 1), indOn = !!(ms && ms.length);
-  const cell = (c, n, cur, nm, mk, full) => `<label class="rcell ${cur === n ? 'sel' : ''}"><input type="radio" name="${esc(nm)}" data-rbl="${esc(a.c)}" data-ck="${esc(c.k)}" ${mk !== undefined ? `data-mk="${esc(mk)}"` : ''} value="${n}" ${cur === n ? 'checked' : ''}><span class="rl">${LVL_NAMES[n]} · ${n}</span>${full ? `<span>${esc((c.d || [])[4 - n] || '')}</span>` : ''}${full && airl && airl[c.k] === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</label>`;
-  return `<div class="rgrid">${r.crit.map(c => { const head = `<div class="rct"><b>${esc(c.t)}</b>${c.ind ? '<span class="pill grey">individual</span>' : ''}${pes ? `<span class="small muted">pes ${f1(c.w)}</span>` : ''}</div>`;
-    if (!c.ind || !indOn) return `<div class="rrow">${head}${[4, 3, 2, 1, 0].map(n => cell(c, n, rl[c.k], `rb_${a.c}_${c.k}`, undefined, true)).join('')}</div>`;
-    // Criteri individual: la descripció dels nivells una vegada i una fila per alumne
-    return `<div class="rrow rdesc">${head}${[4, 3, 2, 1, 0].map(n => `<div class="rcell"><span class="rl">${LVL_NAMES[n]} · ${n}</span><span>${esc((c.d || [])[4 - n] || '')}</span></div>`).join('')}</div>`
+  const pes = r.crit.some(c => Number(c.w) !== 1), indOn = !!(ms && ms.length), D = (c, n) => (c.d || [])[4 - n] || '';
+  // Rúbrica compacta: només el nom del nivell als botons i, a sota, la descripció del nivell triat
+  const cell = (c, n, cur, nm, mk, full) => `<label class="rcell ${cur === n ? 'sel' : ''}" title="${esc(D(c, n))}"><input type="radio" name="${esc(nm)}" data-rbl="${esc(a.c)}" data-ck="${esc(c.k)}" ${mk !== undefined ? `data-mk="${esc(mk)}"` : ''} value="${n}" ${cur === n ? 'checked' : ''}><span class="rl">${full ? LVL_NAMES[n] + ' · ' : ''}${n}</span>${full && airl && airl[c.k] === n ? '<em class="aisug" title="Proposta de la IA">IA</em>' : ''}</label>`;
+  return `<div class="rgrid rcomp">${r.crit.map(c => { const head = `<div class="rct"><b>${esc(c.t)}</b>${c.ind ? '<span class="pill grey">individual</span>' : ''}${pes ? `<span class="small muted">pes ${f1(c.w)}</span>` : ''}</div>`;
+    if (!c.ind || !indOn) { const cur = rl[c.k]; return `<div class="rrow">${head}${[4, 3, 2, 1, 0].map(n => cell(c, n, cur, `rb_${a.c}_${c.k}`, undefined, true)).join('')}${typeof cur === 'number' && D(c, cur) ? `<div class="rlvd">${esc(D(c, cur))}</div>` : ''}</div>`; }
+    // Criteri individual: una fila per alumne i les descripcions dels nivells plegades
+    return `<div class="rrow rhead">${head}<details class="rdet"><summary class="small">Veure què vol dir cada nivell</summary>${[4, 3, 2, 1, 0].map(n => `<p class="small"><b>${LVL_NAMES[n]} · ${n}</b> ${esc(D(c, n))}</p>`).join('')}</details></div>`
       + ms.map((m, j) => `<div class="rrow rind"><div class="rct">${esc(m.n)}</div>${[4, 3, 2, 1, 0].map(n => cell(c, n, ((ri || {})[m.k] || {})[c.k], `rb_${a.c}_${c.k}_${j}`, m.k, false)).join('')}</div>`).join(''); }).join('')}</div>`;
+}
+// Rúbrica sencera (per a l'alumnat): tots els nivells amb la descripció; «sel» marca el nivell tret en cada criteri
+function rubFull(r, sel, mine) {
+  const wts = r.crit.map(c => Number(c.w) || 0), showW = wts.some(w => w !== wts[0]), W = wts.reduce((x, y) => x + y, 0);
+  return r.crit.map(c => { const cur = c.ind ? ((mine || {})[c.k]) : (sel || {})[c.k];
+    return `<div class="rv-c"><h4>${esc(c.t)}${c.ind ? ' <span class="pill grey">individual</span>' : ''}${showW && W ? ` <span class="pill grey">pes ${Math.round((Number(c.w) || 0) / W * 100)} %</span>` : ''}</h4><div class="rv-l rv-5">${[4, 3, 2, 1, 0].map(n => `<div class="${cur === n ? 'on' : ''}"><b>${LVL_NAMES[n]} · ${n}${cur === n ? ' ✓' : ''}</b>${esc((c.d || [])[4 - n] || '—')}</div>`).join('')}</div></div>`; }).join('');
+}
+// Al final de cada apartat de l'alumnat: les rúbriques de les activitats que s'hi treballen
+function pageRubs(k) {
+  if (G.rubHide || role === 'prof') return '';
+  const as = G.acts.filter(a => !a.ext && Number(a.w) > 0 && (a.ev || []).some(e => e[0] === k) && rubOf(a));
+  return as.length ? `<div class="pagerubs">${as.map(a => card(`Com es valorarà · <span class="actcode">${esc(a.c)}</span> ${esc(a.n)}`, pad(`<p class="small muted" style="margin:0 0 4px">${f1(a.w)} % del ${esc(a.ra)} · rúbrica: ${esc(rubOf(a).n)}</p>${rubFull(rubOf(a))}`))).join('')}</div>` : '';
 }
 const aiPatch = (a, ai) => { const r = rubOf(a); return Object.assign({ nivell: ai.nivell, nota: ai.nota, font: 'ia' }, r && ai.rub === r.id ? { rub: r.id, rl: Object.assign({}, ai.rl) } : {}); };
 function gradeCard(t, a) {
@@ -4273,7 +4296,7 @@ function reportBody(t, forStudents) {
   const summary = ['RA4', 'RA5'].map(ra => { const r = ra === 'RA4' ? r4 : r5; return `<tr class="rasec t-${ra.toLowerCase()}"><td colspan="6">${ra} · ${esc(RA_TEXT[ra])}</td></tr>` + G.acts.filter(a => a.ra === ra).map(a => { const g = t.grades[a.c] || {}; return `<tr class="t-${ra.toLowerCase()}"><td><span class="rcode">${esc(a.c)}</span></td><td>${esc(a.n)}${a.ext ? ' <span class="tagauto">externa</span>' : ''}</td><td>${ra}</td><td class="n">${f1(a.w)}%</td><td>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : '—'}</td><td class="n"><span class="gchip ${gcls(g.nota)}">${f1(g.nota)}</span></td></tr>`; }).join('') + `<tr class="rasum t-${ra.toLowerCase()}"><td colspan="5">Mitjana ponderada de l'${ra} (${r.done} de ${r.total} activitats)</td><td class="n"><span class="gchip ${gcls(r.nota)}">${f1(r.nota)}</span></td></tr>`; }).join('');
   const acts = G.acts.map(a => { const g = t.grades[a.c] || {}, ev = actEvidence(t, a);
     return `<section class="ract ra-${a.ra.toLowerCase()}" data-ac="${esc(a.c)}"><div class="rah"><div><span class="rcode">${esc(a.c)}</span> <b>${esc(a.n)}</b><div class="rmeta">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</div></div><div class="rnote ${gcls(g.nota)}">${f1(g.nota)}<small>${g.nivell !== undefined && g.nivell !== null ? LVL_NAMES[g.nivell] : 'Sense nota'}</small></div></div>
-      ${rubRep(g)}${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
+      ${forStudents && rubUsed(g) ? `<div class="rv-rub">${rubFull(rubUsed(g), g.rl, (g.ri || {})[CLOUD && ME ? ME.uid : ''])}</div>` : rubRep(g)}${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
       ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${imgSrc(f.data)}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
       ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
