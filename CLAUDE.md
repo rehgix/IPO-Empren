@@ -26,6 +26,7 @@ Eina web per al projecte emprenedor (RA4 i RA5) del mòdul IPO II de l'Institut 
 - `projName(t)`: el nom que es mostra de cada equip (el del projecte; si no n'hi ha, «Equip N»). Fes-lo servir en lloc de `t.name` als títols i llistes.
 - Navegació del professorat: barra lateral de 88 px amb icona i una paraula (`#tbTabs`, llista `PTABS` amb el nom curt; classe `has-rail`), i a dalt només la capçalera (`#topHead`: «Els meus grups», «Gestiona l'alumnat», «Vista de professor | Vista d'alumne» i la franja del grup). `topGroup()` dins d'un grup, `topHome()` al tauler. En pantalles petites la barra s'amaga i s'obre amb el botó del costat del logo (`railSet`). El menú lateral ample només és per a l'alumnat (classe `noside` al `body` quan no hi és). Només hi ha tema clar.
 - `role`: `'prof'` o el número de l'equip. `profTeam`: l'equip que el professor està mirant.
+- Notes del professorat (`vQualificacio`): primer surt la graella de tot el grup (`qGrid`: un equip per fila, una activitat per columna, filtre RA amb `qRa`); en tocar una nota o un equip s'obre la fitxa de l'equip (`qView = 'equip'`): llista d'activitats a l'esquerra i la rúbrica (`gradeCard`) a la dreta. Les ajudes (IA i proposta automàtica) van plegades a «Ajudes per posar les notes».
 - `RUBRIC` i `G.acts`: rúbrica i activitats per a la nota. Si es mouen apartats, cal revisar que la nota continuï comptant bé.
 
 ## Cicles (no tipus d'empresa)

@@ -447,6 +447,27 @@ table.fin.treso tr.sub td:first-child,table.fin.treso tr.tot td:first-child{back
 .dafo-f .list-head{background:var(--tn-pn-s)}.dafo-d .list-head{background:var(--warn-soft)}.dafo-o .list-head{background:var(--tn-a-s)}.dafo-a .list-head{background:var(--tn-out-s)}
 /* Notes */
 .gchip{display:inline-block;min-width:44px;text-align:center;padding:2px 8px}
+/* Qualificació: graella del grup i fitxa de l'equip */
+.qra{display:inline-block;font-size:11.5px;font-weight:700;letter-spacing:.04em;padding:3px 8px;border-radius:7px}.qra4{background:#eef3ff;color:var(--tn-ra4)}.qra5{background:#f4eeff;color:var(--tn-ra5)}
+.qbox{background:#fff;border-radius:22px;box-shadow:var(--sh-xs);min-width:0;max-width:100%}.qgridw{padding:14px 16px;margin-bottom:16px}.qscroll{overflow-x:auto}.qgrid{border-collapse:separate;border-spacing:0;width:100%;font-variant-numeric:tabular-nums}
+.qgrid th{font-size:12px;font-weight:650;color:var(--muted);padding:8px 5px;text-align:center;white-space:nowrap}.qgrid td{padding:7px 5px;text-align:center;border-top:1px solid var(--line)}
+.qgrid .qtn{text-align:left;position:sticky;left:0;background:#fff;z-index:1;padding-right:12px}
+.qteam{border:0;background:none;font:650 14.5px var(--font);color:var(--ink);cursor:pointer;padding:4px 0;text-align:left;white-space:nowrap}.qteam:hover{text-decoration:underline}
+.qrav{font-size:16.5px}.qrav.qra4{color:var(--tn-ra4);background:none}.qrav.qra5{color:var(--tn-ra5);background:none}
+.qgrid .gchip{border:0;font:700 13.5px var(--font);height:30px;min-width:46px;border-radius:10px;cursor:pointer;transition:transform var(--t-fast)}.qgrid .gchip:hover{transform:scale(1.08);box-shadow:0 0 0 2px var(--ink)}
+.qleg{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px}.qleg span{display:inline-flex;align-items:center;gap:6px}.qleg i{min-width:16px;height:16px;padding:0;border-radius:5px}
+.qbar{display:grid;grid-template-columns:48px 1fr auto;align-items:center;gap:12px;margin:8px 0}.qbar i{height:11px;border-radius:9px;background:#e8eaf0;overflow:hidden;display:block}.qbar u{display:block;height:100%;border-radius:9px}
+.qhead{display:flex;align-items:center;gap:16px;padding:16px 20px;flex-wrap:wrap}.qht{display:grid;flex:1;min-width:160px}.qht b{font-size:24px;letter-spacing:-.02em;line-height:1.15}
+.qrings{display:flex;align-items:center;gap:12px}.qring{width:64px;height:64px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--v)*1%),#e8eaf0 0);display:grid;place-items:center}
+.qring b{width:50px;height:50px;border-radius:50%;background:#fff;display:grid;place-items:center;font-size:16.5px}.qrl{display:grid;gap:3px;margin-right:6px}
+.qhelp{background:#fff;border-radius:18px;padding:12px 16px;margin:12px 0;box-shadow:var(--sh-xs)}.qhelp summary{cursor:pointer;font-weight:650}.qhelp[open] summary{margin-bottom:10px}.qhelp .aipick{margin-top:0}
+.qlay{min-width:0;max-width:100%;display:grid;grid-template-columns:300px minmax(0,1fr);gap:18px;align-items:start;margin-top:14px}
+.qlist{padding:8px;position:sticky;top:12px;max-height:calc(100vh - 24px);overflow:auto}.qlg{padding:12px 10px 4px}
+.qli{display:flex;align-items:center;gap:10px;width:100%;border:0;background:none;padding:9px 10px;border-radius:14px;cursor:pointer;text-align:left;font:inherit;color:var(--ink)}
+.qli:hover{background:var(--soft)}.qli.on{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--accent)}
+.qlt{flex:1;min-width:0;display:grid}.qlt b{font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.qli .gchip{flex:none;font-size:13px}.qall{margin-top:6px;justify-content:center}.qall .qlt{text-align:center}
+.qmain > .list:first-child,.qmain > h2:first-child{margin-top:0}
+@media (max-width:980px){.qlay{grid-template-columns:minmax(0,1fr)}.qlist{position:static;max-height:none;display:flex;overflow-x:auto;gap:6px}.qlg{display:none}.qli{flex:0 0 220px}.qhead{gap:12px}.qrings{width:100%}.qht b{font-size:21px}}
 .g-hi{background:#dcf5e7;color:#13804a}.g-ok{background:#e0f2f1;color:#0f766e}.g-mid{background:#fff1d6;color:#a85f00}.g-low{background:#fde3e1;color:#b3261e}.g-none{background:#f0f0f2;color:#6b6b72}
 .reportview .rnote.g-hi,.reportview .rnote.g-ok,.reportview .rnote.g-mid,.reportview .rnote.g-low,.reportview .rnote.g-none,.reportview .rgrades b[class^="g-"]{background:none}
 .reportview .rnote.g-hi,.reportview .rgrades b.g-hi{color:#13804a}.reportview .rnote.g-ok,.reportview .rgrades b.g-ok{color:#0f766e}.reportview .rnote.g-mid,.reportview .rgrades b.g-mid{color:#a85f00}.reportview .rnote.g-low,.reportview .rgrades b.g-low{color:#b3261e}
@@ -2198,7 +2219,7 @@ function onField(e) {
 }
 // Capçalera amb el nom i el logo de l'equip (quan ja n'ha triat el nom)
 const PROF_TEAM_TABS = ['revisio', 'qualificacio', 'avaluacio', 'informe'];
-function bannerTeam() { return role !== 'prof' ? (tab === 'inici' ? null : T()) : PROF_TEAM_TABS.includes(tab) ? G.teams[profTeam] : null; }
+function bannerTeam() { return role !== 'prof' ? (tab === 'inici' ? null : T()) : PROF_TEAM_TABS.includes(tab) && !(tab === 'qualificacio' && qView !== 'equip') ? G.teams[profTeam] : null; }
 function teamBannerHtml(t) {
   const m = t.data.marca, logo = logoSrc(m.logo);
   return `<div class="tbanner" style="--tb1:${col(m.color1, '#f7a21b')};--tb2:${col(m.color2, '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
@@ -4150,8 +4171,24 @@ function gradeCard(t, a) {
       : `<div class="row"><button type="button" class="btn ghost small" data-aigo="${a.c}">${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/><path d="M19 15l.9 2.1L22 18l-2.1.9L19 21l-.9-2.1L16 18l2.1-.9z"/>')}Corregir amb IA</button></div>`}
       ${st.error ? `<div class="notice" style="margin-top:8px">${esc(st.error)}</div>` : ''}</div>` : ''}`), g.nota !== undefined && g.nota !== '' ? `Nota ${f1(g.nota)}` : 'Sense nota');
 }
+// Graella de notes de tot el grup: un equip per fila i una activitat per columna (toca una nota per corregir-la)
+function qGrid(v) {
+  const acts = G.acts.filter(a => qRa === 'tot' || a.ra === qRa), RA = ['RA4', 'RA5'];
+  const raAvg = ra => { const l = G.teams.map(t => raGradeAct(t, ra)).filter(r => r.nota !== null && r.nota !== undefined && r.nota !== ''), tot = G.teams.reduce((n, t) => n + raGradeAct(t, ra).total, 0), done = G.teams.reduce((n, t) => n + raGradeAct(t, ra).done, 0);
+    return { avg: l.length ? l.reduce((n, r) => n + Number(r.nota), 0) / l.length : null, pc: tot ? Math.round(done / tot * 100) : 0 }; };
+  v.innerHTML = `${head('Qualificació', 'Notes del grup', `<div class="rfilters" role="group" aria-label="Resultat d'aprenentatge">${[['tot', 'Totes'], ['RA4', 'RA4'], ['RA5', 'RA5']].map(([k, l]) => `<button type="button" class="${qRa === k ? 'on' : ''}" data-qra="${k}">${l}</button>`).join('')}</div>`)}
+    <p class="intro muted">Toca una nota per obrir la rúbrica d'aquella activitat, o el nom d'un equip per veure totes les seves notes.</p>
+    ${G.teams.length ? `<div class="qbox qgridw"><div class="qscroll"><table class="qgrid"><thead><tr><th class="qtn">Equip</th>${RA.filter(r => qRa === 'tot' || qRa === r).map(r => `<th><span class="qra q${r.toLowerCase()}">${r}</span></th>`).join('')}${acts.map(a => `<th title="${esc(a.n)} · ${a.ra} · pes ${f1(a.w)} %">${esc(a.c)}</th>`).join('')}</tr></thead>
+      <tbody>${G.teams.map((t, i) => `<tr><td class="qtn"><button type="button" class="qteam" data-qt="${i}">${esc(projName(t))}${repNew(t).length ? ' <span class="repdot" title="Respostes noves de l\'equip"></span>' : ''}</button></td>${RA.filter(r => qRa === 'tot' || qRa === r).map(r => `<td><b class="qrav q${r.toLowerCase()}">${f1(raGradeAct(t, r).nota)}</b></td>`).join('')}${acts.map(a => { const g = t.grades[a.c] || {}; return `<td><button type="button" class="gchip ${gcls(g.nota)}" data-qc="${i}" data-qa="${esc(a.c)}" aria-label="${esc(projName(t))} · ${esc(a.c)}">${f1(g.nota)}</button></td>`; }).join('')}</tr>`).join('')}</tbody></table></div>
+      <div class="qleg small muted"><span><i class="gchip g-hi"></i>9–10</span><span><i class="gchip g-ok"></i>7–8,9</span><span><i class="gchip g-mid"></i>5–6,9</span><span><i class="gchip g-low"></i>menys de 5</span><span><i class="gchip g-none"></i>sense nota</span></div></div>
+    ${card('Com van els resultats d\'aprenentatge', pad(RA.map(r => { const x = raAvg(r); return `<div class="qbar"><span class="qra q${r.toLowerCase()}">${r}</span><i><u style="width:${x.pc}%;background:var(--tn-${r.toLowerCase()})"></u></i><span class="small muted">${x.avg === null ? 'encara sense notes' : 'mitjana ' + f1(x.avg)} · ${x.pc} % qualificat</span></div>`; }).join('')))}` : '<p class="muted">No hi ha cap equip.</p>'}`;
+  v.querySelectorAll('[data-qra]').forEach(b => b.onclick = () => { qRa = b.dataset.qra; render(); });
+  v.querySelectorAll('[data-qt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.qt; qView = 'equip'; render(); window.scrollTo(0, 0); });
+  v.querySelectorAll('[data-qc]').forEach(b => b.onclick = () => { profTeam = +b.dataset.qc; qAct = b.dataset.qa; qView = 'equip'; render(); window.scrollTo(0, 0); });
+}
 function vQualificacio(v) {
   ensureEval();
+  if (qView !== 'equip') return qGrid(v);
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
   const r4 = raGradeAct(t, 'RA4'), r5 = raGradeAct(t, 'RA5');
   const aiActs = G.acts.filter(a => a.ev && a.ev.length && !a.ext);
@@ -4165,11 +4202,13 @@ function vQualificacio(v) {
   const aiBusy = !!(mScope || aiReadNow); // amb la finestreta oberta o l'avís blau, els botons de la IA sobren
   if (qAct !== 'tot' && !G.acts.some(a => a.c === qAct)) qAct = G.acts.length ? G.acts[0].c : 'tot';
   const qShow = a => qAct === 'tot' || a.c === qAct, qi = G.acts.findIndex(a => a.c === qAct), qPrev = G.acts[qi - 1], qNext = G.acts[qi + 1];
-  v.innerHTML = `${head(`Qualificació · ${esc(projName(t))}`, `RA4 ${f1(r4.nota)} <span class="muted" style="font-weight:500">·</span> RA5 ${f1(r5.nota)}`)}
+  const ring = (ra, r) => `<div class="qring" style="--c:var(--tn-${ra.toLowerCase()});--v:${r.nota === null || r.nota === undefined || r.nota === '' ? 0 : Math.round(Number(r.nota) * 10)}"><b>${f1(r.nota)}</b></div><div class="qrl"><span class="qra q${ra.toLowerCase()}">${ra}</span><span class="small muted">${r.done} de ${r.total}</span></div>`;
+  v.innerHTML = `<div class="qhead qbox"><button type="button" class="tback" data-qv="grup">${ico('<path d="M15 18l-6-6 6-6"/>')}<span>Notes del grup</span></button>
+      <div class="qht"><span class="muted small">Qualificació · ${esc(projName(t))}</span><b>Notes de l'equip</b></div><div class="qrings">${ring('RA4', r4)}${ring('RA5', r5)}</div></div>
     ${teamTabs()}
-    <div class="aipick">${C.enabled ? `<div class="aipick-h"><span><b>Correcció amb IA</b> <span class="muted small">Funciona amb la IA que facis servir habitualment (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="linkbtn small muted" id="aiOff">Desactivar la IA</button></div><p class="small muted" style="margin:0">Prem «Corregir amb IA» i l'eina et prepararà una petició amb la feina de l'equip i els criteris de cada activitat. La copies a la IA, enganxes aquí la resposta i decideixes quines propostes aplicar.</p>` : `<div class="aipick-h"><span><b>La correcció amb IA està desactivada.</b> <span class="muted small">Funciona amb la IA que facis servir (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="btn small" id="aiOn2">Activar la IA</button></div>`}</div>
+    <details class="qhelp"${aiBusy ? ' open' : ''}><summary>Ajudes per posar les notes <span class="muted small">${C.enabled ? 'correcció amb IA i proposta automàtica' : 'proposta automàtica'}</span></summary><div class="aipick">${C.enabled ? `<div class="aipick-h"><span><b>Correcció amb IA</b> <span class="muted small">Funciona amb la IA que facis servir habitualment (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="linkbtn small muted" id="aiOff">Desactivar la IA</button></div><p class="small muted" style="margin:0">Prem «Corregir amb IA» i l'eina et prepararà una petició amb la feina de l'equip i els criteris de cada activitat. La copies a la IA, enganxes aquí la resposta i decideixes quines propostes aplicar.</p>` : `<div class="aipick-h"><span><b>La correcció amb IA està desactivada.</b> <span class="muted small">Funciona amb la IA que facis servir (ChatGPT, Gemini, Copilot...).</span></span><button type="button" class="btn small" id="aiOn2">Activar la IA</button></div>`}</div>
     <div class="row">${C.enabled && !aiBusy ? `<button class="btn" id="aiAll" ${busyAll && busyAll.busy ? 'disabled' : ''}>${ico('<path d="M12 3l1.9 4.6L18.5 9l-4.6 1.9L12 15.5l-1.9-4.6L5.5 9l4.6-1.4z"/>')}${busyAll && busyAll.busy ? 'Corregint...' : `Corregir amb IA les ${aiActs.length} activitats`}</button>
-      ${aiPend.length ? `<button class="btn ghost" id="aiApplyAll">Aplicar ${aiPend.length === 1 ? 'la proposta de la IA pendent' : aiPend.length + ' propostes de la IA pendents'}</button>` : ''}` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div>
+      ${aiPend.length ? `<button class="btn ghost" id="aiApplyAll">Aplicar ${aiPend.length === 1 ? 'la proposta de la IA pendent' : aiPend.length + ' propostes de la IA pendents'}</button>` : ''}` : ''}<button class="btn ghost" id="autoAll">Aplicar la proposta automàtica on no hi ha nota</button><button class="btn ghost" data-go="informe">Veure l'informe</button></div><div class="notice info" style="margin:12px 0 0">Tens ${C.enabled ? 'dues ajudes' : 'una ajuda'}. La <b>proposta automàtica</b> es calcula amb el grau de compleció i les teves revisions.${C.enabled ? ` La <b>correcció amb IA</b> llegeix la feina de l'equip amb el criteri de cada activitat i et proposa un nivell, una nota i un comentari. La petició no inclou els noms de l'alumnat.` : ' La correcció amb IA està desactivada: la pots activar a «Configuració».'} La nota final sempre la decideixes tu.</div></details>
     ${busyAll && busyAll.error ? `<div class="notice">${esc(busyAll.error)}</div>` : ''}
     ${aiReadNow ? `<div class="airead${aiReadNow.done ? ' done' : ''}" id="aiRead" role="status">${aiReadNow.done
       ? `<b>✓ Notes posades a ${aiReadNow.done} ${aiReadNow.done === 1 ? 'activitat' : 'activitats'}</b><p>Ja tens la nota, la rúbrica i el comentari de la IA a cada activitat. Els pots canviar a mà si no hi estàs d'acord.</p><div class="row"><button type="button" class="btn ghost small" id="aiReadX">D'acord</button></div>`
@@ -4178,12 +4217,12 @@ function vQualificacio(v) {
       <div class="pfield"><label for="mPrompt">Petició per a la IA</label><textarea id="mPrompt" rows="6" readonly>${esc(aiPrompt(t, mActs))}</textarea></div><button type="button" class="btn ghost small" id="mCopy">Copiar la petició</button>
       <div class="pfield" style="margin-top:12px"><label for="mResp">Resposta de la IA</label><textarea id="mResp" rows="6" placeholder="Enganxa aquí la resposta completa"></textarea></div>
       <div id="mMsg"></div><div class="row"><button type="button" class="btn small" id="mRead">Llegir la resposta</button><button type="button" class="btn ghost small" id="mClose">Tancar</button></div>`)) : ''}
-    <div class="notice info">Tens ${C.enabled ? 'dues ajudes' : 'una ajuda'}. La <b>proposta automàtica</b> es calcula amb el grau de compleció i les teves revisions.${C.enabled ? ` La <b>correcció amb IA</b> llegeix la feina de l'equip amb el criteri de cada activitat i et proposa un nivell, una nota i un comentari. La petició no inclou els noms de l'alumnat.` : ' La correcció amb IA està desactivada: la pots activar a «Configuració».'} La nota final sempre la decideixes tu.</div>
-    <div class="grid2">${['RA4', 'RA5'].map(ra => { const r = ra === 'RA4' ? r4 : r5; return `<div class="stat"><span class="muted small">${ra} · mitjana ponderada</span><span class="v">${f1(r.nota)}</span><span class="small muted">${r.done} de ${r.total} activitats qualificades</span></div>`; }).join('')}</div>
-    <h2 class="actf-h">Activitat</h2>${actPills(qAct, [['tot', 'Totes']])}
-    ${['RA4', 'RA5'].map(ra => { const l = G.acts.filter(a => a.ra === ra && qShow(a)); return l.length ? `<h2>${ra} · ${esc(RA_TEXT[ra])}</h2>` + l.map(a => gradeCard(t, a)).join('') : ''; }).join('')}
-    ${qAct !== 'tot' ? `<div class="rpager">${qPrev ? `<button type="button" class="btn ghost" data-af="${esc(qPrev.c)}">← <span>${esc(qPrev.c)} · ${esc(qPrev.n)}</span></button>` : '<span></span>'}<span class="rpos">${qi + 1} de ${G.acts.length}</span>${qNext ? `<button type="button" class="btn" data-af="${esc(qNext.c)}"><span>${esc(qNext.c)} · ${esc(qNext.n)}</span> →</button>` : '<span></span>'}</div>` : ''}`;
+    <div class="qlay actf-h"><nav class="qlist qbox" aria-label="Activitats">${['RA4', 'RA5'].map(ra => `<div class="qlg"><span class="qra q${ra.toLowerCase()}">${ra}</span></div>` + G.acts.filter(a => a.ra === ra).map(a => { const g = t.grades[a.c] || {}; return `<button type="button" class="qli ${qAct === a.c ? 'on' : ''}" data-af="${esc(a.c)}"><span class="actcode">${esc(a.c)}</span><span class="qlt"><b>${esc(a.n)}</b><span class="small muted">${f1(a.w)} %${a.ext ? ' · nota externa' : ''}</span></span><span class="gchip ${gcls(g.nota)}">${f1(g.nota)}</span></button>`; }).join('')).join('')}
+      <button type="button" class="qli qall ${qAct === 'tot' ? 'on' : ''}" data-af="tot"><span class="qlt"><b>Veure totes les activitats</b></span></button></nav>
+    <div class="qmain">${['RA4', 'RA5'].map(ra => { const l = G.acts.filter(a => a.ra === ra && qShow(a)); return l.length ? (qAct === 'tot' ? `<h2>${ra} · ${esc(RA_TEXT[ra])}</h2>` : '') + l.map(a => gradeCard(t, a)).join('') : ''; }).join('')}
+    ${qAct !== 'tot' ? `<div class="rpager">${qPrev ? `<button type="button" class="btn ghost" data-af="${esc(qPrev.c)}">← <span>${esc(qPrev.c)} · ${esc(qPrev.n)}</span></button>` : '<span></span>'}<span class="rpos">${qi + 1} de ${G.acts.length}</span>${qNext ? `<button type="button" class="btn" data-af="${esc(qNext.c)}"><span>${esc(qNext.c)} · ${esc(qNext.n)}</span> →</button>` : '<span></span>'}</div>` : ''}</div></div>`;
   bindTeamTabs(v);
+  v.querySelectorAll('[data-qv]').forEach(b => b.onclick = () => { qView = 'grup'; render(); window.scrollTo(0, 0); });
   v.querySelectorAll('[data-af]').forEach(b => b.onclick = () => { qAct = b.dataset.af; render(); const f = $('.actf-h'); if (f && f.getBoundingClientRect().top < 0) f.scrollIntoView({ block: 'start' }); });
   const aoff = $('#aiOff'), aon = $('#aiOn2');
   if (aoff) aoff.onclick = () => { aiCfg().enabled = false; manualScope = null; save(); render(); };
@@ -6087,7 +6126,7 @@ const fmt1 = x => x === null ? '—' : x.toLocaleString('ca-ES', { maximumFracti
 function teamTabs() { return `<div class="rtabs" role="tablist" aria-label="Equips">${G.teams.map((x, i) => { const pr = Math.round(progress(x) * 100); return `<button type="button" class="rtab ${i === profTeam ? 'on' : ''}" data-rt="${i}"><b>${esc(projName(x))}${repNew(x).length ? ' <span class="repdot" title="Respostes noves de l\'equip"></span>' : ''}</b><i><u style="width:${pr}%"></u></i><em>${pr}%</em></button>`; }).join('')}</div>`; }
 function bindTeamTabs(v) { v.querySelectorAll('[data-rt]').forEach(b => b.onclick = () => { profTeam = +b.dataset.rt; render(); }); }
 const actPills = (cur, extra) => `<div class="rfilters actf" role="group" aria-label="Activitat">${extra.concat(G.acts.map(a => [a.c, a.c, a.n])).map(([k, l, ti]) => `<button type="button" class="${cur === k ? 'on' : ''}" data-af="${esc(k)}"${ti ? ` title="${esc(ti)}"` : ''}>${esc(l)}</button>`).join('')}</div>`;
-let qAct = null, infAct = 'resum'; // activitat que es mira a Qualificació i a Informes
+let qAct = null, infAct = 'resum', qView = 'grup', qRa = 'tot'; // activitat que es mira a Qualificació i a Informes; qView: graella del grup o fitxa d'un equip
 function teamSel() { return `<select class="field-sel" id="teamSel" style="width:auto" aria-label="Equip">${G.teams.map((t, i) => `<option value="${i}" ${i === profTeam ? 'selected' : ''}>${esc(projName(t))}</option>`).join('')}</select>`; }
 function bindTeamSel() { const s = $('#teamSel'); if (s) s.onchange = e => { profTeam = Number(e.target.value); render(); }; }
 
