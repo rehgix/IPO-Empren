@@ -122,7 +122,7 @@ textarea{font-size:13px;min-height:140px}
 <div class="app">
   <aside class="side">
     <div class="brand"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</div>
-    <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Vista de professor</button><button type="button" data-rs="stu">Vista d'alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
+    <div class="role"><div class="rseg" role="group" aria-label="Veure com"><button type="button" data-rs="prof">Vista de docent</button><button type="button" data-rs="stu">Vista d'alumne</button></div><select id="roleSel" aria-label="Equip que vols veure"></select></div>
     <div class="side-label" id="navLabel">Secció</div>
     <nav class="nav" id="tabs" role="tablist" aria-label="Seccions"></nav>
     <div class="side-foot"><b id="gameName"></b><span id="quarterTxt"></span><div class="quarter" id="quarterBar" aria-hidden="true"></div></div>
@@ -2060,7 +2060,7 @@ function renderSide() {
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
   stuBtn();
 }
-// Selector «Vista de professor | Vista d'alumne»: en passar a alumne, obre l'equip que s'estava mirant
+// Selector «Vista de docent | Vista d'alumne»: en passar a alumne, obre l'equip que s'estava mirant
 document.querySelector('.rseg').addEventListener('click', e => { const b = e.target.closest('[data-rs]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
   role = b.dataset.rs === 'prof' ? 'prof' : Math.max(0, Math.min(profTeam || 0, G.teams.length - 1)); tab = null; save(); render(); navPush(); });
 $('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); navPush(); });
