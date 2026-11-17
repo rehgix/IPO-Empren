@@ -224,8 +224,8 @@ ul.fb.good li::marker{color:var(--ws-ok,#26884f)} ul.fb.bad li::marker{color:var
 .rcell{display:grid;gap:6px;padding:10px;border:1px solid var(--line);cursor:pointer;font-size:13px;line-height:1.4;height:100%;position:relative}
 .rcell input{position:absolute;opacity:0;pointer-events:none}
 .rcell:hover{background:var(--soft)}
-.rcell.sel{border-color:var(--ink);background:var(--soft);box-shadow:inset 0 0 0 1px var(--ink)}
-.rcell:focus-within{outline:2px solid var(--blue);outline-offset:2px}
+.rcell.sel,.rcell.sel:hover{border-color:#1e3a8a;background:#dbeafe;box-shadow:inset 0 0 0 1px #1e3a8a}
+.rcell:has(input:focus-visible){outline:2px solid var(--blue);outline-offset:2px}
 .sug{font-style:normal;font-size:11px;font-weight:600;color:var(--accent-ink);display:flex;align-items:center;gap:5px}
 .sug::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--accent)}
 
@@ -334,7 +334,7 @@ input[type=color]{width:64px;height:40px;border:1px solid var(--line);border-rad
 .rrow.rdesc .rcell{cursor:default;background:none}.rrow.rdesc .rcell:hover{background:none}
 .rrow.rind .rcell{padding:7px 10px}.rrow.rind .rct{padding:7px 2px 7px 12px;align-content:center}
 .rindn{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0 0;font-size:13px}
-.rcell.sel .rl{color:var(--ink)}
+.rcell.sel .rl{color:#1e3a8a}
 .rcell .aisug{position:absolute;top:-8px;right:8px;font:700 9px var(--font);font-style:normal;background:var(--blue);color:#ffffff;border-radius:6px;padding:1px 5px}
 .rubai{list-style:none;margin:0;padding:0;display:grid;gap:2px;font-size:13px}
 .rubai li{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);padding:3px 0}
@@ -834,7 +834,7 @@ body{font-size:15px;letter-spacing:-.003em;text-rendering:optimizeLegibility}
 .list{border-color:var(--line)}
 .list-body{border-color:var(--line)}
 .chev{stroke:var(--muted);transition:transform var(--t-fast),stroke var(--t-fast)}
-.gcard,.rtab,.choice,.odsi,.rcell,.pdoc,.pimg,.interview{transition:transform var(--t),box-shadow var(--t),border-color var(--t),background var(--t)}
+.gcard,.rtab,.choice,.odsi,.pdoc,.pimg,.interview{transition:transform var(--t),box-shadow var(--t),border-color var(--t),background var(--t)}
 .gcard:hover,.rtab:hover,.pdoc:hover,.pimg:hover{box-shadow:var(--sh-md);border-color:var(--line-2)}
 .gcard:hover{border-color:color-mix(in srgb,#e08a0b 50%,var(--line))}
 .choice:hover,.odsi:hover{border-color:var(--line-2);box-shadow:var(--sh-sm)}
@@ -4101,6 +4101,7 @@ function vQualificacio(v) {
   v.querySelectorAll('[data-aiapply]').forEach(b => b.onclick = () => { const c = b.dataset.aiapply, ai = t.ai[c]; setG(c, Object.assign(aiPatch(G.acts.find(x => x.c === c), ai), { comentari: ai.comentari })); rerender(); });
   v.querySelectorAll('[data-rubsel]').forEach(s => s.onchange = () => { const a = G.acts.find(x => x.c === s.dataset.rubsel); if (a) { a.rub = s.value || undefined; save(); rerender(); } });
   v.querySelectorAll('[data-rbl]').forEach(i => i.onchange = () => { const a = G.acts.find(x => x.c === i.dataset.rbl), r = rubOf(a); if (!r) return;
+    i.closest('.rrow').querySelectorAll('.rcell').forEach(c => c.classList.toggle('sel', c.contains(i)));
     const g = t.grades[a.c] || {}, mk = i.dataset.mk, same = g.rub === r.id, rl = Object.assign({}, same ? g.rl : {}), ri = JSON.parse(JSON.stringify((same && g.ri) || {}));
     if (mk !== undefined) (ri[mk] = ri[mk] || {})[i.dataset.ck] = +i.value; else rl[i.dataset.ck] = +i.value;
     const rg = rubGrade(r, rl, ri, r.crit.some(c => c.ind) ? teamStudents(t) : []);
