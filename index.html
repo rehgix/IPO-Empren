@@ -2416,8 +2416,13 @@ function heroBrand(t) {
   const tria = (c1.toLowerCase() !== '#f7a21b' || c2.toLowerCase() !== '#111113' || filled(m.justColors));
   if (!filled(m.nom) || !tria) return { cls: '', st: '' };
   const lum = h => { const x = /^#([0-9a-f]{6})$/i.exec(h); if (!x) return 0; const n = parseInt(x[1], 16), f = v => { v /= 255; return v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4); }; return .2126 * f(n >> 16 & 255) + .7152 * f(n >> 8 & 255) + .0722 * f(n & 255); };
-  const light = (lum(c1) + lum(c2)) / 2 > .4;
-  return { cls: ' brand' + (light ? ' light' : ''), st: `background:linear-gradient(135deg,${c2} 0%,${c1} 100%);--hero-fg:${light ? '#111318' : '#ffffff'};--hero-mu:${light ? 'rgba(17,19,24,.7)' : 'rgba(255,255,255,.78)'};color:var(--hero-fg)` };
+  // Text blanc o fosc: el que es llegeix millor sobre ELS DOS colors (no sobre la mitjana). Si cap no arriba al contrast
+  // mínim (4,5), es posa un vel fosc o clar damunt del degradat, només tan fort com calgui
+  const rgb = h => { const n = parseInt(h.slice(1), 16); return [n >> 16 & 255, n >> 8 & 255, n & 255]; }, hex = a => '#' + a.map(v => Math.round(v).toString(16).padStart(2, '0')).join('');
+  const mix = (h, to, a) => hex(rgb(h).map(v => v + (to - v) * a)), cr = (x, y) => (Math.max(x, y) + .05) / (Math.min(x, y) + .05);
+  const DK = '#111318', need = (fg, to) => { for (let a = 0; a <= .9; a += .05) { if (Math.min(cr(lum(mix(c1, to, a)), lum(fg)), cr(lum(mix(c2, to, a)), lum(fg))) >= 4.5) return a; } return .9; };
+  const aW = need('#ffffff', 0), aD = need(DK, 255), light = aD < aW, al = +(light ? aD : aW).toFixed(2), veil = light ? `rgba(255,255,255,${al})` : `rgba(0,0,0,${al})`;
+  return { cls: ' brand' + (light ? ' light' : ''), st: `background:${al ? `linear-gradient(${veil},${veil}),` : ''}linear-gradient(135deg,${c2} 0%,${c1} 100%);--hero-fg:${light ? DK : '#ffffff'};--hero-mu:${light ? 'rgba(17,19,24,.78)' : 'rgba(255,255,255,.85)'};color:var(--hero-fg)` };
 }
 function teamLogoHtml(t, cls = 'hlogo') {
   const m = t.data.marca, logo = logoSrc(m.logo);
