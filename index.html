@@ -2111,8 +2111,8 @@ function newGroup(name, teams, sector) { return { v: 1, access: defaultAccess([]
 const cnt = (obj, keys) => keys.filter(k => filled(obj[k])).length;
 const ESB_MIN = 3, ESB_MAX = 6; // esbossos del logo: mínim abans del logo final i màxim que es poden pujar
 const SECS = [
-  ['proj', 'El projecte', 'proj', [
-    ['inici', 'Inici', '', '', null],
+  ['ini', '', 'proj', [['inici', 'Inici', '', '', null]]], // Inici va sol, sense títol de bloc
+  ['proj', 'Formació d\'equips', 'proj', [
     ['equip', 'Equip i rols', 'Treball en equip', 'Tasca Classroom', t => { let d = 0; t.members.forEach((m, i) => { if (filled(m.name)) d++; ROL_KEYS.forEach(k => { if (m[k] && !rolDup(t, i, k)) d++; }); if (filled(m.resp)) d++; }); return [d, 5 * Math.max(2, t.members.length)]; }]]],
   ['idea', 'La idea', 'idea', [
     ['idea', 'Idea de negoci i Golden Circle', 'CA 4.2 · 5.1', 'Act4 · Pt4', t => { const d = t.data.idea; return [cnt(d, ['activitat', 'diferenciador', 'benefici', 'why', 'how', 'what']) + (cnt(d, ['motExt', 'motInt', 'motTrans']) ? 1 : 0), 7]; }]]],
@@ -2194,7 +2194,7 @@ function renderSide() {
   $('#quarterBar').innerHTML = `<span class="q done" style="flex:${Math.max(0.001, pr)}"></span><span class="q" style="flex:${Math.max(0.001, 1 - pr)}"></span>`;
   const groups = menu(), all = groups.flatMap(g => g[2]);
   if (!tab || !(all.find(x => x[0] === tab) || (role === 'prof' && tab === 'alumnes'))) tab = all[0][0];
-  $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup${items.every(([k]) => NAVIC[k]) ? ' allic' : ''}" data-g="${ic}"><div class="ghead" title="${esc(g)}">${ico(GICONS[ic])}<span>${g}</span></div>${items.map(([k, l]) => {
+  $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup${items.every(([k]) => NAVIC[k]) ? ' allic' : ''}" data-g="${ic}">${g ? `<div class="ghead" title="${esc(g)}">${ico(GICONS[ic])}<span>${g}</span></div>` : ''}${items.map(([k, l]) => {
     const st = role === 'prof' ? null : secState(T(), sec(k)); const rv = role !== 'prof' && T().review[k];
     const ac = role === 'prof' ? 'open' : access(k);
     return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${tancatProf(k) ? '<span class="rotag">tancat</span>' : ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
@@ -2334,7 +2334,7 @@ function stuWelcome() {
 function render() {
   normSectors();
   renderSide(); liveFn = null;
-  const v = $('#view'); v.dataset.g = role === 'prof' ? 'prof' : (sec(tab) ? sec(tab).g : 'proj');
+  const v = $('#view'); v.dataset.g = role === 'prof' ? 'prof' : (sec(tab) && sec(tab).g !== 'ini' ? sec(tab).g : 'proj');
   // Animació d'entrada només quan canvia la pàgina (no en redibuixar la mateixa)
   const vk = `${role}|${tab}|${profTeam}`; v.classList.toggle('vin', vk !== render.k); render.k = vk;
   if (role !== 'prof' && sec(tab) && sec(tab).p && access(tab) === 'closed') lockedPage(v, tab);
@@ -6576,7 +6576,7 @@ function edPanel(t, i) { const n = t.members.length;
 const ACC_OPEN = new Set(); // apartats amb les dates desplegades a «Planificació»
 function vObertura(v) {
   if (!G.access) G.access = defaultAccess([]);
-  const groups = SECS.filter(g => !['lliura'].includes(g[0]));
+  const groups = SECS.filter(g => !['lliura'].includes(g[0]) && g[3].some(([k]) => sec(k).p));
   const st = k => G.access[k] || (G.access[k] = { state: 'closed', from: '' });
   const nOpen = PROG.filter(s => access(s.k) === 'open').length;
   const seg = k => { const a = st(k); return `<div class="seg" role="group" aria-label="Estat">${[['closed', 'Tancat'], ['open', 'Obert'], ['readonly', '<span class="lg">Només lectura</span><span class="sh">Lectura</span>']].map(([v2, l]) => `<button type="button" class="${a.state === v2 ? 'on' : ''} s-${v2}" data-acc="${k}" data-v="${v2}">${l}</button>`).join('')}</div>`; };
