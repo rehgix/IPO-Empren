@@ -2114,10 +2114,10 @@ const SECS = [
   ['proj', 'El projecte', 'proj', [
     ['inici', 'Inici', '', '', null],
     ['equip', 'Equip i rols', 'Treball en equip', 'Tasca Classroom', t => { let d = 0; t.members.forEach((m, i) => { if (filled(m.name)) d++; ROL_KEYS.forEach(k => { if (m[k] && !rolDup(t, i, k)) d++; }); if (filled(m.resp)) d++; }); return [d, 5 * Math.max(2, t.members.length)]; }]]],
-  ['ident', 'Identitat corporativa', 'ident', [
-    ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['idea', 'La idea', 'idea', [
     ['idea', 'Idea de negoci i Golden Circle', 'CA 4.2 · 5.1', 'Act4 · Pt4', t => { const d = t.data.idea; return [cnt(d, ['activitat', 'diferenciador', 'benefici', 'why', 'how', 'what']) + (cnt(d, ['motExt', 'motInt', 'motTrans']) ? 1 : 0), 7]; }]]],
+  ['ident', 'Identitat corporativa', 'ident', [
+    ['marca', 'Nom, logo i imatge', 'CA 4.10', 'Act10', t => [cnt(t.data.marca, ['nom', 'eslogan', 'logo', 'justColors', 'justIcones', 'justTipo', 'missio', 'visio', 'valors']) + ((t.data.marca.esbossos || []).length >= ESB_MIN ? 1 : 0), 10]]]],
   ['model', 'Model de negoci', 'model', [
     ['lean', 'Lean Canvas sostenible', 'CA 4.3 · 5.5', 'Pt5 · Act8', t => [cnt(t.data.lean, PE.LEAN.map(x => x[0])) + (filled(t.data.sost.costosAmb) ? 1 : 0) + (cnt(t.data.sost, ['benSocial', 'benAmbiental', 'cicleVida', 'circular']) >= 2 ? 1 : 0), 11]],
     ['sost', 'ODS i sostenibilitat', 'CA 4.5 · 5.3 · 5.6', 'Act8', t => { const d = t.data.sost; return [(d.ods.length ? 1 : 0) + cnt(d, ['odsAccions', 'tecnologia']), 3]; }],
