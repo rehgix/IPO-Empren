@@ -1698,6 +1698,9 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 [data-gdelbox]:not(:empty){margin-top:12px}
 /* Visor d'imatges (esbossos, prototip, logo) */
 .pgal .pimg img,img.dlogo{cursor:zoom-in}
+.logobig{margin:8px 0 12px;padding:16px;border:1px solid var(--line);border-radius:16px;background:repeating-conic-gradient(#f4f4f5 0% 25%,#fff 0% 50%) 50%/20px 20px;display:grid;justify-items:center;gap:10px}
+.logobig .dlogo{max-width:100%;width:auto;max-height:260px;margin:0;border-radius:8px}
+.logobig figcaption{font-size:12.5px;color:var(--muted,#78716c);background:#fff;padding:3px 10px;border-radius:999px}
 .imgv{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;background:rgba(15,12,8,.88);backdrop-filter:blur(4px)}
 .imgv-top{display:flex;align-items:center;gap:8px;padding:12px 16px;color:#fff}
 .imgv-t{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -1705,7 +1708,14 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 .imgv-b:hover{background:rgba(255,255,255,.22)}
 .imgv svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
 .imgv-m{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 16px 20px}
-.imgv-m img{min-width:0;max-width:min(100%,1400px);max-height:100%;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.imgv-m img{min-width:0;max-width:min(100%,1400px);max-height:100%;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5);touch-action:none;cursor:zoom-in;transition:transform .12s ease-out;user-select:none;-webkit-user-select:none}
+.imgv-m{overflow:hidden}
+.imgv.zoomed .imgv-m img{cursor:grab;transition:none}
+.imgv.zoomed .imgv-n{opacity:.35}
+.imgv-zb{display:inline-flex;gap:4px;margin-left:auto}
+.imgv-zb+.imgv-b{margin-left:0}
+.imgv-zb .imgv-b{min-width:38px;justify-content:center;font-size:17px;padding:6px 10px}
+.imgv-zb .imgv-zp{font-size:13px;min-width:62px}
 .imgv-n{flex:none;width:46px;height:46px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
 .imgv-n:hover{background:rgba(255,255,255,.26)}
 @media (max-width:620px){.imgv-b span{display:none}.imgv-m{position:relative;padding:0 8px 76px}.imgv-n{position:absolute;bottom:18px;width:44px;height:44px}[data-ivp]{left:calc(50% - 56px)}[data-ivn]{right:calc(50% - 56px)}}
@@ -2679,12 +2689,28 @@ function imgView(l, i) {
   const o = document.createElement('div'); o.className = 'imgv'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', 'Imatge ampliada');
   const many = l.length > 1, nm = x => String(x.t || 'imatge').replace(/[\\/:*?"<>|]/g, '_');
   const draw = () => { const x = l[i]; o.innerHTML = `<div class="imgv-top"><span class="imgv-t">${many ? `<b>${i + 1} de ${l.length}</b> · ` : ''}${esc(x.t)}</span>
+      <span class="imgv-zb" role="group" aria-label="Zoom"><button type="button" class="imgv-b" data-zo title="Allunyar (−)" aria-label="Allunyar">−</button><button type="button" class="imgv-b imgv-zp" data-zr title="Ajustar a la pantalla (0)" aria-label="Ajustar a la pantalla">100%</button><button type="button" class="imgv-b" data-zi title="Apropar (+)" aria-label="Apropar">+</button></span>
       <a class="imgv-b" href="${esc(x.src)}" download="${esc(nm(x))}" title="Descarregar la imatge">${ico('<path d="M12 4v12M6 10l6 6 6-6"/><path d="M4 20h16"/>')}<span>Descarregar</span></a><button type="button" class="imgv-b" data-ivx title="Tancar (Esc)" aria-label="Tancar">${ico('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div>
     <div class="imgv-m">${many ? `<button type="button" class="imgv-n" data-ivp aria-label="Imatge anterior">${ico('<path d="M15 18l-6-6 6-6"/>')}</button>` : ''}<img src="${esc(x.src)}" alt="${esc(x.t)}">${many ? `<button type="button" class="imgv-n" data-ivn aria-label="Imatge següent">${ico('<path d="M9 18l6-6-6-6"/>')}</button>` : ''}</div>`;
-    o.querySelector('[data-ivx]').focus(); };
+    o.querySelector('[data-ivx]').focus(); zoomInit(); };
+  // Zoom: botons + i −, roda del ratolí, doble clic o doble toc, pessic amb dos dits i arrossegar per moure's
+  let sc = 1, tx = 0, ty = 0, im = null, pct = null;
+  const ap = () => { if (sc <= 1.001) { sc = 1; tx = 0; ty = 0; } im.style.transform = `translate(${tx}px,${ty}px) scale(${sc})`; pct.textContent = Math.round(sc * 100) + '%'; o.classList.toggle('zoomed', sc > 1); };
+  const zoomAt = (f, cx, cy) => { const r = im.getBoundingClientRect(), ox = cx - (r.left + r.width / 2), oy = cy - (r.top + r.height / 2), ns = Math.min(8, Math.max(1, sc * f)), k = ns / sc; tx -= ox * (k - 1); ty -= oy * (k - 1); sc = ns; ap(); };
+  const zoomMid = f => { const r = o.querySelector('.imgv-m').getBoundingClientRect(); zoomAt(f, r.left + r.width / 2, r.top + r.height / 2); };
+  function zoomInit() { sc = 1; tx = 0; ty = 0; im = o.querySelector('.imgv-m img'); pct = o.querySelector('[data-zr]'); im.draggable = false; ap();
+    const pts = new Map(); let last = null;
+    im.addEventListener('pointerdown', e => { im.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); last = null; });
+    im.addEventListener('pointermove', e => { if (!pts.has(e.pointerId)) return; const pv = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (last) zoomAt(d / last, (a[0] + b[0]) / 2, (a[1] + b[1]) / 2); last = d; }
+      else if (sc > 1) { tx += e.clientX - pv[0]; ty += e.clientY - pv[1]; ap(); } });
+    const up = e => { pts.delete(e.pointerId); last = null; }; im.addEventListener('pointerup', up); im.addEventListener('pointercancel', up);
+    im.addEventListener('dblclick', e => { if (sc > 1) { sc = 1; ap(); } else zoomAt(2.5, e.clientX, e.clientY); }); }
+  o.addEventListener('wheel', e => { if (!im) return; e.preventDefault(); zoomAt(e.deltaY < 0 ? 1.2 : 1 / 1.2, e.clientX, e.clientY); }, { passive: false });
   const mv = d => { i = (i + d + l.length) % l.length; draw(); };
-  const close = () => { o.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); else if (many && e.key === 'ArrowRight') mv(1); else if (many && e.key === 'ArrowLeft') mv(-1); };
-  o.onclick = e => { if (e.target.closest('[data-ivx]') || e.target === o || e.target.classList.contains('imgv-m')) close(); else if (e.target.closest('[data-ivp]')) mv(-1); else if (e.target.closest('[data-ivn]')) mv(1); };
+  const close = () => { o.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); else if (e.key === '+' || e.key === '=') zoomMid(1.4); else if (e.key === '-') zoomMid(1 / 1.4); else if (e.key === '0') { sc = 1; ap(); } else if (many && sc === 1 && e.key === 'ArrowRight') mv(1); else if (many && sc === 1 && e.key === 'ArrowLeft') mv(-1); };
+  o.onclick = e => { if (e.target.closest('[data-zi]')) return zoomMid(1.4); if (e.target.closest('[data-zo]')) return zoomMid(1 / 1.4); if (e.target.closest('[data-zr]')) { sc = 1; return ap(); }
+    if (e.target.closest('[data-ivx]') || e.target === o || e.target.classList.contains('imgv-m')) close(); else if (e.target.closest('[data-ivp]')) mv(-1); else if (e.target.closest('[data-ivn]')) mv(1); };
   document.addEventListener('keydown', k); document.body.appendChild(o); draw();
 }
 function dataUrlBlob(u) { const [h, b] = u.split(','); const bin = atob(b); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: (h.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream' }); }
@@ -3885,7 +3911,7 @@ function vMarca(v) {
       <label class="upl ${nEsb >= ESB_MAX ? 'off' : ''}" style="margin-top:10px"><input type="file" id="esbIn" multiple accept="image/*">${ico('<path d="M12 16V4M6 10l6-6 6 6"/><path d="M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/>')}<span>Pujar esbossos</span></label>
       <div id="esbMsg" class="small" role="status"></div>
       ${nEsb ? `<div class="pgal" id="esbFiles">${d.esbossos.map((f, i) => `<figure class="pimg"><img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}"><figcaption><span>Versió ${i + 1}</span><button type="button" class="btn ghost small" data-pdel="${i}">Treure</button></figcaption></figure>`).join('')}</div>` : ''}`), nEsb >= ESB_MIN ? `${nEsb} versions` : `${nEsb} de ${ESB_MIN} versions`)
-    + `<div class="grid2">${card('Identitat', pad(txt('marca.nom', 'Nom de l\'empresa', 'Curt, fàcil de recordar i relacionat amb el que feu.') + txt('marca.eslogan', 'Eslògan', 'Una frase curta que digui què us fa diferents.') + `<div class="pfield"><label for="logoIn">Logo final</label>${logoOk ? `<div class="help">Pugeu la versió definitiva (PNG o JPG). Podeu crear-la amb una eina en línia com <a href="https://es.freelogodesign.org/" target="_blank" rel="noopener">FreeLogoDesign</a>.</div><input type="file" id="logoIn" accept="image/*">${d.logo ? '<button type="button" class="btn ghost small" id="logoDel">Treure el logo</button>' : ''}` : `<div class="help">Primer heu de pujar com a mínim ${ESB_MIN} esbossos. Us en ${ESB_MIN - nEsb === 1 ? 'falta 1' : 'falten ' + (ESB_MIN - nEsb)}.</div><input type="file" id="logoIn" accept="image/*" disabled>`}</div>
+    + `<div class="grid2">${card('Identitat', pad(txt('marca.nom', 'Nom de l\'empresa', 'Curt, fàcil de recordar i relacionat amb el que feu.') + txt('marca.eslogan', 'Eslògan', 'Una frase curta que digui què us fa diferents.') + `<div class="pfield"><label for="logoIn">Logo final</label>${logoOk ? `<div class="help">Pugeu la versió definitiva (PNG o JPG). Podeu crear-la amb una eina en línia com <a href="https://es.freelogodesign.org/" target="_blank" rel="noopener">FreeLogoDesign</a>.</div>${logoSrc(d.logo) ? `<figure class="logobig"><img class="dlogo" src="${imgSrc(d.logo)}" alt="Logo definitiu de ${esc(d.nom || 'l\'empresa')}" title="Toca'l per ampliar-lo"><figcaption>🔍 Toca el logo per veure'l en gran i ampliar-lo</figcaption></figure>` : ''}<input type="file" id="logoIn" accept="image/*">${d.logo ? '<button type="button" class="btn ghost small" id="logoDel">Treure el logo</button>' : ''}` : `<div class="help">Primer heu de pujar com a mínim ${ESB_MIN} esbossos. Us en ${ESB_MIN - nEsb === 1 ? 'falta 1' : 'falten ' + (ESB_MIN - nEsb)}.</div><input type="file" id="logoIn" accept="image/*" disabled>`}</div>
       <div class="help">Trieu els dos colors de la vostra marca (els del logo). Es faran servir a la web i al dossier.</div><div class="grid2" style="gap:12px"><div class="pfield"><label for="c1">Color principal</label><input type="color" id="c1" data-path="marca.color1" value="${esc(d.color1)}"></div><div class="pfield"><label for="c2">Color secundari</label><input type="color" id="c2" data-path="marca.color2" value="${esc(d.color2)}"></div></div>`))}
     ${card('Vista prèvia', `<div class="brandprev" id="brandPrev"></div>`)}</div>`
     + card('Per què aquest logo?', pad(`<div class="help">Expliqueu per què heu triat aquesta versió i no les altres dels esbossos.</div>`
@@ -3913,7 +3939,10 @@ function vMarca(v) {
   const ef = $('#esbFiles'); if (ef) ef.onclick = e => { const del = e.target.closest('[data-pdel]'); if (del && access('marca') === 'open') { d.esbossos.splice(Number(del.dataset.pdel), 1); T().updated = Date.now(); save(); rer(); } };
   $('#logoIn').onchange = e => { const f = e.target.files[0]; if (!f || !(d.esbossos.length >= ESB_MIN || d.logo)) return; const bad = () => { e.target.value = ''; toast('No s\'ha pogut afegir el logo: ha de ser una imatge (PNG o JPG).'); };
     if (!/^image\//.test(f.type)) return bad();
-    const r = new FileReader(); r.onerror = bad; r.onload = () => { const img = new Image(); img.onerror = bad; img.onload = () => { const s = Math.min(1, 320 / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); d.logo = c.toDataURL('image/png'); save(); render(); }; img.src = r.result; }; r.readAsDataURL(f); };
+    const r = new FileReader(); r.onerror = bad; r.onload = () => { const img = new Image(); img.onerror = bad; img.onload = () => { // fins a 640 px (per poder-lo ampliar); si pesa massa, en WebP (manté la transparència) i, si cal, més petit
+      const make = (mx, type, q) => { const s = Math.min(1, mx / Math.max(img.width, img.height)); const c = document.createElement('canvas'); c.width = Math.round(img.width * s); c.height = Math.round(img.height * s); c.getContext('2d').drawImage(img, 0, 0, c.width, c.height); return c.toDataURL(type, q); };
+      let u = make(640, 'image/png'); if (u.length > 260000) u = make(640, 'image/webp', .9); if (u.length > 260000) u = make(480, 'image/webp', .85); if (u.length > 260000) u = make(320, 'image/png');
+      d.logo = u; save(); render(); }; img.src = r.result; }; r.readAsDataURL(f); };
   const dl = $('#logoDel'); if (dl) dl.onclick = () => { d.logo = ''; save(); render(); };
 }
 function vP7(v) {
