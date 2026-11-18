@@ -1685,6 +1685,19 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 .gmenu button:hover{background:var(--soft)}
 .gmenu .danger{color:var(--bad)}
 [data-gdelbox]:not(:empty){margin-top:12px}
+/* Visor d'imatges (esbossos, prototip, logo) */
+.pgal .pimg img,img.dlogo{cursor:zoom-in}
+.imgv{position:fixed;inset:0;z-index:200;display:flex;flex-direction:column;background:rgba(15,12,8,.88);backdrop-filter:blur(4px)}
+.imgv-top{display:flex;align-items:center;gap:8px;padding:12px 16px;color:#fff}
+.imgv-t{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.imgv-b{display:inline-flex;align-items:center;gap:6px;padding:8px 12px;border:0;border-radius:10px;background:rgba(255,255,255,.12);color:#fff;font:600 13.5px var(--font);text-decoration:none;cursor:pointer}
+.imgv-b:hover{background:rgba(255,255,255,.22)}
+.imgv svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.imgv-m{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;gap:12px;padding:0 16px 20px}
+.imgv-m img{min-width:0;max-width:min(100%,1400px);max-height:100%;object-fit:contain;border-radius:10px;background:#fff;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.imgv-n{flex:none;width:46px;height:46px;display:grid;place-items:center;border:0;border-radius:50%;background:rgba(255,255,255,.14);color:#fff;cursor:pointer}
+.imgv-n:hover{background:rgba(255,255,255,.26)}
+@media (max-width:620px){.imgv-b span{display:none}.imgv-m{position:relative;padding:0 8px 76px}.imgv-n{position:absolute;bottom:18px;width:44px;height:44px}[data-ivp]{left:calc(50% - 56px)}[data-ivn]{right:calc(50% - 56px)}}
 /* Avís de les còpies de seguretat: ha de semblar una funció de l'eina, no un avís de galetes */
 .bkask{background:rgba(20,16,10,.55);backdrop-filter:blur(3px)}
 .bkask .bkbox{width:min(560px,100%);padding:26px;gap:14px;border:0;border-top:6px solid var(--pri);border-radius:22px;box-shadow:0 30px 70px -20px rgba(0,0,0,.45)}
@@ -2612,6 +2625,22 @@ function protoFilesHtml(fs, edit) {
   const imgs = fs.map((f, i) => [f, i]).filter(([f]) => f.kind === 'img'), docs = fs.map((f, i) => [f, i]).filter(([f]) => f.kind !== 'img');
   return `${imgs.length ? `<div class="pgal">${imgs.map(([f, i]) => `<figure class="pimg"><img src="${imgSrc(f.data)}" alt="${esc(f.name)}"><figcaption><span>${esc(f.name)}</span>${edit ? `<button type="button" class="btn ghost small" data-pdel="${i}">Treure</button>` : ''}</figcaption></figure>`).join('')}</div>` : ''}
     ${docs.length ? `<div class="pdocs">${docs.map(([f, i]) => `<div class="pdoc"><span class="pext">${esc((f.name.split('.').pop() || '').toUpperCase())}</span><div style="min-width:0"><b>${esc(f.name)}</b><div class="small muted">${fmtSize(f.size || 0)}</div></div>${edit ? `<button type="button" class="btn ghost small keep" data-pget="${i}">Descarregar</button><button type="button" class="btn ghost small" data-pdel="${i}">Treure</button>` : ''}</div>`).join('')}</div>` : ''}`;
+}
+// Visor d'imatges: en tocar una imatge d'una galeria (esbossos del logo, prototip) o el logo, s'obre gran; amb fletxes es passa a la següent
+document.addEventListener('click', e => { const im = e.target.closest('.pgal .pimg img, img.dlogo'); if (!im || e.target.closest('.imgv')) return;
+  const g = im.closest('.pgal'), l = g ? [...g.querySelectorAll('.pimg img')] : [im];
+  imgView(l.map(x => ({ src: x.src, t: ((x.closest('figure') || {}).querySelector ? (x.closest('figure').querySelector('figcaption span') || {}).textContent : '') || x.alt || 'Imatge' })), l.indexOf(im)); });
+function imgView(l, i) {
+  const o = document.createElement('div'); o.className = 'imgv'; o.setAttribute('role', 'dialog'); o.setAttribute('aria-modal', 'true'); o.setAttribute('aria-label', 'Imatge ampliada');
+  const many = l.length > 1, nm = x => String(x.t || 'imatge').replace(/[\\/:*?"<>|]/g, '_');
+  const draw = () => { const x = l[i]; o.innerHTML = `<div class="imgv-top"><span class="imgv-t">${many ? `<b>${i + 1} de ${l.length}</b> · ` : ''}${esc(x.t)}</span>
+      <a class="imgv-b" href="${esc(x.src)}" download="${esc(nm(x))}" title="Descarregar la imatge">${ico('<path d="M12 4v12M6 10l6 6 6-6"/><path d="M4 20h16"/>')}<span>Descarregar</span></a><button type="button" class="imgv-b" data-ivx title="Tancar (Esc)" aria-label="Tancar">${ico('<path d="M6 6l12 12M18 6 6 18"/>')}</button></div>
+    <div class="imgv-m">${many ? `<button type="button" class="imgv-n" data-ivp aria-label="Imatge anterior">${ico('<path d="M15 18l-6-6 6-6"/>')}</button>` : ''}<img src="${esc(x.src)}" alt="${esc(x.t)}">${many ? `<button type="button" class="imgv-n" data-ivn aria-label="Imatge següent">${ico('<path d="M9 18l6-6-6-6"/>')}</button>` : ''}</div>`;
+    o.querySelector('[data-ivx]').focus(); };
+  const mv = d => { i = (i + d + l.length) % l.length; draw(); };
+  const close = () => { o.remove(); document.removeEventListener('keydown', k); }, k = e => { if (e.key === 'Escape') close(); else if (many && e.key === 'ArrowRight') mv(1); else if (many && e.key === 'ArrowLeft') mv(-1); };
+  o.onclick = e => { if (e.target.closest('[data-ivx]') || e.target === o || e.target.classList.contains('imgv-m')) close(); else if (e.target.closest('[data-ivp]')) mv(-1); else if (e.target.closest('[data-ivn]')) mv(1); };
+  document.addEventListener('keydown', k); document.body.appendChild(o); draw();
 }
 function dataUrlBlob(u) { const [h, b] = u.split(','); const bin = atob(b); const a = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); return new Blob([a], { type: (h.match(/data:([^;]+)/) || [])[1] || 'application/octet-stream' }); }
 function bindProtoFiles() {
