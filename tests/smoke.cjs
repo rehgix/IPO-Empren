@@ -58,7 +58,7 @@ async function check(page, width, where) {
     await page.close();
     // 2) Amb sessió (Firebase de mentida): tauler, configuració i còpies de seguretat
     const c = await open(browser, width, true);
-    await c.page.addInitScript(() => { try { localStorage.setItem('ipoBk:prof@biada.net', JSON.stringify({ seen: true, on: false })); } catch (e) {} });
+    await c.page.addInitScript(() => { try { localStorage.setItem('ipoBk:prof@biada.net', JSON.stringify({ seen: true, on: false, ask: 2 })); } catch (e) {} });
     for (const [hash, name] of [['', 'tauler del professorat'], ['#config', 'configuració general'], ['#copies', 'còpies de seguretat'], ['#g=g1', 'grup amb sessió']]) {
       c.st.where = name;
       await c.page.goto(ORIGIN + 'index.html' + hash); await c.page.waitForTimeout(1200);

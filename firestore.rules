@@ -88,11 +88,13 @@ service cloud.firestore {
     match /bkkeys/{email} {
       allow get: if signed() && me() == email;
       // També es desa si les còpies estan activades i quan es va fer l'última (perquè no torni a preguntar a cada ordinador)
-      allow create, update: if signed() && me() == email && request.resource.data.keys().hasOnly(['pw', 'at', 'on', 'last', 'n'])
+      allow create, update: if signed() && me() == email && request.resource.data.keys().hasOnly(['pw', 'at', 'on', 'last', 'n', 'ask', 'askAt'])
         && request.resource.data.pw is string && request.resource.data.pw.size() <= 200 && request.resource.data.at is number
         && (!('on' in request.resource.data) || request.resource.data.on is bool)
         && (!('last' in request.resource.data) || request.resource.data.last is number)
-        && (!('n' in request.resource.data) || request.resource.data.n is number);
+        && (!('n' in request.resource.data) || request.resource.data.n is number)
+        && (!('ask' in request.resource.data) || request.resource.data.ask is number)
+        && (!('askAt' in request.resource.data) || request.resource.data.askAt is number);
     }
     // SOL·LICITUDS d'accés com a professor (una per correu)
     match /profreq/{email} {

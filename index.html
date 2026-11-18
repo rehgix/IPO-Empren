@@ -1685,6 +1685,21 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 .gmenu button:hover{background:var(--soft)}
 .gmenu .danger{color:var(--bad)}
 [data-gdelbox]:not(:empty){margin-top:12px}
+/* Avís de les còpies de seguretat: ha de semblar una funció de l'eina, no un avís de galetes */
+.bkask{background:rgba(20,16,10,.55);backdrop-filter:blur(3px)}
+.bkask .bkbox{width:min(560px,100%);padding:26px;gap:14px;border:0;border-top:6px solid var(--pri);border-radius:22px;box-shadow:0 30px 70px -20px rgba(0,0,0,.45)}
+.bkhd{display:flex;align-items:center;gap:14px}
+.bkhd b{display:block;font-size:22px;letter-spacing:-.02em;line-height:1.15}
+.bkask .bkic{flex:none;width:52px;height:52px;border-radius:15px;background:#FFF1E3}.bkask .bkic svg{stroke:#C4510A;width:28px;height:28px}
+.bktag{display:inline-block;margin-bottom:5px;padding:2px 9px;border-radius:999px;background:#FFF1E3;color:#C4510A;font-size:11.5px;font-weight:650;letter-spacing:.02em}
+.bkpts{list-style:none;margin:0;padding:12px 14px;display:grid;gap:10px;border-radius:14px;background:var(--soft)}
+.bkpts li{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.45}
+.bkpts svg{flex:none;width:18px;height:18px;margin-top:1px;fill:none;stroke:#57524A;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.bkbtns{display:grid;grid-template-columns:1fr auto;gap:8px}
+.bkask .bkgo{justify-content:center;font-size:16px;padding:13px 18px}
+.bkno{display:grid;justify-items:center;gap:4px;text-align:center}
+.bkno .linkbtn{color:var(--muted)}
+@media (max-width:620px){.bkbtns{grid-template-columns:1fr}.bkhd b{font-size:19px}.bkask .bkbox{padding:20px}}
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -5437,13 +5452,14 @@ const BK_DIR = 'IPO Emprèn · Còpies de seguretat', BK_KEEP = 8, BK_DAYS = 7, 
 const bkKey = () => 'ipoBk:' + (USER ? USER.email : '');
 const bkGet = () => { try { return JSON.parse(localStorage.getItem(bkKey()) || '{}') || {}; } catch (e) { return {}; } };
 const bkSet = o => { const s = Object.assign(bkGet(), o); try { localStorage.setItem(bkKey(), JSON.stringify(s)); } catch (e) {}
-  if (CLOUD && FB && USER && ('on' in o || 'last' in o)) bkCloud(); // si està activat i quan es va fer l'última còpia: igual a tots els ordinadors
+  if (CLOUD && FB && USER && ('on' in o || 'last' in o || 'ask' in o)) bkCloud(); // si està activat i quan es va fer l'última còpia: igual a tots els ordinadors
   return s; };
 // Desa al núvol l'estat de les còpies, amb la contrasenya (primer es llegeix, per no esborrar-la mai)
 function bkCloud() { const u = USER.email; bkPw().then(pw => { if (!USER || USER.email !== u || !BKPW.ok) return; const s = bkGet(); // si no s'ha pogut llegir el núvol, no s'hi escriu (es podria esborrar la contrasenya)
-  return FB.set('bkkeys/' + u, Object.assign({ pw: pw || '', at: s.pwAt || Date.now() }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {})); }).catch(e => console.warn(e)); }
+  return FB.set('bkkeys/' + u, Object.assign({ pw: pw || '', at: s.pwAt || Date.now() }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {}, s.ask ? { ask: s.ask, askAt: s.askAt || 0 } : {})); }).catch(e => console.warn(e)); }
 const bkDue = () => { const s = bkGet(); return s.on === true && Date.now() - (s.last || 0) >= BK_DAYS * 864e5 && Date.now() > (s.snooze || 0); };
 let DRVTOK = null, BK_RUN = null, BK_ASKED = false;
+const BK_ASK_GAP = 8 * 36e5; // el segon avís surt com a mínim 8 hores després del primer (una altra entrada, no una recàrrega)
 // Permís de Drive guardat (dura uns 50 minuts)
 function drvTok() {
   if (DRVTOK && DRVTOK.u === USER.email && DRVTOK.exp > Date.now()) return DRVTOK.t;
@@ -5534,9 +5550,10 @@ async function bkPw() {
     if (d && typeof d.pw === 'string') { if (d.pw) pw = d.pw; const o = { pw, pwAt: d.at };
       if (typeof d.on === 'boolean') { o.on = d.on; o.seen = true; } // activat (o descartat) en un altre ordinador o navegador
       if ((d.last || 0) > (l.last || 0)) { o.last = d.last; o.n = d.n; } // l'última còpia es pot haver fet en un altre ordinador
+      if ((d.ask || 0) > (l.ask || 0)) { o.ask = d.ask; o.askAt = d.askAt || 0; } // l'avís de les còpies ja ha sortit en un altre ordinador
       try { localStorage.setItem(bkKey(), JSON.stringify(Object.assign(l, o))); } catch (e) {}
-      up = (typeof l.on === 'boolean' && typeof d.on !== 'boolean') || (l.last || 0) > (d.last || 0) || (!d.pw && pw); }
-    else up = !!(pw || typeof l.on === 'boolean'); } catch (e) {}
+      up = (typeof l.on === 'boolean' && typeof d.on !== 'boolean') || (l.last || 0) > (d.last || 0) || (l.ask || 0) > (d.ask || 0) || (!d.pw && pw); }
+    else up = !!(pw || typeof l.on === 'boolean' || l.ask); } catch (e) {}
   BKPW = { u: USER.email, pw, ok };
   if (up) bkCloud(); // aquest navegador sabia més coses que el núvol: s'hi desen
   return pw;
@@ -5544,7 +5561,7 @@ async function bkPw() {
 async function bkPwSet(pw) {
   bkSet({ pw }); BKPW = { u: USER.email, pw };
   const s = bkSet({ pwAt: Date.now() });
-  try { await FB.set('bkkeys/' + USER.email, Object.assign({ pw, at: s.pwAt }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {})); return true; } catch (e) { console.warn(e); return false; }
+  try { await FB.set('bkkeys/' + USER.email, Object.assign({ pw, at: s.pwAt }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {}, s.ask ? { ask: s.ask, askAt: s.askAt || 0 } : {})); return true; } catch (e) { console.warn(e); return false; }
 }
 // Prepara l'arxiu de la còpia: xifrat si hi ha contrasenya
 async function bkPack(data) { const pw = await bkPw(); return pw ? bkEnc(data, pw) : data; }
@@ -5625,29 +5642,37 @@ function bkHome(v, prof) {
   if (!prof || !USER) return;
   if (CLOUD && !(BKPW && BKPW.u === USER.email)) { bkPw().then(() => { if (USER && $('#view') === v && v.isConnected) bkHome(v, prof); }); return; } // primer, què diu el núvol
   const s = bkGet();
-  if (s.seen === undefined && !BK_ASKED) { BK_ASKED = true;
-    bkPw().then(pw => bkDialog(`<div class="bkic">${ico('<path d="M7 18a5 5 0 0 1-.5-10 6 6 0 0 1 11.5 1.5A4.3 4.3 0 0 1 17 18z"/><path d="M12 11v6M9.5 13.5 12 11l2.5 2.5"/>')}</div>
-      <b>Còpies de seguretat al teu Google Drive</b>
-      <p>Pots guardar una còpia de tots els teus grups (equips, feina de l'alumnat, revisions i notes) al teu Google Drive. Si mai passés res, podries recuperar les dades des d'aquí.</p>
-      <p>Si l'actives, es fa una còpia <b>cada setmana</b> quan entres a l'eina, i també en pots fer quan vulguis des de «Còpies de seguretat». L'eina només veu la seva carpeta de còpies, no la resta del teu Drive.</p>
-      ${pw ? '' : `<div class="bkpwbox"><label for="bkPwNew"><b>Abans d'activar-les, crea una contrasenya</b></label><p class="small muted">Les còpies es desen xifrades amb aquesta contrasenya i es demana per recuperar-les. La podràs consultar sempre a «Còpies de seguretat».</p>
+  // Qui no té les còpies activades veu l'avís dues vegades com a molt: la primera vegada que entra i la següent (un altre moment, no en tornar a carregar la pàgina)
+  const asks = typeof s.ask === 'number' ? s.ask : s.seen ? 1 : 0, last = asks >= 1;
+  if (s.on !== true && !BK_ASKED && asks < 2 && (asks === 0 || Date.now() - (s.askAt || 0) > BK_ASK_GAP)) { BK_ASKED = true;
+    const nG = v.querySelectorAll('.gcard').length;
+    bkPw().then(pw => { bkSet({ ask: asks + 1, askAt: Date.now() }); bkDialog(`<div class="bkhd"><div class="bkic">${ico('<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>')}</div>
+        <div><span class="bktag">${last ? 'Recordatori · encara no tens cap còpia' : 'Funció de l\'eina · no són galetes'}</span><b>Protegeix la feina dels teus grups</b></div></div>
+      <p>${nG ? `Ara mateix tens <b>${nG} ${nG === 1 ? 'grup' : 'grups'}</b> sense cap còpia de seguretat.` : 'Encara no tens cap còpia de seguretat dels teus grups.'} Si un dia s'esborra alguna cosa per error, <b>la feina de l'alumnat, les revisions i les notes no es podrien recuperar</b>.</p>
+      <ul class="bkpts"><li>${ico('<path d="M7 18a5 5 0 0 1-.5-10 6 6 0 0 1 11.5 1.5A4.3 4.3 0 0 1 17 18z"/>')}<span>Es desa una còpia al <b>teu</b> Google Drive, <b>cada setmana</b> i sense fer res.</span></li>
+        <li>${ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>')}<span>Va xifrada amb una contrasenya teva. L'eina només veu la seva carpeta, no la resta del Drive.</span></li>
+        <li>${ico('<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>')}<span>Si mai cal, recuperes els grups amb un clic des de «Còpies de seguretat».</span></li></ul>
+      ${pw ? '' : `<div class="bkpwbox"><label for="bkPwNew"><b>Crea una contrasenya per a les còpies</b></label><p class="small muted">Es demana per recuperar-les. La podràs consultar sempre a «Còpies de seguretat».</p>
         <div class="row"><input type="password" class="bkpw" id="bkPwNew" placeholder="Contrasenya (6 caràcters o més)" autocomplete="new-password"><button type="button" class="btn ghost small" data-bkpwshow>Mostrar</button></div></div>`}
-      <div class="bkmsg"></div><div class="row"><button type="button" class="btn" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkpc>Descarregar a l'ordinador</button><button type="button" class="btn ghost" data-bkclose>Ara no</button></div>`,
+      <div class="bkmsg"></div><div class="bkbtns"><button type="button" class="btn bkgo" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkpc>Descarregar ara a l'ordinador</button></div>
+      <div class="bkno"><button type="button" class="linkbtn small" data-bkclose>${last ? 'No vull còpies de seguretat' : 'Ara no, recorda-m\'ho un altre dia'}</button>${last ? '<span class="small muted">No t\'ho tornarem a preguntar. Ho pots activar quan vulguis a «Còpies de seguretat».</span>' : ''}</div>`,
       (o, close) => {
+        o.classList.add('bkask');
+        o.onclick = e => { if (e.target.closest('[data-bkclose]')) close(); }; // un clic fora de la finestra no la tanca: cal triar una opció
         const f = o.querySelector('#bkPwNew'), sh = o.querySelector('[data-bkpwshow]');
         if (sh) sh.onclick = () => { const on = f.type === 'password'; f.type = on ? 'text' : 'password'; sh.textContent = on ? 'Amagar' : 'Mostrar'; };
         // Sense contrasenya creada no es fa cap còpia: primer cal escriure-la
         const pwOk = () => { if (!f) return true; const val = f.value.trim();
           if (val.length < 6 || val.length > 100) { o.querySelector('.bkmsg').innerHTML = '<div class="notice">Escriu primer una contrasenya de 6 caràcters o més.</div>'; f.focus(); return false; }
           bkPwSet(val); return true; };
-        o.querySelector('[data-bkclose]').addEventListener('click', () => { bkSet({ seen: true, on: false }); toast('D\'acord. Ho pots activar quan vulguis a «Còpies de seguretat».'); });
+        o.querySelector('[data-bkclose]').addEventListener('click', () => { toast(last ? 'D\'acord. Ho pots activar quan vulguis a «Còpies de seguretat».' : 'D\'acord. T\'ho tornarem a recordar la propera vegada que entris.'); });
         o.querySelector('[data-bkpc]').onclick = e => { if (pwOk()) bkPcBtn(e.target, o.querySelector('.bkmsg')); };
         o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); if (!pwOk()) return; b.disabled = true;
           try { await drvConnect(); bkSet({ seen: true, on: true }); b.innerHTML = '<span class="spin"></span> Fent la primera còpia...'; await bkRun(false); close(); toast('Fet! La primera còpia ja és al teu Google Drive.'); }
           catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Activar les còpies'; m.innerHTML = `<div class="notice">${esc(bkErr(err))}</div>`; } };
       },
-      // Es tanqui com es tanqui (fora de la finestra, Esc, després de descarregar...), l'avís ja no torna a sortir
-      () => { if (bkGet().seen === undefined) bkSet({ seen: true, on: false }); }));
+      // Es tanqui com es tanqui sense activar-les, queden desactivades (i l'avís surt un cop més, si era la primera vegada)
+      () => { if (bkGet().on !== true) bkSet({ seen: true, on: false }); }); });
     return;
   }
   // Còpies activades però encara sense contrasenya: es demana abans de fer-ne cap més
