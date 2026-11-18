@@ -5459,7 +5459,7 @@ function bkCloud() { const u = USER.email; bkPw().then(pw => { if (!USER || USER
   return FB.set('bkkeys/' + u, Object.assign({ pw: pw || '', at: s.pwAt || Date.now() }, typeof s.on === 'boolean' ? { on: s.on } : {}, s.last ? { last: s.last } : {}, s.n ? { n: s.n } : {}, s.ask ? { ask: s.ask, askAt: s.askAt || 0 } : {})); }).catch(e => console.warn(e)); }
 const bkDue = () => { const s = bkGet(); return s.on === true && Date.now() - (s.last || 0) >= BK_DAYS * 864e5 && Date.now() > (s.snooze || 0); };
 let DRVTOK = null, BK_RUN = null, BK_ASKED = false;
-const BK_ASK_GAP = 8 * 36e5; // el segon avís surt com a mínim 8 hores després del primer (una altra entrada, no una recàrrega)
+const BK_ASK_GAP = 8 * 36e5, BK_ASK_MONTH = 30 * 864e5; // el segon avís surt com a mínim 8 hores després del primer (una altra entrada, no una recàrrega); després, un cop al mes
 // Permís de Drive guardat (dura uns 50 minuts)
 function drvTok() {
   if (DRVTOK && DRVTOK.u === USER.email && DRVTOK.exp > Date.now()) return DRVTOK.t;
@@ -5642,9 +5642,9 @@ function bkHome(v, prof) {
   if (!prof || !USER) return;
   if (CLOUD && !(BKPW && BKPW.u === USER.email)) { bkPw().then(() => { if (USER && $('#view') === v && v.isConnected) bkHome(v, prof); }); return; } // primer, què diu el núvol
   const s = bkGet();
-  // Qui no té les còpies activades veu l'avís dues vegades com a molt: la primera vegada que entra i la següent (un altre moment, no en tornar a carregar la pàgina)
+  // Qui no té les còpies activades veu l'avís en entrar la primera vegada, a la següent entrada (un altre moment, no en tornar a carregar la pàgina) i després un cop al mes
   const asks = typeof s.ask === 'number' ? s.ask : s.seen ? 1 : 0, last = asks >= 1;
-  if (s.on !== true && !BK_ASKED && asks < 2 && (asks === 0 || Date.now() - (s.askAt || 0) > BK_ASK_GAP)) { BK_ASKED = true;
+  if (s.on !== true && !BK_ASKED && (asks === 0 || Date.now() - (s.askAt || 0) > (asks < 2 ? BK_ASK_GAP : BK_ASK_MONTH))) { BK_ASKED = true;
     const nG = v.querySelectorAll('.gcard').length;
     bkPw().then(pw => { bkSet({ ask: asks + 1, askAt: Date.now() }); bkDialog(`<div class="bkhd"><div class="bkic">${ico('<path d="M12 3 4 6v6c0 4.5 3.4 8.3 8 9 4.6-.7 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>')}</div>
         <div><span class="bktag">${last ? 'Recordatori · encara no tens cap còpia' : 'Funció de l\'eina · no són galetes'}</span><b>Protegeix la feina dels teus grups</b></div></div>
@@ -5655,7 +5655,7 @@ function bkHome(v, prof) {
       ${pw ? '' : `<div class="bkpwbox"><label for="bkPwNew"><b>Crea una contrasenya per a les còpies</b></label><p class="small muted">Es demana per recuperar-les. La podràs consultar sempre a «Còpies de seguretat».</p>
         <div class="row"><input type="password" class="bkpw" id="bkPwNew" placeholder="Contrasenya (6 caràcters o més)" autocomplete="new-password"><button type="button" class="btn ghost small" data-bkpwshow>Mostrar</button></div></div>`}
       <div class="bkmsg"></div><div class="bkbtns"><button type="button" class="btn bkgo" data-bkon>Activar les còpies</button><button type="button" class="btn ghost" data-bkpc>Descarregar ara a l'ordinador</button></div>
-      <div class="bkno"><button type="button" class="linkbtn small" data-bkclose>${last ? 'No vull còpies de seguretat' : 'Ara no, recorda-m\'ho un altre dia'}</button>${last ? '<span class="small muted">No t\'ho tornarem a preguntar. Ho pots activar quan vulguis a «Còpies de seguretat».</span>' : ''}</div>`,
+      <div class="bkno"><button type="button" class="linkbtn small" data-bkclose>${last ? 'Ara no' : 'Ara no, recorda-m\'ho un altre dia'}</button>${last ? '<span class="small muted">T\'ho tornarem a recordar d\'aquí a un mes. Ho pots activar quan vulguis a «Còpies de seguretat».</span>' : ''}</div>`,
       (o, close) => {
         o.classList.add('bkask');
         o.onclick = e => { if (e.target.closest('[data-bkclose]')) close(); }; // un clic fora de la finestra no la tanca: cal triar una opció
@@ -5665,13 +5665,13 @@ function bkHome(v, prof) {
         const pwOk = () => { if (!f) return true; const val = f.value.trim();
           if (val.length < 6 || val.length > 100) { o.querySelector('.bkmsg').innerHTML = '<div class="notice">Escriu primer una contrasenya de 6 caràcters o més.</div>'; f.focus(); return false; }
           bkPwSet(val); return true; };
-        o.querySelector('[data-bkclose]').addEventListener('click', () => { toast(last ? 'D\'acord. Ho pots activar quan vulguis a «Còpies de seguretat».' : 'D\'acord. T\'ho tornarem a recordar la propera vegada que entris.'); });
+        o.querySelector('[data-bkclose]').addEventListener('click', () => { toast(last ? 'D\'acord. T\'ho recordarem d\'aquí a un mes.' : 'D\'acord. T\'ho tornarem a recordar la propera vegada que entris.'); });
         o.querySelector('[data-bkpc]').onclick = e => { if (pwOk()) bkPcBtn(e.target, o.querySelector('.bkmsg')); };
         o.querySelector('[data-bkon]').onclick = async e => { const b = e.target, m = o.querySelector('.bkmsg'); if (!pwOk()) return; b.disabled = true;
           try { await drvConnect(); bkSet({ seen: true, on: true }); b.innerHTML = '<span class="spin"></span> Fent la primera còpia...'; await bkRun(false); close(); toast('Fet! La primera còpia ja és al teu Google Drive.'); }
           catch (err) { console.warn(err); b.disabled = false; b.textContent = 'Activar les còpies'; m.innerHTML = `<div class="notice">${esc(bkErr(err))}</div>`; } };
       },
-      // Es tanqui com es tanqui sense activar-les, queden desactivades (i l'avís surt un cop més, si era la primera vegada)
+      // Es tanqui com es tanqui sense activar-les, queden desactivades (i l'avís tornarà a sortir més endavant)
       () => { if (bkGet().on !== true) bkSet({ seen: true, on: false }); }); });
     return;
   }
