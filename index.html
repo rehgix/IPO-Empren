@@ -1579,6 +1579,112 @@ body.has-rail .panel{margin-left:88px}
 .btn.glink{background:var(--accent-soft,#fff6e6);border-color:color-mix(in srgb,var(--accent) 45%,transparent);color:var(--accent-ink,#b45309)}
 .btn.glink svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
+/* ========== Redisseny (novembre 2026): aspecte més net i actual. Va al final perquè mani sobre les capes anteriors ========== */
+:root{--page:#F5F3EF;--line:#E9E5DE;--soft:#F4F1EC;--track:#ECE8E1;--muted:#6B655C}
+body{background:var(--page)}
+:is(.grpbar,.stm,.list,.stat,.iprog,.istats,.gcard,.sheet,.rtab,.rcard,.snums div){box-shadow:0 1px 2px rgba(40,30,20,.04)}
+/* Menú lateral: més ample, amb el nom de cada secció al costat de la icona */
+.rbrand{display:flex;align-items:center;gap:10px;padding:4px 10px 18px;font:700 18px var(--font);letter-spacing:-.02em;color:var(--ink);text-decoration:none;white-space:nowrap}
+.rbrand .logo{width:34px;height:38px;flex:none}
+.rsec{padding:4px 12px 6px;font-size:11px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:#A29C92}
+body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:var(--line)}
+.ttabs button{flex-direction:row;justify-content:flex-start;gap:12px;padding:10px 12px;border-radius:11px;font:500 14.5px/1.2 var(--font);color:#57524A;text-align:left}
+.ttabs button:hover{background:var(--soft);color:var(--ink)}
+.ttabs button[aria-selected="true"]{background:#FFF1E3;color:#C4510A;font-weight:650}
+.ttabs .nic svg{width:19px;height:19px}
+.ttabs .ncount{position:static;margin-left:auto}
+@media (min-width:861px){body.has-rail .panel{margin-left:224px}body.has-rail .tbrand{display:none}}
+/* Capçalera: botons més discrets */
+.tback,.tchip{border-radius:11px;box-shadow:none}
+#tbRole .rseg{background:#ECE8E1;box-shadow:none;border-radius:12px;padding:3px}
+#tbRole .rseg button{border-radius:9px;color:#6B655C}
+#tbRole .rseg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+#tbRole select{border-radius:11px}
+/* Franja del grup: etiquetes petites en lloc d'una caixa */
+.grpbar{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:8px;font-size:13px}
+.grpbar .gb-s{gap:8px;align-items:center}
+.grpbar .gb-n,.grpbar .gb-i{background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 12px}
+.notice.info{border-radius:12px;box-shadow:none}
+/* Seguiment: títol lleuger (sense el bloc negre) */
+.shead{display:block}
+.sttl{background:none;color:var(--ink);padding:0;min-height:0;border-radius:0;gap:2px;margin:0 0 16px;border:0}
+.sttl p{font-size:13.5px;color:var(--muted)}
+.sttl h1{font-size:34px!important;line-height:1.1;letter-spacing:-.03em}
+/* Les quatre xifres: icona, número i una dada més */
+.snums{grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.snums div{background:#fff;border:1px solid var(--line);border-radius:18px;padding:16px 18px;justify-content:flex-start;gap:4px}
+.snums [data-sn]:hover{transform:none;border-color:#DCD5CA}
+.snh{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:600;color:var(--muted)}
+.sni{width:30px;height:30px;flex:none;border-radius:9px;background:var(--soft);display:grid;place-items:center}
+.sni svg{width:16px;height:16px;fill:none;stroke:#57524A;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.snums b{font-size:32px!important;margin-top:2px}
+.snums small{font-size:12.5px}
+.snbar{display:block;height:6px;margin-top:10px;border-radius:9px;background:var(--track);overflow:hidden}
+.snbar span{display:block;height:100%;border-radius:9px;background:var(--pri)}
+.snums .hot{background:#FFFAF4;border:1.5px solid #F6A24A}
+.snums .hot b{color:var(--ink)}
+.snums .hot .sni{background:#FFE6CC}.snums .hot .sni svg{stroke:#C4510A}
+.snums .hot small{color:#C4510A;font-weight:600}
+/* Llista d'equips: una sola targeta amb títols de columna */
+.slist{gap:0;background:#fff;border:1px solid var(--line);border-radius:18px;overflow:hidden}
+.slist > .notice{margin:12px}
+.srow + .srow{border-top:1px solid #F0ECE6}
+.slist .stm,.shd{grid-template-columns:minmax(190px,1.3fr) minmax(160px,1.5fr) 64px minmax(130px,.9fr) minmax(140px,1fr);gap:8px 20px}
+.slist .stm{border:0!important;border-radius:0;box-shadow:none!important;padding:14px 60px 14px 20px}
+.slist .stm:hover{background:#FCFBF9;box-shadow:none}
+.shd{display:grid;align-items:center;height:38px;padding:0 60px 0 20px;border-bottom:1px solid #F0ECE6;font-size:11px;font-weight:650;letter-spacing:.06em;text-transform:uppercase;color:#A29C92;white-space:nowrap}
+.shd span{overflow:hidden;text-overflow:ellipsis}
+.ssq{width:40px;height:40px;border-radius:12px;font-size:14px}
+.swho{gap:12px}
+.swho b{font-size:15.5px}
+.swho .smem{display:flex;flex-wrap:wrap;gap:0 4px;margin-top:2px;font-size:12.5px}
+.swho .smem span:not(:last-child)::after{content:","}
+.spc{font-size:20px}
+.sseg{gap:3px}
+.sseg i{height:8px;border-radius:3px;background:linear-gradient(90deg,var(--pri) var(--p),var(--track) var(--p))}
+.sseg i.x{height:8px;border:1.5px dashed #D9D3C9;background:none}
+.sseg .sb svg,.sleg svg{stroke:#A29C92}
+.bst{border-radius:7px;font-size:12px;padding:3px 8px}
+.snx{font-size:14px}
+.sedit{top:22px;right:14px;width:34px;height:34px;padding:0;display:grid;place-items:center;border:0;border-radius:10px;background:none;color:#A29C92}
+.sedit:hover{background:var(--soft);color:var(--ink);box-shadow:none}
+.sedit svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+@container (max-width:860px){
+  .slist .stm{grid-template-columns:minmax(0,1fr) auto}
+  .shd{display:none}
+}
+@media (max-width:980px){.snums{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.srow .stm,.slist .stm{padding:14px 52px 14px 16px}.sedit{top:14px;right:10px}.sttl h1{font-size:28px!important}.snums b{font-size:26px!important}}
+/* Tauler: targetes de grup amb el seu color, l'emoji en un requadre i un sol botó principal */
+.glist{grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
+.gcard{display:flex;flex-direction:column;gap:0;padding:18px;border-radius:20px;border:1px solid var(--line)!important}
+.gcard.has-col{background:color-mix(in srgb,var(--gcol) 11%,#fff);border-color:color-mix(in srgb,var(--gcol) 24%,#fff)!important}
+.gcard:hover{box-shadow:0 10px 28px -14px rgba(40,30,20,.3)}
+.gcard.has-col .gbar{background:color-mix(in srgb,var(--gcol) 20%,#fff)}
+.ghd{display:flex;align-items:center;gap:12px}
+.gemoji{position:static;flex:none;width:46px;height:46px;border-radius:13px;background:#fff;display:grid;place-items:center;font-size:24px;font-weight:700;color:var(--ink);box-shadow:0 1px 2px rgba(40,30,20,.08)}
+.gnm{flex:1;min-width:0;display:grid}
+.gcard .gtitle,.gcard .gmeta{padding-right:0}
+.gcard .gtitle b{font-size:16.5px;letter-spacing:-.015em;overflow-wrap:anywhere}
+.gstats{margin-top:16px}
+.gbar{height:6px;margin-top:10px}
+.gbar{margin-bottom:14px}
+.gact{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:12px;border-top:1px solid color-mix(in srgb,var(--gcol,#A29C92) 22%,transparent)}
+.glink2{display:inline-flex;align-items:center;gap:6px;margin-left:-8px;padding:7px 8px;border:0;border-radius:9px;background:none;font:600 13px var(--font);color:#57524A;cursor:pointer}
+.glink2:hover{background:rgba(255,255,255,.75);color:var(--ink)}
+.glink2 svg,.gmenu svg,.gmore svg{width:15px;height:15px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.gcard .gopen{background:#1F1D1A;border-color:#1F1D1A;color:#fff;border-radius:10px;padding:7px 14px;font-size:13.5px;gap:6px}
+.gcard .gopen:hover{background:#3A3631;border-color:#3A3631}
+.gmw{position:relative;align-self:flex-start}
+.gmore{width:32px;height:32px;display:grid;place-items:center;border:0;border-radius:9px;background:none;color:#8A847B;cursor:pointer}
+.gmore svg{width:18px;height:18px;stroke-width:2.6}
+.gmore:hover,.gmore[aria-expanded="true"]{background:rgba(255,255,255,.8);color:var(--ink)}
+.gmenu{position:absolute;top:36px;right:0;z-index:20;display:grid;min-width:150px;padding:5px;background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 32px -12px rgba(30,20,10,.28)}
+.gmenu[hidden]{display:none}
+.gmenu button{display:flex;align-items:center;gap:9px;padding:8px 10px;border:0;border-radius:8px;background:none;font:500 14px var(--font);color:var(--ink);text-align:left;cursor:pointer}
+.gmenu button:hover{background:var(--soft)}
+.gmenu .danger{color:var(--bad)}
+[data-gdelbox]:not(:empty){margin-top:12px}
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -2085,7 +2191,7 @@ $('#topHead').addEventListener('click', e => {
 $('#tbBrand').onclick = e => { e.preventDefault(); goHome(); };
 $('#railBtn').onclick = () => railSet(!document.body.classList.contains('railopen'));
 $('#railBack').onclick = () => railSet(false);
-$('#tbTabs').addEventListener('click', e => { if (e.target.closest('[data-ptab]')) railSet(false); });
+$('#tbTabs').addEventListener('click', e => { if (e.target.closest('[data-ptab]')) railSet(false); if (e.target.closest('.rbrand')) { e.preventDefault(); railSet(false); goHome(); } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('railopen')) railSet(false); });
 $('#tbRole').appendChild(document.querySelector('.role'));
 // Historial del navegador: cada canvi de pàgina dins del grup es desa, i «Enrere» torna a la pàgina anterior (no a la llista de grups)
@@ -2221,6 +2327,8 @@ function segBtnUpdate() {
 /* ---------- Capçalera del professorat: pestanyes de dalt (substitueixen el menú lateral) ---------- */
 const isProfUser = () => !CLOUD || !!(ME && ME.isProf);
 const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Avaluar'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
+// Capçalera del menú lateral: logo (porta a l'inici) i nom de la secció
+const railHead = l => `<a class="rbrand" href="#" title="Anar a l'inici"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</a><span class="rsec">${l}</span>`;
 const tabBtn = (k, l, on, n, sh) => `<button type="button" data-ptab="${k}" aria-selected="${on}" title="${esc(l)}" aria-label="${esc(l)}">${nic(k)}<span class="tl">${sh || l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
 // Menú lateral (barra d'icones amb nom): en pantalles petites s'obre amb el botó de dalt a l'esquerra
 const railSet = on => { document.body.classList.toggle('railopen', on); const b = $('#railBtn'); b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', on ? 'Tancar el menú' : 'Obrir el menú'); };
@@ -2231,14 +2339,14 @@ function topGroup() {
   $('#topHead').hidden = false; document.body.classList.add('has-top'); document.body.classList.toggle('has-rail', role === 'prof'); $('#tbRole').hidden = false;
   const cur = tab === 'rubriques' ? 'guia' : tab, pr = role === 'prof';
   $('#tbGrp').innerHTML = grpBar();
-  $('#tbTabs').innerHTML = PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
+  $('#tbTabs').innerHTML = railHead('Docent') + PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
   $('#tbSub').innerHTML = pr && cur === 'guia' ? `<div class="tsub" role="group" aria-label="Guia i rúbriques">${[['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques']].map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>` : '';
 }
 // Pestanyes del tauler (fora d'un grup)
 function topHome(cur) {
   const h = HOME || {}, prof = h.ok || h.groups;
   document.body.classList.add('noside', 'has-top', 'has-rail'); $('#topHead').hidden = false; $('#tbRole').hidden = true; $('#tbGrp').innerHTML = $('#tbSub').innerHTML = '';
-  $('#tbTabs').innerHTML = [tabBtn('grups', 'Els meus grups', cur === 'grups', 0, 'Grups'), isAdmin() ? tabBtn('admin', 'Panell d\'administrador', cur === 'admin', h.nReq, 'Admin') : '', prof ? tabBtn('copies', 'Còpies de seguretat', cur === 'copies', 0, 'Còpies') : '', tabBtn('config', 'Configuració', cur === 'config', 0, 'Configuració')].join('');
+  $('#tbTabs').innerHTML = railHead('General') + [tabBtn('grups', 'Els meus grups', cur === 'grups', 0, 'Grups'), isAdmin() ? tabBtn('admin', 'Panell d\'administrador', cur === 'admin', h.nReq, 'Admin') : '', prof ? tabBtn('copies', 'Còpies de seguretat', cur === 'copies', 0, 'Còpies') : '', tabBtn('config', 'Configuració', cur === 'config', 0, 'Configuració')].join('');
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
 function grpBar() {
@@ -5729,7 +5837,7 @@ const gcolHex = k => { const c = GCOLS.find(x => x.k === k && x.h); return c ? c
 const gcolsHtml = cur => `<div class="gcols" role="radiogroup" aria-label="Color del grup">${GCOLS.map(c => `<button type="button" class="gcol${c.k === (cur || '') ? ' on' : ''}" role="radio" aria-checked="${c.k === (cur || '')}" data-col="${c.k}" title="${c.n}" aria-label="${c.n}" style="${c.h ? 'background:' + c.h : ''}"></button>`).join('')}</div>`;
 const bindGcols = root => root.querySelectorAll('.gcol').forEach(b => b.onclick = () => root.querySelectorAll('.gcol').forEach(x => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on); }));
 const pickedGcol = root => { const b = root.querySelector('.gcol.on'); return b ? b.dataset.col : ''; };
-// Emoji del grup (surt gran a la dreta de la targeta). Se'n tria un de la llista o s'escriu el que es vulgui
+// Emoji del grup (surt al costat del nom, a la targeta). Se'n tria un de la llista o s'escriu el que es vulgui
 const GEMOJIS = ['⚡', '🔌', '💡', '🔧', '🛠️', '⚙️', '🤖', '🚗', '🏍️', '🚆', '⛵', '⚗️', '🎮', '🌐', '🏭', '🔬', '🧪', '🧬', '🏥', '💊', '💻', '📊', '💼', '🏦', '🧾', '📱', '🎨', '🍳', '🌱', '☀️', '🏗️', '🚀', '🎯', '🌟'];
 // Emoji suggerit segons el nom del cicle (es pot canviar). L'ordre compta: «elèctriques i automàtiques» → ⚡
 const GEMO_CIC = [[/mecanitz/, '🔩'], [/electr(ic|iq)/, '⚡'], [/robot|automatitz/, '🤖'], [/motocicl/, '🏍️'], [/ferrovi/, '🚆'], [/carrosser|automoci|vehicle/, '🚗'], [/farmac|biotec/, '🧪'], [/laborat/, '🔬'], [/quimic/, '⚗️'], [/mecatron|electromec/, '⚙️'], [/fabricaci|cad\b|mecanic/, '🏭'], [/administr|gestio|financ/, '💼'], [/obres|edific|projectes|construc/, '🏗️'], [/embarcac|nautic/, '⛵'], [/rehabilit|manteniment/, '🔧'], [/videojoc/, '🎮'], [/web\b|pagines web/, '🌐'], [/disseny|comunicaci/, '🎨'], [/\bapps?\b|mobil/, '📱'], [/informat|sistemes|xarx|program/, '💻'], [/sanit|salut|cura/, '🏥'], [/comer|vend|marqueting/, '📊']];
@@ -5864,18 +5972,19 @@ async function homeView(msg, d) {
     ${listErr ? `<div class="notice">No s'han pogut carregar els grups. <span class="small muted">Codi: ${esc(listErr)}</span></div>` : ''}
     ${gs.length || ok ? `<div class="hsecrow"><h3 class="hsec">Els teus grups</h3>${ok ? `<button type="button" class="btn small" id="ngOpen">${ico('<path d="M12 5v14M5 12h14"/>')}<span>Afegir un grup nou</span></button>` : ''}</div>` : ''}
     ${gs.length ? `<div class="glist">${gs.map(g => { const gc = gcolHex((P(g.cfg) || {}).color); return `<div class="gcard${gc ? ' has-col' : ''}" data-gid="${esc(g.id)}"${gc ? ` style="--gcol:${gc}"` : ''}>
-        ${gemoOf(P(g.cfg) || {}) ? `<span class="gemoji" aria-hidden="true">${esc(gemoOf(P(g.cfg) || {}))}</span>` : ''}<a class="gtitle" href="#g=${esc(g.id)}">${gc ? '<span class="gdot" aria-hidden="true"></span>' : ''}<b>${esc(g.name)}</b></a>
-        <span class="small muted">Curs ${esc(g.course || '')}</span>
+        <div class="ghd"><span class="gemoji" aria-hidden="true">${esc(gemoOf(P(g.cfg) || {}) || (g.name || '?').trim().charAt(0).toUpperCase())}</span><div class="gnm"><a class="gtitle" href="#g=${esc(g.id)}"><b>${esc(g.name)}</b></a><span class="small muted">Curs ${esc(g.course || '')}</span></div>
+          <div class="gmw"><button type="button" class="gmore" data-gmenu aria-haspopup="true" aria-expanded="false" aria-label="Més opcions del grup ${esc(g.name)}" title="Més opcions">${ico('<circle cx="5" cy="12" r="1.3"/><circle cx="12" cy="12" r="1.3"/><circle cx="19" cy="12" r="1.3"/>')}</button>
+          <div class="gmenu" role="menu" hidden><button type="button" role="menuitem" data-gedit="${esc(g.id)}">${ico('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')}Editar</button><button type="button" role="menuitem" class="danger" data-gdel="${esc(g.id)}">${ico('<path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/>')}Esborrar</button></div></div></div>
         <div class="gstats"><span><b>${(g.teamList || []).length}</b> equips</span><span><b data-st="alum">${ST[g.id] ? ST[g.id].alum : '…'}</b> alumnes</span><span><b data-st="prog">${ST[g.id] ? ST[g.id].p + ' %' : '…'}</b> completat</span></div>
         <div class="gbar"><span data-st="bar" style="width:${ST[g.id] ? ST[g.id].p : 0}%"></span></div>
-        <div class="row gact"><a class="btn small" href="#g=${esc(g.id)}">Obrir</a><button type="button" class="btn small glink" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç per a l'alumnat</span></button><button type="button" class="btn ghost small" data-gedit="${esc(g.id)}">Editar</button><button type="button" class="btn ghost small" data-gdel="${esc(g.id)}">Esborrar</button></div>
+        <div class="gact"><button type="button" class="glink2" data-gcopy="${esc(g.id)}" title="Copia l'enllaç que has de donar a l'alumnat per entrar en aquest grup">${ico('<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>')}<span>Copiar l'enllaç</span></button><a class="btn small gopen" href="#g=${esc(g.id)}">Obrir<span aria-hidden="true">→</span></a></div>
         <div data-gdelbox></div></div>`; }).join('')}</div>` + guide : (ok ? '<p class="muted">Encara no tens cap grup. Crea\'n un amb el botó «Afegir un grup nou».</p>' : '') + guide}
     ${!ok ? reqCard(req) : ''}`;
   // Finestra per crear un grup nou
   const ngForm = `<b>Crear un grup nou</b><div class="pfield"><label for="ngName">Nom del grup</label><input type="text" id="ngName" maxlength="100" required placeholder="IPO II · 2n CFGM Instal·lacions elèctriques"></div>
       <div class="pfield"><label for="ngSector">Cicle del grup</label><div class="help">Les pistes, els costos orientatius i els préstecs dels bancs s'adapten al cicle. Cada equip hi pot muntar l'empresa que vulgui.</div><select class="field-sel" id="ngSector">${secGroups(sectors[0][0])}</select></div>
       <div class="pfield"><label>Color del grup</label><div class="help">Es veurà a la targeta del tauler. El pots canviar després amb «Editar».</div>${gcolsHtml('taronja')}</div>
-      <div class="pfield"><label>Emoji del grup</label><div class="help">Sortirà gran a la dreta de la targeta. Te'n proposem un segons el cicle; el pots canviar.</div>${gemoHtml('')}</div>
+      <div class="pfield"><label>Emoji del grup</label><div class="help">Sortirà al costat del nom, a la targeta del grup. Te'n proposem un segons el cicle; el pots canviar.</div>${gemoHtml('')}</div>
       <div class="pfield"><label for="ngN">Nombre d'equips</label><input type="number" id="ngN" min="1" max="12" value="5" style="max-width:120px"></div>
       <p class="small muted">El grup comença amb tots els apartats tancats: els obres quan vulguis a «Obertura dels apartats». Les dades del grup s'esborraran automàticament el <b>${fmtDay(nextExpiry())}</b>. Abans, l'eina t'avisarà perquè en descarreguis els informes.</p>
       <div id="ngMsg"></div><div class="row"><button class="btn" id="ngGo">Crear el grup</button><button class="btn ghost" id="ngEx">Crear un grup d'exemple per provar</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
@@ -5914,7 +6023,7 @@ async function homeView(msg, d) {
     const form = `<b>Editar el grup</b>
       <div class="pfield"><label for="geName">Nom del grup</label><input type="text" id="geName" maxlength="100" value="${esc(g.name)}"></div>
       <div class="pfield"><label>Color del grup</label><div class="help">Es veurà a la targeta del tauler.</div>${gcolsHtml(cfg.color)}</div>
-      <div class="pfield"><label>Emoji del grup</label><div class="help">Sortirà gran a la dreta de la targeta.</div>${gemoHtml(gemoOf(cfg))}</div>
+      <div class="pfield"><label>Emoji del grup</label><div class="help">Sortirà al costat del nom, a la targeta del grup.</div>${gemoHtml(gemoOf(cfg))}</div>
       <div class="pfield"><label for="geSector">Cicle del grup</label><div class="help">Si el canvies, també canvia als equips que tenien l'anterior. Els que en tenen un altre el conserven.</div><select class="field-sel" id="geSector">${secGroups(cfg.sector)}</select></div>
       <div class="pfield"><label class="ckrow"><input type="checkbox" id="geJoin" ${g.join !== false ? 'checked' : ''}> Deixar que l'alumnat entri amb l'enllaç del grup</label></div>
       <div id="geMsg"></div><div class="row"><button class="btn" id="geGo">Desar els canvis</button><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button></div>`;
@@ -5931,6 +6040,10 @@ async function homeView(msg, d) {
       } catch (err) { console.warn(err); go.disabled = false; msg.innerHTML = '<div class="notice">No s\'ha pogut desar. Torna-ho a provar.</div>'; } };
     close = bkDialog(form, o => { o.classList.add('ngdlg'); bindGcols(o); bindGemo(o); if (cfg.emoji == null) gemoAuto(o, '#geSector'); $('#geGo').onclick = save; $('#geName').onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); save(); } }; setTimeout(() => $('#geName').focus(), 50); });
   };
+  const gmClose = () => v.querySelectorAll('.gmenu').forEach(m => { m.hidden = true; m.previousElementSibling.setAttribute('aria-expanded', 'false'); });
+  v.querySelectorAll('[data-gmenu]').forEach(b => b.onclick = e => { e.stopPropagation(); const m = b.nextElementSibling, open = m.hidden; gmClose(); m.hidden = !open; b.setAttribute('aria-expanded', String(open)); });
+  v.querySelectorAll('.gmenu button').forEach(b => b.addEventListener('click', gmClose));
+  if (!homeView.gmDoc) { homeView.gmDoc = true; document.addEventListener('click', e => { if (!e.target.closest('.gmw')) document.querySelectorAll('.gmenu').forEach(m => { if (!m.hidden) { m.hidden = true; m.previousElementSibling.setAttribute('aria-expanded', 'false'); } }); }); document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.gmenu').forEach(m => { m.hidden = true; }); }); }
   v.querySelectorAll('[data-gedit]').forEach(b => b.onclick = () => { const g = gs.find(x => x.id === b.dataset.gedit); if (g) gEdit(g); });
   // Tota la targeta és un enllaç al grup (els botons i els camps de dins fan la seva acció)
   v.querySelectorAll('.gcard').forEach(c => c.onclick = e => { if (e.target.closest('button,a,input,select,textarea,label')) return; location.hash = 'g=' + c.dataset.gid; });
@@ -6300,19 +6413,19 @@ function vSeguiment(v) {
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<span class="sb" data-g="${gk}"><i class="x" title="${esc(gl)}: tancat"></i>${ico(GICONS[gk])}</span>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<span class="sb" data-g="${gk}"><i style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>${ico(GICONS[gk])}</span>`; }).join('');
-    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">✎ Editar</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
+    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">${ico('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')}</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}"${rev ? ' data-pill="sent" title="Obrir el primer apartat per revisar"' : ''}>${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}"${mil ? ' data-pill="mil" title="Obrir el primer apartat a millorar"' : ''}>${mil} a millorar</span></span>
       <span class="snx"><small>${nx ? 'Ara han de fer' : 'Apartats oberts'}</small>${nx ? esc(nx.l) : PROG.some(s => access(s.k) === 'open') ? '✓ Tot fet' : 'Cap apartat obert'}<small class="snx-n" title="Nota actual de l'equip amb les notes que ja has posat">Nota: <span>RA4 <b>${f1(raGradeAct(t, 'RA4').nota)}</b></span> · <span>RA5 <b>${f1(raGradeAct(t, 'RA5').nota)}</b></span></small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
-      <div class="snums">${[['equips', nT, 'equips', 'Anar a la llista d\'equips', ''], ['alumnes', nAl, 'alumnes', 'Veure la llista d\'alumnes del grup', ''], ['prog', Math.round(avg * 100) + ' %', 'de mitjana', 'Ordenar els equips de menys a més progrés', ''], ['rev', nRev, 'apartats per revisar', 'Veure tots els apartats per revisar', nRev ? 'hot' : '']].map(([k, n, l, tt, c]) => `<div class="${c}" role="button" tabindex="0" data-sn="${k}" title="${tt}"${k === 'rev' ? ` aria-expanded="${sRev}"` : ''}><b>${n}</b><small>${l}<i aria-hidden="true">→</i></small></div>`).join('')}</div></section>
+      <div class="snums">${[['equips', nT, 'Equips', 'Anar a la llista d\'equips', '', '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>', 'Veure la llista'], ['alumnes', nAl, 'Alumnes', 'Veure la llista d\'alumnes del grup', '', '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6"/>', 'Gestionar l\'alumnat'], ['prog', Math.round(avg * 100) + ' %', 'Progrés mitjà', 'Ordenar els equips de menys a més progrés', '', '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/>', ''], ['rev', nRev, 'Per revisar', 'Veure tots els apartats per revisar', nRev ? 'hot' : '', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', nRev ? 'Revisa-ho ara' : 'Tot revisat']].map(([k, n, l, tt, c, ic, m]) => `<div class="${c}" role="button" tabindex="0" data-sn="${k}" title="${tt}"${k === 'rev' ? ` aria-expanded="${sRev}"` : ''}><span class="snh">${l}<span class="sni">${ico(ic)}</span></span><b>${n}</b>${k === 'prog' ? `<span class="snbar"><span style="width:${Math.round(avg * 100)}%"></span></span>` : `<small>${m}<i aria-hidden="true">→</i></small>`}</div>`).join('')}</div></section>
     ${sRev ? `<div id="sRevBox">${card(`Apartats per revisar · ${nRev}`, pad(pendL.length ? `<p class="small muted">Tots els apartats que els equips han enviat i encara no has revisat, del més antic al més nou. Toca'n un per obrir-lo.</p><div class="pd-l">${pendL.map(x => `<button type="button" class="pd-i" data-pt="${x.ti}" data-pk="${esc(x.k)}"><span class="pd-t"><b>${esc(x.team)}</b> · ${esc(x.l)}</span><span class="pd-d">${x.at ? 'enviat ' + fmtDay(x.at) : ''}</span></button>`).join('')}</div>` : '<p class="muted" style="margin:0">No hi ha cap apartat per revisar. Quan un equip n\'enviï un, sortirà aquí.</p>'))}</div>` : ''}
     ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Vista d\'alumne» a dalt per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     ${G.teams.length ? `<div class="stools"><div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>
       ${nT > 1 ? `<label class="ssort">Ordena per <select class="field-sel" id="sSort">${[['ordre', 'Ordre dels equips'], ['rev', 'Pendents de revisar'], ['prog', 'Menor progrés'], ['alfa', 'Alfabètic']].map(([k, l]) => `<option value="${k}" ${sSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</div>` : ''}
-    <section class="slist">${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
+    <section class="slist">${rows ? `<div class="shd" aria-hidden="true"><span>Equip</span><span>Fases del projecte</span><span>Progrés</span><span>Pendents</span><span>Situació</span></div>` : ''}${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
     <div class="row"><button type="button" class="btn" id="sAdd">+ Afegir un equip</button></div>
-    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada franja de color és un bloc del projecte (la icona de sota et diu quin) i s'omple a mesura que l'equip avança; les ratllades encara estan tancades.</p>`;
+    <p class="small muted">Toca un equip per revisar el projecte i deixar-hi comentaris. Cada tram de la barra és un bloc del projecte (la icona de sota et diu quin) i s'omple a mesura que l'equip avança; les ratllades encara estan tancades.</p>`;
   // Tocar «N per revisar» o «N a millorar» obre directament el primer d'aquests apartats
   v.querySelectorAll('[data-rev]').forEach(b => b.onclick = e => { profTeam = +b.dataset.rev; const t = G.teams[profTeam], p = e.target.closest('[data-pill]');
     const s = p && PROG.find(x => p.dataset.pill === 'mil' ? milPending(t, x) : workState(t, x) === 'sent'); revFilter = 'tots'; revK = s ? s.k : null; go('revisio'); const l = s && $('.rlayout'); if (l) l.scrollIntoView({ block: 'start' }); });
