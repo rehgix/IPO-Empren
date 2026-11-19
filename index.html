@@ -1871,6 +1871,17 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 .reob svg{width:18px;height:18px;flex:none;margin-top:1px;fill:none;stroke:#B45309;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .reob .btn{display:inline-flex;align-items:center;gap:7px;background:var(--ink);color:#fff;border-color:var(--ink);white-space:nowrap}.reob .btn svg{stroke:#fff;margin:0}
 .reob.on{background:#EAF7EF;border-color:#BFE5CD}.reob.on svg{stroke:#15803D}
+/* Bàner de l'equip (vista de docent): integrants ben visibles */
+.tbanner .tb-m{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.tbanner .tb-m span{padding:4px 11px;border-radius:999px;font:600 14.5px var(--font);background:color-mix(in srgb,currentColor 16%,transparent);border:1px solid color-mix(in srgb,currentColor 22%,transparent)}
+/* A Revisió el bàner fa de capçalera: gran (com les capçaleres de pàgina), amb el logo a la dreta */
+.tbanner.big{padding:30px 34px;min-height:150px;border-radius:28px;gap:24px}
+.tbanner.big .tb-n{font-size:clamp(34px,5vw,52px);font-weight:700;letter-spacing:-.035em;line-height:1.05}
+.tbanner.big .tb-s{font-size:16px;margin-top:6px}
+.tbanner.big > img,.tbanner.big > .tb-ph{width:96px;height:96px;order:3;border-radius:18px}.tbanner.big > .tb-ph{font-size:40px}
+.tbanner.big .tb-team{order:2;align-self:flex-start}
+@media (max-width:620px){.tbanner.big{padding:20px;min-height:0;border-radius:22px;gap:14px;flex-wrap:wrap}.tbanner.big > img,.tbanner.big > .tb-ph{width:64px;height:64px;order:0}.tbanner.big .tb-txt{flex-basis:100%;order:4}}
+@media (max-width:620px){.tbanner .tb-m span{font-size:13px;padding:3px 9px}}
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -2634,7 +2645,7 @@ const PROF_TEAM_TABS = ['revisio', 'qualificacio', 'avaluacio', 'informe'];
 function bannerTeam() { return role !== 'prof' ? (tab === 'inici' ? null : T()) : PROF_TEAM_TABS.includes(tab) && !(tab === 'qualificacio' && qView !== 'equip') ? G.teams[profTeam] : null; }
 function teamBannerHtml(t) {
   const m = t.data.marca, logo = logoSrc(m.logo);
-  return `<div class="tbanner" style="--tb1:${col(m.color1, '#f7a21b')};--tb2:${col(m.color2, '#111113')}">${logo ? logoImg(m.logo, '', 'Logo de ' + m.nom) : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
+  return `<div class="tbanner${role === 'prof' && tab === 'revisio' ? ' big' : ''}" style="--tb1:${col(m.color1, '#f7a21b')};--tb2:${col(m.color2, '#111113')}">${logo ? logoImg(m.logo, '', 'Logo de ' + m.nom) : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}${role === 'prof' && teamNames(t).length ? `<div class="tb-m" aria-label="Integrants de l'equip">${teamNames(t).map(n => `<span>${esc(n)}</span>`).join('')}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
 }
 // Targeta de l'inici de l'alumnat amb els colors corporatius, quan l'equip ja té nom i ha triat colors
 function heroBrand(t) {
@@ -7048,7 +7059,7 @@ function vRevisio(v) {
         <textarea rows="2" data-cm="${s.k}" aria-label="Comentari per a ${esc(s.l)}" placeholder="Comentari per a l'equip (el veuran a la pàgina d'aquest apartat)">${esc(rv.comment || '')}</textarea>
       </footer></section>`;
   }).join('') + pager || `<div class="notice info">No hi ha cap apartat amb aquest filtre.${revHide && PROG.some(s => show(s) && hideN(s)) ? ' Els apartats sense fer estan amagats.' : ''}</div>`;
-  v.innerHTML = `${head(`Revisió dels projectes${teamNames(t).length ? ' · ' + teamNames(t).map(esc).join(', ') : ''}`, esc(projName(t)))}
+  v.innerHTML = `${filled(t.data.marca.nom) ? '' : head(`Revisió dels projectes${teamNames(t).length ? ' · ' + teamNames(t).map(esc).join(', ') : ''}`, esc(projName(t)))}
     <div class="rtabs" role="tablist" aria-label="Equips">${tabs}</div>
     <div class="rsum">
       <div class="rsum-i sent"><b>${cnt('sent')}</b><span>enviats per revisar</span></div>
