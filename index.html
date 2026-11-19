@@ -1156,7 +1156,22 @@ table.fin{box-shadow:none}
 .istats small{font-size:13.5px;color:var(--muted)}
 /* Rànquing de la classe i ronda d'inversors */
 .rk-card{background:var(--tile);border-radius:32px;padding:26px 28px;margin:16px 0;display:grid;gap:14px}
-.ihero.solo{grid-template-columns:minmax(0,1fr)}.ihero.solo .iname{grid-row:auto;min-height:0}
+.ihead{display:grid;grid-template-columns:minmax(0,1fr);gap:16px}.ihead.rk-on{grid-template-columns:repeat(2,minmax(0,1fr))}
+.ihead .ileft{display:grid;gap:16px;align-content:start}
+.iname.icomp{grid-row:auto;min-height:0;padding:26px 28px;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:20px}
+.iname.icomp .itx{display:grid;gap:12px;align-self:stretch;align-content:center}
+.iname.icomp .k{padding-right:0}.iname.icomp h1{margin:2px 0 0;font-size:clamp(32px,4.2vw,58px);padding-right:0}.iname.icomp .d{margin:6px 0 0;font-size:17px}
+.iname.icomp .nlogo.big{position:static;width:clamp(96px,11vw,150px);height:clamp(96px,11vw,150px);border-radius:28px;padding:10px}.iname.icomp .nlogo.big b{font-size:clamp(40px,5vw,64px);border-radius:20px}
+.ifoot2{display:grid;gap:6px}.ichs{display:flex;flex-wrap:wrap;gap:6px}
+.ich{background:rgba(255,255,255,.14);padding:5px 11px;border-radius:999px;font-size:13px;font-weight:550;display:inline-flex;align-items:center;gap:4px}.ich.p{cursor:help}
+.iname.brand .ich{background:rgba(255,255,255,.2)}.iname.brand.light .ich{background:rgba(255,255,255,.55)}
+.ich.iods i{font-style:normal;display:inline-grid;place-items:center;min-width:20px;height:20px;border-radius:5px;color:#fff;font-size:11px;font-weight:700}
+.ihead .isub{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:16px}
+.ihead .isub .iprog{padding:18px 20px;gap:16px}.ihead .isub .iring{width:96px;height:96px}.ihead .isub .iring::before{inset:11px}.ihead .isub .iring b{font-size:23px}.ihead .isub .inx strong{font-size:18px}
+.ihead .isub .istats{grid-template-columns:repeat(2,minmax(0,1fr));padding:16px 20px;gap:6px 12px;align-content:center}.ihead .isub .istats b{font-size:26px}
+.ihead .rk-mini{height:100%;box-sizing:border-box}
+@media (max-width:1100px){.ihead.rk-on{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:620px){.iname.icomp{grid-template-columns:minmax(0,1fr) auto;padding:20px}.iname.icomp .nlogo.big{width:64px;height:64px;border-radius:16px;align-self:start}.iname.icomp .nlogo.big b{font-size:28px}.ihead .isub{grid-template-columns:minmax(0,1fr)}}
 .ilow{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:16px}.ilow.rk-on{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
 .ileft{display:grid;gap:16px;align-content:start}.ilow:not(.rk-on) .ileft{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
 @media (max-width:900px){.ilow.rk-on,.ilow:not(.rk-on) .ileft{grid-template-columns:minmax(0,1fr)}}
@@ -2705,12 +2720,11 @@ const openFrom = ks => ks.map(k => G.access && G.access[k] && G.access[k].from).
 const ODS_COL = ['#E5243B', '#DDA63A', '#4C9F38', '#C5192D', '#FF3A21', '#26BDE2', '#FCC30B', '#A21942', '#FD6925', '#DD1367', '#FD9D24', '#BF8B2E', '#3F7E44', '#0A97D9', '#56C02B', '#00689D', '#19486A'];
 function heroFoot(t) {
   const d = t.data, ms = t.members.filter(m => filled(nomBo(m.name) || m.name));
-  const people = ms.length ? ms.map(m => { const rs = ROL_KEYS.map(k => rolN(m[k])).filter(Boolean); return `<li><b>${esc(nomBo(m.name) || m.name)}</b>${rs.length ? `<small>${rs.map(esc).join(' · ')}</small>` : ''}</li>`; }).join('') : '<li><small>Encara no heu afegit ningú</small></li>';
   const fm = d.juridica && PE.FORMS[d.juridica.forma], ods = ((d.sost && d.sost.ods) || []).filter(i => i >= 1 && i <= 17);
-  const facts = [['Cicle', esc(sectorLabel(d.idea.sector) || 'Per definir')], fm ? ['Forma jurídica', esc(fm.label)] : null,
-    ods.length ? ['ODS', `<span class="iods">${ods.map(i => `<i style="background:${ODS_COL[i - 1]}" title="${esc(i + '. ' + PE.ODS[i - 1])}">${i}</i>`).join('')}</span>`] : null,
-    filled(d.marca.missio) ? ['Missió', `<span class="imis">${esc(d.marca.missio)}</span>`, 'w'] : null].filter(Boolean);
-  return `<div class="ifoot"><div class="ipeople"><small class="ilab">L'equip</small><ul>${people}</ul></div><dl class="ifacts">${facts.map(([l, v, w]) => `<div${w ? ' class="w"' : ''}><dt>${l}</dt><dd>${v}</dd></div>`).join('')}</dl></div>`;
+  const people = ms.length ? ms.map(m => { const rs = ROL_KEYS.map(k => rolN(m[k])).filter(Boolean); return `<span class="ich p"${rs.length ? ` title="${esc(rs.join(' · '))}"` : ''}>${esc(nomBo(m.name) || m.name)}</span>`; }).join('') : '<span class="ich">Encara no heu afegit ningú</span>';
+  const facts = [`<span class="ich">${esc(sectorLabel(d.idea.sector) || 'Cicle per definir')}</span>`, fm ? `<span class="ich">${esc(fm.label)}</span>` : '',
+    ods.length ? `<span class="ich iods" title="Objectius de Desenvolupament Sostenible">ODS ${ods.map(i => `<i style="background:${ODS_COL[i - 1]}" title="${esc(i + '. ' + PE.ODS[i - 1])}">${i}</i>`).join('')}</span>` : ''].join('');
+  return `<div class="ifoot2"><div class="ichs">${people}</div><div class="ichs">${facts}</div></div>`;
 }
 function vInici(v) {
   const t = T(), pr = progress(t), m = t.data.marca;
@@ -2732,13 +2746,12 @@ function vInici(v) {
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2><span class="bnum" aria-label="Bloc ${i + 1}">${i + 1}</span>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   const rkm = rankMiniHtml(t);
-  v.innerHTML = `${flashHtml()}<section class="ihero solo">
-    <div class="iname${heroBrand(t).cls}" style="${heroBrand(t).st}">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
-      ${heroFoot(t)}</div>
-  </section>
-  <section class="ilow${rkm ? ' rk-on' : ''}"><div class="ileft"><div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
+  v.innerHTML = `${flashHtml()}<section class="ihead${rkm ? ' rk-on' : ''}"><div class="ileft">
+    <div class="iname icomp${heroBrand(t).cls}" style="${heroBrand(t).st}"><div class="itx"><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}
+      ${heroFoot(t)}</div>${filled(m.nom) ? teamLogoHtml(t, 'nlogo big') : ''}</div>
+    <div class="isub"><div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
       <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
-    <div class="istats">${[['correcte', 'ok', 'correctes'], ['sent', 'sent', 'enviats'], ['millorar', 'mil', 'a millorar'], ['edit', 'edit', 'en edició']].map(([w, c, l]) => `<button type="button" class="iws" data-ws="${w}" ${wl[w].length ? `title="Veure els apartats ${l}"` : 'disabled'}><b style="color:var(--st-${c}-f)">${wc[w]}</b><small>${l}</small></button>`).join('')}<div id="iwsl" class="iwsl" hidden></div></div></div>${rkm}
+    <div class="istats">${[['correcte', 'ok', 'correctes'], ['sent', 'sent', 'enviats'], ['millorar', 'mil', 'a millorar'], ['edit', 'edit', 'en edició']].map(([w, c, l]) => `<button type="button" class="iws" data-ws="${w}" ${wl[w].length ? `title="Veure els apartats ${l}"` : 'disabled'}><b style="color:var(--st-${c}-f)">${wc[w]}</b><small>${l}</small></button>`).join('')}<div id="iwsl" class="iwsl" hidden></div></div></div></div>${rkm}
   </section>
   <section class="bento">${tiles}</section>
   ${G.rubHide ? '' : '<div class="row" style="margin-top:14px"><button type="button" class="btn ghost" data-go="criteris">Veure com s\'avaluarà el projecte (rúbriques)</button></div>'}`;
