@@ -6881,7 +6881,7 @@ const BADGES = {
   fin: ['💶', 'Números clars', 'Han acabat inversió, préstec, tresoreria i viabilitat.'],
   mkt: ['📣', 'A punt per vendre', 'Han acabat les 7 P i la comunicació del projecte.'],
   tot: ['🏁', 'Projecte complet', 'Tenen tots els apartats fets.'],
-  dos: ['📦', 'Dossier lliurat', 'Han lliurat el dossier del projecte.'],
+  dos: ['📦', 'Dossier lliurat', 'Al final del projecte: han lliurat el dossier i ja tenen nota de l\'exposició final (Pt6).'],
   top: ['💰', 'Projecte més finançat', 'Han rebut més inversió que ningú a la ronda d\'inversors.']
 };
 let PUB = {}, INVS = [], rkT = null, rkLast = '', rkView = null;
@@ -6916,7 +6916,7 @@ function teamBadges(t) {
   if (['inversio', 'prestec', 'treso', 'viab'].every(done)) b.push('fin');
   if (['p7', 'pitch'].every(done)) b.push('mkt');
   if (progress(t) >= 1) b.push('tot');
-  if (t.delivered) b.push('dos');
+  if (t.delivered && hasNota((t.grades || {}).Pt6)) b.push('dos'); // només quan el projecte s'ha acabat (Pt6 és l'última activitat)
   return b;
 }
 // live: el professor veu el capital abans de tancar la ronda (l'alumnat només quan es tanca)
