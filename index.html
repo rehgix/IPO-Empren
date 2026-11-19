@@ -1156,7 +1156,10 @@ table.fin{box-shadow:none}
 .istats small{font-size:13.5px;color:var(--muted)}
 /* Rànquing de la classe i ronda d'inversors */
 .rk-card{background:var(--tile);border-radius:32px;padding:26px 28px;margin:16px 0;display:grid;gap:14px}
-.ihero.rk-on .rk-mini{grid-row:span 2}
+.ihero.solo{grid-template-columns:minmax(0,1fr)}.ihero.solo .iname{grid-row:auto;min-height:0}
+.ilow{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;margin-top:16px}.ilow.rk-on{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)}
+.ileft{display:grid;gap:16px;align-content:start}.ilow:not(.rk-on) .ileft{grid-template-columns:minmax(0,1.5fr) minmax(0,1fr)}
+@media (max-width:900px){.ilow.rk-on,.ilow:not(.rk-on) .ileft{grid-template-columns:minmax(0,1fr)}}
 .rk-chg{font-weight:650;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}.rk-chg.up{color:#15803d}.rk-chg.dn{color:#dc2626}.rk-chg.fl,.rk-chg.nw{color:var(--muted)}
 .rk-chg.big{font-size:15px;padding:5px 10px;border-radius:999px;background:var(--soft)}.rk-chg.big.up{background:#dcfce7}.rk-chg.big.dn{background:#fee2e2}
 .rk-sp{width:60px;height:20px;display:block;flex:none}.rk-sp polyline{fill:none;stroke:#9ca3af;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.rk-sp.up polyline{stroke:#16a34a}.rk-sp.dn polyline{stroke:#dc2626}
@@ -2729,12 +2732,13 @@ function vInici(v) {
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2><span class="bnum" aria-label="Bloc ${i + 1}">${i + 1}</span>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   const rkm = rankMiniHtml(t);
-  v.innerHTML = `${flashHtml()}<section class="ihero${rkm ? ' rk-on' : ''}">
+  v.innerHTML = `${flashHtml()}<section class="ihero solo">
     <div class="iname${heroBrand(t).cls}" style="${heroBrand(t).st}">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
       ${heroFoot(t)}</div>
-    ${rkm ? rkm + '</section><section class="iprow">' : ''}<div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
+  </section>
+  <section class="ilow${rkm ? ' rk-on' : ''}"><div class="ileft"><div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
       <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
-    <div class="istats">${[['correcte', 'ok', 'correctes'], ['sent', 'sent', 'enviats'], ['millorar', 'mil', 'a millorar'], ['edit', 'edit', 'en edició']].map(([w, c, l]) => `<button type="button" class="iws" data-ws="${w}" ${wl[w].length ? `title="Veure els apartats ${l}"` : 'disabled'}><b style="color:var(--st-${c}-f)">${wc[w]}</b><small>${l}</small></button>`).join('')}<div id="iwsl" class="iwsl" hidden></div></div>
+    <div class="istats">${[['correcte', 'ok', 'correctes'], ['sent', 'sent', 'enviats'], ['millorar', 'mil', 'a millorar'], ['edit', 'edit', 'en edició']].map(([w, c, l]) => `<button type="button" class="iws" data-ws="${w}" ${wl[w].length ? `title="Veure els apartats ${l}"` : 'disabled'}><b style="color:var(--st-${c}-f)">${wc[w]}</b><small>${l}</small></button>`).join('')}<div id="iwsl" class="iwsl" hidden></div></div></div>${rkm}
   </section>
   <section class="bento">${tiles}</section>
   ${G.rubHide ? '' : '<div class="row" style="margin-top:14px"><button type="button" class="btn ghost" data-go="criteris">Veure com s\'avaluarà el projecte (rúbriques)</button></div>'}`;
