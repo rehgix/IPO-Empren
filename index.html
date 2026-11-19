@@ -1225,6 +1225,17 @@ table.fin{box-shadow:none}
 .inv-i{display:grid;gap:6px;padding:10px;border-radius:14px;background:var(--soft)}.inv-i.on{box-shadow:inset 0 0 0 2px var(--pri)}
 .inv-r{display:flex;align-items:center;gap:10px}.inv-r b{flex:1;min-width:0}.inv-r select{width:auto}
 .inv-tot .bad{color:var(--bad)}
+/* Avisos de venciment */
+@keyframes dueBlink{0%,100%{background-color:#fee2e2;box-shadow:0 0 0 0 rgba(220,38,38,0)}50%{background-color:#fecaca;box-shadow:0 0 0 3px rgba(220,38,38,.55)}}
+.due-blink{animation:dueBlink 1.3s ease-in-out infinite;color:#7f1d1d}
+#tabs button.due-blink{border-radius:12px}#tabs button.due-zero{background:none;box-shadow:none}
+.due-zero{background:#f3f4f6;box-shadow:inset 3px 0 0 #111318}.due-zero .n{color:var(--muted)}
+.duetag{display:inline-flex;align-items:center;margin-left:8px;padding:2px 8px;border-radius:999px;background:#dc2626;color:#fff;font-size:11.5px;font-weight:700;font-style:normal;vertical-align:middle;white-space:nowrap}
+.duetag.zero{background:#111318}
+.nbadge.due{background:#dc2626;color:#fff}.nbadge.due.zero{background:#111318}
+.sb-due.zero{background:#111318;color:#fff}
+.due-ic{font-size:30px}.due-i small{display:block;font-weight:400;margin-top:2px;color:var(--ink-2)}
+@media (prefers-reduced-motion:reduce){.due-blink{animation:none;background:#fee2e2;box-shadow:inset 0 0 0 2px #dc2626}}
 .list-pad .rk-l li{background:var(--tile)}.list-pad .rk-l li.me{background:var(--accent-soft)}
 @media (max-width:620px){.rk-card{padding:20px 16px;border-radius:24px}.rk-l li{padding:9px 10px;gap:8px}.rk-sq{width:34px;height:34px}.rk-trophy{font-size:34px}.rk-c{font-size:13px}}
 /* Dues columnes on cada bloc fa l'alçada del seu contingut (sense forats) */
@@ -2241,8 +2252,9 @@ function dueHtml(t, k) {
   const m = l === 'temps' ? `⏱️ <b>Lliurat a temps:</b> heu guanyat la insígnia d'aquesta tasca.`
     : l === 'tard' ? `Lliurat després de la data límit (${dd(d)}): la nota màxima d'aquesta tasca serà un ${NOTA_TARD}.`
     : now < dayEnd(d) ? `⏱️ <b>Data límit: ${dd(d)}.</b> Si l'envieu abans, guanyeu la insígnia.${u ? ` Després, fins al ${dd(u)}, encara la podreu enviar, però la nota màxima serà un ${NOTA_TARD}.` : ''}`
-    : u && now < dayEnd(u) ? `<b>Ha passat la data límit (${dd(d)}).</b> Encara la podeu enviar fins al ${dd(u)}, però la nota màxima serà un ${NOTA_TARD}.` : '';
-  return m ? `<div class="sb-due ${l || (now < dayEnd(d) ? 'ok' : 'tard')}">${m}</div>` : '';
+    : u && now < dayEnd(u) ? `<b>Ha passat la data límit (${dd(d)}).</b> Encara la podeu enviar fins al ${dd(u)}, però la nota màxima serà un ${NOTA_TARD}.`
+    : !sentOf(t, k) ? `<b>✕ No l'heu lliurada:</b> el termini es va tancar el ${u ? dd(u) : dd(d)} i la nota d'aquesta tasca és un 0.` : '';
+  return m ? `<div class="sb-due ${l || (now < dayEnd(d) ? 'ok' : u && now >= dayEnd(u) ? 'zero' : 'tard')}">${m}</div>` : '';
 }
 function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'prof') return; const s = sec(tab); el.innerHTML = sendBarHtml(T(), s, access(tab)); bindSendBar(); }
 function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); }; }
@@ -2362,7 +2374,8 @@ function renderSide() {
   $('#tabs').innerHTML = groups.map(([g, ic, items]) => `<div class="ngroup${items.every(([k]) => NAVIC[k]) ? ' allic' : ''}" data-g="${ic}">${g ? `<div class="ghead" title="${esc(g)}">${ico(GICONS[ic])}<span>${g}</span></div>` : ''}${items.map(([k, l]) => {
     const st = role === 'prof' ? null : secState(T(), sec(k)); const rv = role !== 'prof' && T().review[k];
     const ac = role === 'prof' ? 'open' : access(k);
-    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${tancatProf(k) ? '<span class="rotag">tancat</span>' : ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}</button>`; }).join('')}</div>`).join('');
+    const dc = role === 'prof' || ac === 'closed' || !sec(k) ? '' : dueCls(T(), k);
+    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}${dc}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${tancatProf(k) ? '<span class="rotag">tancat</span>' : ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}${dc ? `<span class="nbadge due${dc === ' due-zero' ? ' zero' : ''}" title="${dc === ' due-zero' ? 'No lliurada: un 0' : 'Venç: nota màxima ' + NOTA_TARD + ' si s\'envia tard'}">${dc === ' due-zero' ? '0' : '!'}</span>` : ''}</button>`; }).join('')}</div>`).join('');
   const cur = all.find(x => x[0] === tab);
   $('#menuToggle').innerHTML = `<span>${cur ? cur[1] : tab === 'alumnes' ? 'Gestiona l\'alumnat' : 'Menú'}</span><span class="small">Menú ▾</span>`;
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
@@ -2482,7 +2495,35 @@ function profBell(b) {
   setTimeout(() => document.addEventListener('click', function off(e) { if (!pop.isConnected) return document.removeEventListener('click', off); if (!pop.contains(e.target) && !b.contains(e.target)) { shut(); document.removeEventListener('click', off); } }), 0);
 }
 // Finestra en entrar: el que cal millorar (amb el comentari) i el que falta enviar
-function stuWelcome() {
+/* ---------- Avisos de venciment: el dia de la data límit i durant el marge, finestra emergent i tasca parpellejant; passat el tancament sense enviar, un 0 ---------- */
+// '' | 'avui' (la data límit és avui) | 'marge' (ja ha passat: nota màxima 5) | 'zero' (tancada sense enviar)
+function dueState(t, k) {
+  const d = dueOf(k); if (!d || !t || !sec(k) || !sec(k).p || firstSent(t, k) || stuAccess0(k) === 'closed') return '';
+  const today = todayISO(), u = ((G.access || {})[k] || {}).until;
+  return today < d ? '' : today === d ? 'avui' : !u || today <= u ? 'marge' : 'zero';
+}
+const dueDays = k => { const u = ((G.access || {})[k] || {}).until; return u ? Math.round((new Date(u + 'T12:00') - new Date(todayISO() + 'T12:00')) / 864e5) : null; };
+function dueTag(t, k) {
+  const st = dueState(t, k), n = dueDays(k);
+  return st === 'avui' ? '<span class="duetag">⚠ Venç avui</span>' : st === 'marge' ? `<span class="duetag">⚠ Màx. ${NOTA_TARD}${n !== null ? ` · ${n === 0 ? 'últim dia' : n === 1 ? 'queda 1 dia' : 'queden ' + n + ' dies'}` : ''}</span>` : st === 'zero' ? '<span class="duetag zero">✕ No lliurada · 0</span>' : '';
+}
+const dueCls = (t, k) => { const st = dueState(t, k); return st === 'avui' || st === 'marge' ? ' due-blink' : st === 'zero' ? ' due-zero' : ''; };
+// Finestra emergent en entrar (un cop al dia per a cada grup de tasques)
+function dueAlert(t, then) {
+  const ls = PROG.filter(s => ['avui', 'marge'].includes(dueState(t, s.k))); if (!ls.length) return then && then();
+  const key = 'ipoDue:' + (GID || 'demo') + ':' + t.id + ':' + todayISO() + ':' + ls.map(s => s.k).join(',');
+  try { if (localStorage.getItem(key)) return then && then(); localStorage.setItem(key, '1'); } catch (e) {}
+  let skip = false; // si van directament a la tasca, no s'obre la finestra de benvinguda a sobre
+  const dd = iso => new Date(iso + 'T00:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' });
+  const li = s => { const st = dueState(t, s.k), u = ((G.access || {})[s.k] || {}).until; return `<button type="button" class="hi-i due-i" data-hk="${esc(s.k)}"><span><b>${esc(s.l)}</b><small>${st === 'avui' ? 'La data límit és <b>avui</b>.' : `La data límit ja ha passat. ${u ? `Encara la podeu enviar fins al <b>${dd(u)}</b>, però la` : 'La'} nota màxima serà un ${NOTA_TARD}.`}</small></span><em>Hi vaig →</em></button>`; };
+  bkDialog(`<div class="bkic due-ic">⚠️</div><b>Atenció: teniu tasques que vencen</b>
+    <div class="hi-g warn">${ls.map(li).join('')}</div>
+    <p class="small">Si no les envieu abans que s'acabi la data límit, tindreu <b>${DUE_MARGE} dies de marge</b> per fer-ho, però la <b>nota màxima serà un ${NOTA_TARD}</b>. Passada la data de tancament, ja no les podreu enviar i la nota serà un <b>0</b>.</p>
+    <div class="row"><button type="button" class="btn" data-bkclose>Entesos</button></div>`,
+    (o, close) => o.querySelectorAll('[data-hk]').forEach(x => x.onclick = () => { skip = true; close(); go(x.dataset.hk); }), () => { if (!skip && then) then(); });
+}
+function stuWelcome() { const t = stuView(); if (t) dueAlert(t, stuWelcome0); }
+function stuWelcome0() {
   const t = stuView(); if (!t) return;
   const k = 'ipoHi:' + (GID || 'demo') + ':' + t.id; try { if (sessionStorage.getItem(k)) return; sessionStorage.setItem(k, '1'); } catch (e) {}
   const mil = PROG.filter(s => access(s.k) !== 'closed' && milPending(t, s));
@@ -2744,7 +2785,7 @@ function vInici(v) {
     const ok = ss.filter(s => workState(t, s) === 'correcte').length;
     const rows = ss.map(s => { const ac = acx(s.k), w = workState(t, s), rv = t.review[s.k];
       const du = dueOf(s.k), lo = lliuraOf(t, s.k), meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : sendLocked(t, s.k) && stuAccess0(s.k) === 'open' ? 'Enviat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : '', lo === 'temps' ? '⏱️ A temps' : lo === 'tard' ? 'Lliurat tard (màx. ' + NOTA_TARD + ')' : du && ac === 'open' ? 'Data límit: ' + dayCa(du) : ''].filter(Boolean).join(' · ');
-      return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
+      return `<button type="button" class="bit${ac === 'closed' ? '' : dueCls(t, s.k)}" data-go="${s.k}"><span class="n">${esc(s.l)}${ac === 'closed' ? '' : dueTag(t, s.k)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2><span class="bnum" aria-label="Bloc ${i + 1}">${i + 1}</span>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   const rkm = rankMiniHtml(t);
   v.innerHTML = `${flashHtml()}<section class="ihead${rkm ? ' rk-on' : ''}"><div class="ileft">
@@ -4698,6 +4739,7 @@ function gradeCard(t, a) {
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="gmeta small muted">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
     ${rubTwins(a).length ? `<div class="notice info" style="margin:8px 0 0"><b>Rúbrica compartida</b> amb ${rubTwins(a).map(b => esc(b.c + ' · ' + b.n)).join(', ')}: el que marquis aquí també queda marcat allà.</div>` : ''}
+    ${(a.ev || []).some(([k]) => dueState(t, k) === 'zero') ? `<div class="notice" style="margin:8px 0 0"><b>No lliurada:</b> ${(a.ev || []).filter(([k]) => dueState(t, k) === 'zero').map(([k]) => esc(sec(k).l)).join(', ')} no es va enviar abans del tancament. Per a l'alumnat, la nota és un 0.</div>` : ''}
     ${actTard(t, a) ? `<div class="notice" style="margin:8px 0 0"><b>Lliurada després de la data límit:</b> la nota màxima és un ${NOTA_TARD}.</div>` : ''}
     ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? (subActs(a).length ? 'Es fa fora de l\'eina: escriu la nota grupal i la de la coavaluació. Cada una compta amb el seu pes al ' + esc(a.ra) + '.' : 'Nota externa: escriu la nota que han tret.') : 'Aquesta activitat es fa fora de l\'eina (en paper o a classe): corregeix-la amb la rúbrica.'}</p>`}
     ${a.ext ? '' : `<div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>`}
