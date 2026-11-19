@@ -1139,6 +1139,16 @@ table.fin{box-shadow:none}
 .istats small{font-size:13.5px;color:var(--muted)}
 /* Rànquing de la classe i ronda d'inversors */
 .rk-card{background:var(--tile);border-radius:32px;padding:26px 28px;margin:16px 0;display:grid;gap:14px}
+.ihero.rk-on .rk-mini{grid-row:span 2}
+.rk-mini{background:var(--tile);border-radius:32px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.rk-mini .rk-h h2{font-size:26px}.rk-mini .rk-h h2 small{font-size:16px;color:var(--muted);font-weight:500}.rk-mini .rk-trophy{font-size:36px}
+.rk-l.sm{gap:6px}.rk-l.sm li{padding:7px 10px;border-radius:14px;gap:10px}.rk-l.sm .rk-sq{width:32px;height:32px;border-radius:10px;font-size:13px}.rk-l.sm .rk-pt b{font-size:19px}.rk-l.sm .rk-pos{width:24px;font-size:15px}
+.rk-l .rk-gap{background:none;padding:0 0 0 18px;color:var(--muted);line-height:.6}
+.rk-open.sm{padding:8px 12px;border-radius:14px;gap:10px;justify-content:space-between}.rk-open.sm span{flex:1}
+.rk-all{align-self:flex-start;margin-top:auto;font-weight:600}
+.iprow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;margin-top:16px}
+.rkdlg .bkbox{width:min(720px,100%)}.rk-dlg .rk-card{margin:0;padding:0;background:none}
+@media (max-width:900px){.iprow{grid-template-columns:minmax(0,1fr)}}
 .rk-h{display:flex;justify-content:space-between;align-items:center;gap:12px}
 .rk-h .k{margin:0;color:var(--muted);font-size:14px}.rk-h h2{margin:4px 0 0;font:650 24px/1.15 var(--font);letter-spacing:-.02em}
 .rk-trophy{font-size:44px;line-height:1}
@@ -1549,6 +1559,12 @@ body:has(.hbanner) .tbrand{display:none} /* al tauler ja surt el bàner amb el l
 .tchip .dcount{min-width:22px;padding:1px 7px;border-radius:99px;font-size:12px;text-align:center;background:var(--pri);color:var(--pri-fg);font-variant-numeric:tabular-nums}
 .tchip.on .dcount{background:var(--pri-fg);color:#fff}
 #tbRole .role{display:flex;align-items:center;gap:8px}
+.rview{display:grid;gap:4px;padding:4px;margin:0 6px 10px;border-radius:14px;background:var(--side-2)}
+.rview button{display:grid;justify-items:center;gap:2px;border:0;background:none;border-radius:10px;padding:7px 2px;font:600 11.5px var(--font);color:var(--side-muted);cursor:pointer}
+.rview button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.rview button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}.rview button:not([aria-pressed="true"]):hover{color:var(--ink);background:rgba(255,255,255,.6)}
+.rview button:disabled{opacity:.4;cursor:default}
+.side .role .rseg button{white-space:nowrap;font-size:13px}
 #tbRole .rseg{background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink);min-width:270px}#tbRole .rseg button{white-space:nowrap}
 #tbRole .rseg button{color:var(--ink-2)}#tbRole .rseg button[aria-pressed="true"]{background:var(--ink);color:#fff}
 #tbRole select{width:auto;max-width:200px;padding:8px 12px;border-radius:999px;background:var(--bg);border:1px solid var(--line);font-size:13.5px}
@@ -2292,7 +2308,7 @@ function renderSide() {
   stuBtn();
 }
 // Selector «Vista de docent | Vista d'alumne»: en passar a alumne, obre l'equip que s'estava mirant
-document.querySelector('.rseg').addEventListener('click', e => { const b = e.target.closest('[data-rs]'); if (!b || b.getAttribute('aria-pressed') === 'true') return;
+document.addEventListener('click', e => { const b = e.target.closest('.rseg [data-rs], .rview [data-rs]'); if (!b || b.getAttribute('aria-pressed') === 'true' || b.disabled) return; railSet(false);
   role = b.dataset.rs === 'prof' ? 'prof' : Math.max(0, Math.min(profTeam || 0, G.teams.length - 1)); tab = null; save(); render(); navPush(); });
 $('#roleSel').addEventListener('change', e => { role = e.target.value === 'prof' ? 'prof' : Number(e.target.value); tab = null; save(); render(); navPush(); });
 $('#tabs').addEventListener('click', e => { const b = e.target.closest('button[data-tab]'); if (b) go(b.dataset.tab); });
@@ -2309,7 +2325,7 @@ $('#railBtn').onclick = () => railSet(!document.body.classList.contains('railope
 $('#railBack').onclick = () => railSet(false);
 $('#tbTabs').addEventListener('click', e => { if (e.target.closest('[data-ptab]')) railSet(false); if (e.target.closest('.rbrand')) { e.preventDefault(); railSet(false); goHome(); } });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.body.classList.contains('railopen')) railSet(false); });
-$('#tbRole').appendChild(document.querySelector('.role'));
+// «Vista de docent | Vista d'alumne»: a la vista d'alumne, a dalt del menú de l'esquerra (.side); a la de docent, a la barra lateral (rviewHtml)
 // Historial del navegador: cada canvi de pàgina dins del grup es desa, i «Enrere» torna a la pàgina anterior (no a la llista de grups)
 const navState = () => ({ nav: 1, gid: typeof GID === 'undefined' ? '' : GID || '', tab, role, team: profTeam });
 function navPush() { try { if (!history.state || !history.state.nav) { const c = navState(); history.replaceState(c, ''); } history.pushState(navState(), ''); } catch (e) {} }
@@ -2444,6 +2460,8 @@ function segBtnUpdate() {
 const isProfUser = () => !CLOUD || !!(ME && ME.isProf);
 const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Avaluar'], ['ranking', 'Rànquing i ronda d\'inversors', 'Rànquing'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
 // Capçalera del menú lateral: logo (porta a l'inici) i nom de la secció
+// Canvi de vista a la barra lateral del professor: docent o alumne (l'equip es tria després al menú de l'esquerra)
+const rviewHtml = () => `<div class="rview" role="group" aria-label="Veure com"><button type="button" data-rs="prof" aria-pressed="${role === 'prof'}" title="Vista de docent">${ico('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>')}<span>Docent</span></button><button type="button" data-rs="stu" aria-pressed="${role !== 'prof'}" title="Vista d'alumne: veure la web com un equip"${G && G.teams.length ? '' : ' disabled'}>${ico('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>')}<span>Alumne</span></button></div>`;
 const railHead = l => `<a class="rbrand" href="#" title="Anar a l'inici"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</a><span class="rsec">${l}</span>`;
 const tabBtn = (k, l, on, n, sh) => `<button type="button" data-ptab="${k}" aria-selected="${on}" title="${esc(l)}" aria-label="${esc(l)}">${nic(k)}<span class="tl">${sh || l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
 // Menú lateral (barra d'icones amb nom): en pantalles petites s'obre amb el botó de dalt a l'esquerra
@@ -2455,7 +2473,7 @@ function topGroup() {
   $('#topHead').hidden = false; document.body.classList.add('has-top'); document.body.classList.toggle('has-rail', role === 'prof'); $('#tbRole').hidden = false;
   const cur = tab === 'rubriques' ? 'guia' : tab, pr = role === 'prof';
   $('#tbGrp').innerHTML = grpBar();
-  $('#tbTabs').innerHTML = railHead('Docent') + PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
+  $('#tbTabs').innerHTML = railHead('Docent') + rviewHtml() + PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
   $('#tbSub').innerHTML = pr && cur === 'guia' ? `<div class="tsub" role="group" aria-label="Guia i rúbriques">${[['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques']].map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>` : '';
 }
 // Pestanyes del tauler (fora d'un grup)
@@ -2652,14 +2670,14 @@ function vInici(v) {
       const du = dueOf(s.k), lo = lliuraOf(t, s.k), meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : sendLocked(t, s.k) && stuAccess0(s.k) === 'open' ? 'Enviat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : '', lo === 'temps' ? '⏱️ A temps' : lo === 'tard' ? 'Lliurat tard (màx. ' + NOTA_TARD + ')' : du && ac === 'open' ? 'Data límit: ' + dayCa(du) : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2><span class="bnum" aria-label="Bloc ${i + 1}">${i + 1}</span>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
-  v.innerHTML = `${flashHtml()}<section class="ihero">
+  const rkm = rankMiniHtml(t);
+  v.innerHTML = `${flashHtml()}<section class="ihero${rkm ? ' rk-on' : ''}">
     <div class="iname${heroBrand(t).cls}" style="${heroBrand(t).st}">${filled(m.nom) ? teamLogoHtml(t, 'nlogo') : ''}<div><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}</div>
       <div class="ichips">${chips.map(c => c.startsWith('<span class="inames">') ? c + '<i class="ibr"></i>' : `<span>${c}</span>`).join('')}</div></div>
-    <div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
+    ${rkm ? rkm + '</section><section class="iprow">' : ''}<div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
       <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
     <div class="istats"><div><b style="color:var(--st-ok-f)">${wc.correcte}</b><small>correctes</small></div><div><b style="color:var(--st-sent-f)">${wc.sent}</b><small>enviats</small></div><div><b style="color:var(--st-mil-f)">${wc.millorar}</b><small>a millorar</small></div><div><b style="color:var(--st-edit-f)">${wc.edit}</b><small>en edició</small></div></div>
   </section>
-  ${rankCardHtml(t)}
   <section class="bento">${tiles}</section>
   ${G.rubHide ? '' : '<div class="row" style="margin-top:14px"><button type="button" class="btn ghost" data-go="criteris">Veure com s\'avaluarà el projecte (rúbriques)</button></div>'}`;
   rankBind(v);
@@ -6689,7 +6707,7 @@ function vSeguiment(v) {
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Seguiment</h1></div>
       <div class="snums">${[['equips', nT, 'Equips', 'Anar a la llista d\'equips', '', '<rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>', 'Veure la llista'], ['alumnes', nAl, 'Alumnes', 'Veure la llista d\'alumnes del grup', '', '<circle cx="9" cy="8" r="4"/><path d="M2 21a7 7 0 0 1 14 0M17 11a3 3 0 1 0 0-6M22 21a6 6 0 0 0-4-5.6"/>', 'Gestionar l\'alumnat'], ['prog', Math.round(avg * 100) + ' %', 'Progrés mitjà', 'Ordenar els equips de menys a més progrés', '', '<path d="M3 3v18h18"/><path d="m7 15 4-4 3 3 6-6"/>', ''], ['rev', nRev, 'Per revisar', 'Veure tots els apartats per revisar', nRev ? 'hot' : '', '<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', nRev ? 'Revisa-ho ara' : 'Tot revisat']].map(([k, n, l, tt, c, ic, m]) => `<div class="${c}" role="button" tabindex="0" data-sn="${k}" title="${tt}"${k === 'rev' ? ` aria-expanded="${sRev}"` : ''}><span class="snh">${l}<span class="sni">${ico(ic)}</span></span><b>${n}</b>${k === 'prog' ? `<span class="snbar"><span style="width:${Math.round(avg * 100)}%"></span></span>` : `<small>${m}<i aria-hidden="true">→</i></small>`}</div>`).join('')}</div></section>
     ${sRev ? `<div id="sRevBox">${card(`Apartats per revisar · ${nRev}`, pad(pendL.length ? `<p class="small muted">Tots els apartats que els equips han enviat i encara no has revisat, del més antic al més nou. Toca'n un per obrir-lo.</p><div class="pd-l">${pendL.map(x => `<button type="button" class="pd-i" data-pt="${x.ti}" data-pk="${esc(x.k)}"><span class="pd-t"><b>${esc(x.team)}</b> · ${esc(x.l)}</span><span class="pd-d">${x.at ? 'enviat ' + fmtDay(x.at) : ''}</span></button>`).join('')}</div>` : '<p class="muted" style="margin:0">No hi ha cap apartat per revisar. Quan un equip n\'enviï un, sortirà aquí.</p>'))}</div>` : ''}
-    ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Vista d\'alumne» a dalt per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
+    ${G.example ? '<div class="notice info">Aquestes són dades d\'exemple. Tria «Alumne» a la barra de l\'esquerra per veure què fa l\'alumnat, o crea el teu grup a «Configuració».</div>' : ''}
     ${G.teams.length ? `<div class="stools"><div class="sleg" aria-label="Blocs del projecte">${groups.map(([gk, gl]) => `<span data-g="${gk}">${ico(GICONS[gk])}${esc(gl)}</span>`).join('')}</div>
       ${nT > 1 ? `<label class="ssort">Ordena per <select class="field-sel" id="sSort">${[['ordre', 'Ordre dels equips'], ['rev', 'Pendents de revisar'], ['prog', 'Menor progrés'], ['alfa', 'Alfabètic']].map(([k, l]) => `<option value="${k}" ${sSort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>` : ''}</div>` : ''}
     <section class="slist">${rows ? `<div class="shd" aria-hidden="true"><span>Equip</span><span>Fases del projecte</span><span>Progrés</span><span>Pendents</span><span>Situació</span></div>` : ''}${rows || '<div class="notice info">Encara no hi ha cap equip.</div>'}</section>
@@ -7019,7 +7037,18 @@ function rankCardHtml(t) {
   return `<section class="rk-card"><div class="rk-h"><div><p class="k">Rànquing de la classe</p><h2>${pos >= 0 ? `Esteu en la posició ${pos + 1} de ${rows.length}` : 'Classificació dels equips'}</h2></div><span class="rk-trophy" aria-hidden="true">🏆</span></div>
     ${banner}${rankListHtml(rows, t.id, st === 'closed')}${rkHowHtml()}</section>`;
 }
-function rankBind(v) { const b = v.querySelector('#rkInv'); if (b) b.onclick = invDialog; }
+// Requadre petit de l'inici (al costat del nom de l'equip): els 3 primers i el vostre equip; la llista sencera s'obre en una finestra
+function rankMiniHtml(t) {
+  if (!rkOn()) return ''; const rows = rankRows(), st = rkSt(); if (!rows.length) return '';
+  const pos = rows.findIndex(r => r.id === t.id), prof = CLOUD && ME && ME.isProf, show = rows.slice(0, 3).concat(pos > 2 ? [rows[pos]] : []);
+  const li = r => { const i = rows.indexOf(r); return `${i > 3 && r === rows[pos] ? '<li class="rk-gap" aria-hidden="true">···</li>' : ''}<li class="${r.id === t.id ? 'me' : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>${rkSq(r)}<span class="rk-n"><b>${esc(r.n)}</b></span>${st === 'closed' ? `<span class="rk-c">${eur(r.c)}</span>` : ''}<span class="rk-pt"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`; };
+  return `<section class="rk-mini"><div class="rk-h"><div><p class="k">Rànquing de la classe</p><h2>${pos >= 0 ? `Posició ${pos + 1} <small>de ${rows.length}</small>` : 'Classificació'}</h2></div><span class="rk-trophy" aria-hidden="true">🏆</span></div>
+    ${st === 'open' ? `<div class="rk-open sm"><span>💼 <b>Ronda d'inversors oberta</b></span><button type="button" class="btn small" id="rkInv"${prof ? ' disabled title="Només ho pot fer l\'alumnat"' : ''}>Invertir</button></div>` : ''}
+    <ol class="rk-l sm">${show.map(li).join('')}</ol>
+    <button type="button" class="linkbtn rk-all" id="rkAll">Veure tot el rànquing i d'on surten els punts →</button></section>`;
+}
+function rankBind(v) { const b = v.querySelector('#rkInv'); if (b) b.onclick = invDialog;
+  const a = v.querySelector('#rkAll'); if (a) a.onclick = () => bkDialog(`<div class="rk-dlg">${rankCardHtml(T())}</div><div class="row"><button type="button" class="btn" data-bkclose>Tancar</button></div>`, o => { o.classList.add('rkdlg'); const i = o.querySelector('#rkInv'); if (i) i.onclick = () => { o.remove(); invDialog(); }; }); }
 // Finestra per invertir (alumnat): un import per a cada altre equip i el motiu
 async function invDialog() {
   const t = T(); if (!t || rkSt() !== 'open') return;
