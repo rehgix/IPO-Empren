@@ -124,6 +124,12 @@ textarea{font-size:13px;min-height:140px}
 .enun-a{margin-left:auto;font:600 12px var(--font);padding:2px 9px;border-radius:999px;background:var(--soft);color:var(--ink-2)}
 .enun ol{margin:10px 0 0;padding-left:22px;display:grid;gap:7px;line-height:1.55;color:var(--ink-2)}.enun li::marker{font-weight:700;color:var(--gc,var(--ink))}.enun li b{color:var(--ink)}
 @media print{.enun{display:none}}
+
+/* Números de l'inici de l'equip: es poden tocar per anar als apartats */
+.istats .iws{display:grid;gap:2px;text-align:left;border:0;background:none;padding:6px 8px;margin:-6px -8px;border-radius:14px;font:inherit;color:inherit;cursor:pointer;transition:background var(--t-fast)}
+.istats .iws:not(:disabled):hover,.istats .iws.on{background:rgba(15,18,34,.06)}.istats .iws:not(:disabled) small{text-decoration:underline;text-decoration-color:var(--line-2,#cfd3dd);text-underline-offset:3px}
+.istats .iws:disabled{cursor:default}
+.istats .iwsl{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.istats .iwsl[hidden]{display:none}
 </style>
 
 <div class="app">
@@ -2654,7 +2660,7 @@ const openFrom = ks => ks.map(k => G.access && G.access[k] && G.access[k].from).
 function vInici(v) {
   const t = T(), pr = progress(t), m = t.data.marca;
   // Estat de les revisions: quants apartats estan correctes, enviats, a millorar o en edició
-  const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }; PROG.forEach(s => { const w = milPending(t, s) ? 'millorar' : okDone(t, s) ? 'correcte' : workState(t, s); if (w in wc) wc[w]++; });
+  const wc = { correcte: 0, sent: 0, millorar: 0, edit: 0 }, wl = { correcte: [], sent: [], millorar: [], edit: [] }; PROG.forEach(s => { const w = milPending(t, s) ? 'millorar' : okDone(t, s) ? 'correcte' : workState(t, s); if (w in wc) { wc[w]++; if (!amagat(s.k)) wl[w].push(s); } });
   // Primer el que cal millorar; si no n'hi ha, el següent apartat per fer
   const mil = PROG.find(s => access(s.k) === 'open' && milPending(t, s)), nx = mil || PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
   const names = t.members.map(x => esc(nomBo(x.name))).filter(Boolean);
@@ -2676,11 +2682,18 @@ function vInici(v) {
       <div class="ichips">${chips.map(c => c.startsWith('<span class="inames">') ? c + '<i class="ibr"></i>' : `<span>${c}</span>`).join('')}</div></div>
     ${rkm ? rkm + '</section><section class="iprow">' : ''}<div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
       <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
-    <div class="istats"><div><b style="color:var(--st-ok-f)">${wc.correcte}</b><small>correctes</small></div><div><b style="color:var(--st-sent-f)">${wc.sent}</b><small>enviats</small></div><div><b style="color:var(--st-mil-f)">${wc.millorar}</b><small>a millorar</small></div><div><b style="color:var(--st-edit-f)">${wc.edit}</b><small>en edició</small></div></div>
+    <div class="istats">${[['correcte', 'ok', 'correctes'], ['sent', 'sent', 'enviats'], ['millorar', 'mil', 'a millorar'], ['edit', 'edit', 'en edició']].map(([w, c, l]) => `<button type="button" class="iws" data-ws="${w}" ${wl[w].length ? `title="Veure els apartats ${l}"` : 'disabled'}><b style="color:var(--st-${c}-f)">${wc[w]}</b><small>${l}</small></button>`).join('')}<div id="iwsl" class="iwsl" hidden></div></div>
   </section>
   <section class="bento">${tiles}</section>
   ${G.rubHide ? '' : '<div class="row" style="margin-top:14px"><button type="button" class="btn ghost" data-go="criteris">Veure com s\'avaluarà el projecte (rúbriques)</button></div>'}`;
   rankBind(v);
+  // En tocar un número: si és un sol apartat, s'hi va; si n'hi ha més, se'n mostra la llista
+  v.querySelectorAll('[data-ws]').forEach(b => b.onclick = () => { const l = wl[b.dataset.ws], box = $('#iwsl'); if (!l.length) return;
+    if (l.length === 1) return go(l[0].k);
+    const on = box.dataset.ws === b.dataset.ws && !box.hidden; v.querySelectorAll('[data-ws]').forEach(x => x.classList.toggle('on', !on && x === b));
+    box.hidden = on; box.dataset.ws = b.dataset.ws; if (on) return;
+    box.innerHTML = l.map(s => `<button type="button" class="btn ghost small" data-go="${s.k}">${esc(s.l)} →</button>`).join('');
+    box.querySelectorAll('[data-go]').forEach(x => x.onclick = () => go(x.dataset.go)); });
 }
 
 /* ---------- Equip ---------- */
