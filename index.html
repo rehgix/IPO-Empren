@@ -1225,6 +1225,13 @@ table.fin{box-shadow:none}
 .inv-i{display:grid;gap:6px;padding:10px;border-radius:14px;background:var(--soft)}.inv-i.on{box-shadow:inset 0 0 0 2px var(--pri)}
 .inv-r{display:flex;align-items:center;gap:10px}.inv-r b{flex:1;min-width:0}.inv-r select{width:auto}
 .inv-tot .bad{color:var(--bad)}
+.rk-bd.neg{filter:none;background:#fee2e2;border-radius:8px;padding:1px 4px}.rk-ng{font-size:12px;color:#b91c1c;font-weight:700}
+.ng-l{display:grid;gap:14px}.ng-t{display:grid;gap:6px}.ng-m{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:6px 10px;border-radius:12px;background:var(--soft)}
+.ng-n{min-width:170px;font-weight:550}.ng-bs{flex:1;display:flex;gap:6px;flex-wrap:wrap}
+.ng-b{display:inline-flex;align-items:center;gap:4px;background:#fee2e2;color:#7f1d1d;border-radius:999px;padding:3px 4px 3px 10px;font-size:13px;font-weight:600}
+.ng-x{border:0;background:rgba(0,0,0,.08);color:inherit;border-radius:999px;width:20px;height:20px;cursor:pointer;line-height:1}.ng-x:hover{background:rgba(0,0,0,.18)}
+.ng-pick{display:grid;gap:6px;margin-top:8px}
+.ng-card{background:#fef2f2;border:1px solid #fecaca;color:#7f1d1d;border-radius:20px;padding:14px 18px}.ng-card ul{list-style:none;margin:8px 0 6px;padding:0;display:grid;gap:6px}.ng-card li{display:flex;gap:8px}.ng-card small{color:#991b1b;font-weight:500}.ng-card p{margin:0;color:#991b1b}
 /* Avisos de venciment */
 @keyframes dueBlink{0%,100%{background-color:#fee2e2;box-shadow:0 0 0 0 rgba(220,38,38,0)}50%{background-color:#fecaca;box-shadow:0 0 0 3px rgba(220,38,38,.55)}}
 .due-blink{animation:dueBlink 1.3s ease-in-out infinite;color:#7f1d1d}
@@ -2801,7 +2808,7 @@ function vInici(v) {
   v.innerHTML = `${flashHtml()}<section class="ihead${rkm ? ' rk-on' : ''}"><div class="ileft">
     <div class="iname icomp${heroBrand(t).cls}" style="${heroBrand(t).st}"><div class="itx"><p class="k">Projecte emprenedor · RA4 i RA5</p><h1>${esc(projName(t))}</h1>${sub ? `<p class="d">${esc(sub)}</p>` : ''}
       ${heroFoot(t)}</div>${filled(m.nom) ? teamLogoHtml(t, 'nlogo big') : ''}</div>
-    <div class="isub"><div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
+    ${negHtml(t)}<div class="isub"><div class="iprog"><div class="iring" style="--p:${(pr * 100).toFixed(1)}%" role="img" aria-label="Projecte completat al ${Math.round(pr * 100)} %"><b>${Math.round(pr * 100)} %</b></div>
       <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
     <div class="istats">${[['correcte', 'ok', 'correctes'], ['sent', 'sent', 'enviats'], ['millorar', 'mil', 'a millorar'], ['edit', 'edit', 'en edició']].map(([w, c, l]) => `<button type="button" class="iws" data-ws="${w}" ${wl[w].length ? `title="Veure els apartats ${l}"` : 'disabled'}><b style="color:var(--st-${c}-f)">${wc[w]}</b><small>${l}</small></button>`).join('')}<div id="iwsl" class="iwsl" hidden></div></div></div></div>${rkm}
   </section>
@@ -7174,6 +7181,13 @@ const BADGES = {
   top: ['💰', 'Projecte més finançat', 'Han rebut més inversió que ningú a la ronda d\'inversors.']
 };
 let PUB = {}, INVS = [], rkT = null, rkLast = '', rkView = null;
+/* Insígnies negatives: el professor les posa a un alumne (review._neg[id] = { n: nom, k: tipus, c: comentari, at }).
+   L'alumne i el seu equip les veuen amb el nom; al rànquing només compten per a l'equip (sense nom) i resten RK_BADGE punts cadascuna. */
+const NEG = {
+  feina: ['😴', 'No treballa a classe'], mobil: ['📱', 'Distret amb el mòbil'], molesta: ['🗣️', 'Distreu els companys'],
+  material: ['🎒', 'Sense material ni feina feta'], equip: ['🤝', 'No col·labora amb l\'equip']
+};
+const negList = t => { const o = (t && t.review && isObj(t.review._neg)) ? t.review._neg : {}; return Object.entries(o).filter(([, x]) => isObj(x) && NEG[x.k]).map(([id, x]) => Object.assign({ id }, x)).sort((a, b) => (b.at || 0) - (a.at || 0)); };
 const rkS = () => CLOUD ? (PUB = isObj(PUB) ? PUB : {}) : (G.rk = isObj(G.rk) ? G.rk : {});
 const rkSt = () => ['open', 'closed'].includes(rkS().st) ? rkS().st : 'off', rkOn = () => rkS().on !== false;
 const isStuCloud = () => CLOUD && ME && !ME.isProf;
@@ -7210,9 +7224,9 @@ function teamBadges(t) {
 // live: el professor veu el capital abans de tancar la ronda (l'alumnat només quan es tanca)
 function rankCalc(live) {
   const I = invTotals(), show = live || rkSt() === 'closed';
-  const rows = G.teams.map(t => ({ id: t.id, n: projName(t), c1: col(t.data.marca.color1, '#f7a21b'), b: teamBadges(t), p: Math.round(progress(t) * 100), c: show ? I.cap[t.id] || 0 : 0 }));
+  const rows = G.teams.map(t => ({ id: t.id, ng: negList(t).length, n: projName(t), c1: col(t.data.marca.color1, '#f7a21b'), b: teamBadges(t), p: Math.round(progress(t) * 100), c: show ? I.cap[t.id] || 0 : 0 }));
   if (rkSt() === 'closed') { const mx = Math.max(0, ...rows.map(r => r.c)); if (mx > 0) rows.filter(r => r.c === mx).forEach(r => r.b.push('top')); }
-  rows.forEach(r => { r.pt = r.p + r.b.length * RK_BADGE + Math.floor(r.c / 1000); });
+  rows.forEach(r => { r.pt = r.p + r.b.length * RK_BADGE + Math.floor(r.c / 1000) - r.ng * RK_BADGE; });
   return rows.sort((a, b) => b.pt - a.pt || b.p - a.p || a.n.localeCompare(b.n, 'ca'));
 }
 const rankBuild = () => { const rows = rankCalc(false); return { st: rkSt(), on: rkOn(), rows, h: rkHist(rows) }; };
@@ -7263,7 +7277,8 @@ async function rankPush() {
 // D'on surten els punts de cada equip (perquè l'alumnat entengui per què dos equips sense insígnies no tenen els mateixos punts)
 function rkWhy(r) {
   const p = Number(r.p) || 0, nb = (r.b || []).filter(k => BADGES[k]).length, ci = Math.floor((Number(r.c) || 0) / 1000);
-  return [`${p} pt pel ${p} % del projecte fet`, nb ? `${nb * RK_BADGE} pt per ${nb === 1 ? '1 insígnia' : nb + ' insígnies'}` : 'cap insígnia encara', ci ? `${ci} pt per la inversió` : ''].filter(Boolean).join(' · ');
+  const ng = Number(r.ng) || 0;
+  return [`${p} pt pel ${p} % del projecte fet`, nb ? `${nb * RK_BADGE} pt per ${nb === 1 ? '1 insígnia' : nb + ' insígnies'}` : 'cap insígnia encara', ci ? `${ci} pt per la inversió` : '', ng ? `−${ng * RK_BADGE} pt per ${ng === 1 ? '1 insígnia negativa' : ng + ' insígnies negatives'}` : ''].filter(Boolean).join(' · ');
 }
 // Quadrat amb les inicials: lletra blanca o fosca segons el color de l'equip (perquè es llegeixi sempre)
 function rkSq(r) {
@@ -7277,10 +7292,10 @@ const rkBadgesHtml = b => { const n = {}; (b || []).filter(k => BADGES[k]).forEa
 function rankListHtml(rows, mine, cap) {
   rows = rkDecor(rows);
   return `<ol class="rk-l">${rows.map((r, i) => `<li class="${r.id === mine ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>${rkSq(r)}
-    <span class="rk-n"><b><span class="rk-tk">${esc(r.tk)}</span> ${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b)}</span><small class="rk-bk">${rkWhy(r)}</small></span>
+    <span class="rk-n"><b><span class="rk-tk">${esc(r.tk)}</span> ${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b)}${r.ng ? `<span class="rk-bd neg" title="Insígnies negatives: −${r.ng * RK_BADGE} punts">👎<small>×${r.ng}</small></span>` : ''}</span><small class="rk-bk">${rkWhy(r)}</small></span>
     ${cap ? `<span class="rk-c" title="Inversió rebuda">${eur(r.c)}</span>` : ''}<span class="rk-mv">${rkChg(r)}${rkSpark(r)}</span><span class="rk-pt" title="${esc(rkWhy(r))}"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`).join('')}</ol>`;
 }
-const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><p class="small" style="margin:8px 0 0">Els punts surten de tres coses. Per això dos equips sense insígnies poden tenir punts diferents: el que porta més projecte fet té més punts. Sota el nom de cada equip hi veieu d'on surten els seus. Com a la borsa, la fletxa <span class="rk-chg up">▲</span> o <span class="rk-chg dn">▼</span> diu quant ha pujat o baixat cada equip els darrers ${RK_DAYS} dies.</p><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet (els apartats que heu omplert).</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li></ul>
+const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><p class="small" style="margin:8px 0 0">Els punts surten de tres coses. Per això dos equips sense insígnies poden tenir punts diferents: el que porta més projecte fet té més punts. Sota el nom de cada equip hi veieu d'on surten els seus. Com a la borsa, la fletxa <span class="rk-chg up">▲</span> o <span class="rk-chg dn">▼</span> diu quant ha pujat o baixat cada equip els darrers ${RK_DAYS} dies.</p><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet (els apartats que heu omplert).</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li><li><b>−${RK_BADGE} punts</b> per cada insígnia negativa 👎 que ${PR('el')} posi a algú de l'equip per no treballar a classe.</li></ul>
   <div class="rk-bl">${Object.values(BADGES).map(([e, n, d]) => `<div><span>${e}</span><span><b>${esc(n)}</b><small>${esc(d)}</small></span></div>`).join('')}</div></details>`;
 // Targeta de l'inici de l'equip
 function rankCardHtml(t) {
@@ -7293,11 +7308,16 @@ function rankCardHtml(t) {
     ${banner}${rankListHtml(rows, t.id, st === 'closed')}${rkHowHtml()}</section>`;
 }
 // Requadre petit de l'inici (al costat del nom de l'equip): els 3 primers i el vostre equip; la llista sencera s'obre en una finestra
+// Avís a l'inici de l'equip amb les insígnies negatives (amb el nom de l'alumne)
+function negHtml(t) {
+  const l = negList(t); if (!l.length) return '';
+  return `<section class="ng-card"><b>👎 Insígnies negatives de l'equip <small>(−${l.length * RK_BADGE} punts al rànquing)</small></b><ul>${l.map(x => `<li><span>${NEG[x.k][0]}</span><span><b>${esc(nomBo(x.n) || x.n)}</b> · ${esc(NEG[x.k][1])}${x.c ? ` · «${esc(x.c)}»` : ''} <small>${new Date(x.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' })}</small></span></li>`).join('')}</ul><p class="small">Quan ${PR('el')} vegi que heu millorat, la pot retirar i recuperareu els punts.</p></section>`;
+}
 function rankMiniHtml(t) {
   if (!rkOn()) return ''; const st = rkSt(), all = rankRows(); if (!all.length) return '';
   const rows = rkDecor(all), pos = rows.findIndex(r => r.id === t.id), prof = CLOUD && ME && ME.isProf;
   const show = rows.length <= 6 ? rows : rows.slice(0, 5).concat(pos > 4 ? [rows[pos]] : [rows[5]]);
-  const tr = r => { const i = rows.indexOf(r); return `${i > 5 && r === rows[pos] ? '<tr class="rk-gap" aria-hidden="true"><td colspan="5">···</td></tr>' : ''}<tr class="${r.id === t.id ? 'me' : ''}"><td class="rk-p">${i + 1}</td><td><b class="rk-tk">${esc(r.tk)}</b><small>${esc(r.n)}</small></td><td class="rk-v">${Number(r.pt) || 0}<small>pt</small></td><td>${rkChg(r)}</td><td>${rkSpark(r)}</td></tr>`; };
+  const tr = r => { const i = rows.indexOf(r); return `${i > 5 && r === rows[pos] ? '<tr class="rk-gap" aria-hidden="true"><td colspan="5">···</td></tr>' : ''}<tr class="${r.id === t.id ? 'me' : ''}"><td class="rk-p">${i + 1}</td><td><b class="rk-tk">${esc(r.tk)}</b>${r.ng ? ` <span class="rk-ng" title="Insígnies negatives: −${r.ng * RK_BADGE} punts">👎${r.ng > 1 ? r.ng : ''}</span>` : ''}<small>${esc(r.n)}</small></td><td class="rk-v">${Number(r.pt) || 0}<small>pt</small></td><td>${rkChg(r)}</td><td>${rkSpark(r)}</td></tr>`; };
   return `<section class="rk-mini"><div class="rk-h"><div><p class="k">Borsa de la classe</p><h2>${pos >= 0 ? `Posició ${pos + 1} <small>de ${rows.length}</small>` : 'Cotitzacions'}</h2></div>${pos >= 0 ? rkChg(rows[pos]).replace('rk-chg', 'rk-chg big') : ''}</div>
     ${rkTapeHtml(rows)}
     ${st === 'open' ? `<div class="rk-open sm"><span>💼 <b>Ronda d'inversors oberta</b></span><button type="button" class="btn small" id="rkInv"${prof ? ' disabled title="Només ho pot fer l\'alumnat"' : ''}>Invertir</button></div>` : ''}
@@ -7350,8 +7370,19 @@ function vRanking(v) {
     ${card('Ronda d\'inversors', pad(`<p style="margin-top:0">Cada alumne té <b>${eur(INV_BUDGET)}</b> ficticis per invertir en els projectes dels <b>altres</b> equips i ha d'explicar per què. Obre-la, per exemple, després dels pitchs. Mentre és oberta, l'alumnat no veu quant rep cada equip: ho veurà quan la tanquis.</p>
       <p><b>Estat:</b> ${stTxt} · <b>${I.n}</b> de ${nAl} ${nAl === 1 ? 'alumne ha' : 'alumnes han'} invertit.</p><div class="row">${btns}</div>`))}
     ${card('Classificació', pad(`${st !== 'closed' ? '<p class="small muted" style="margin-top:0">Tu ja veus la inversió que porta cada equip; l\'alumnat no la veurà fins que tanquis la ronda.</p>' : ''}${rankListHtml(rows, null, true)}${rkHowHtml()}`), rows.length + ' equips')}
-    ${whyL ? card('Per què hi han invertit', pad(whyL)) : ''}`;
+    ${whyL ? card('Per què hi han invertit', pad(whyL)) : ''}
+    ${card('Insígnies negatives 👎', pad(`<p style="margin-top:0" class="small muted">Per a l'alumnat que no treballa a classe. Cada una resta ${RK_BADGE} punts a l'equip fins que la retiris. L'alumne i el seu equip la veuen amb el nom; la resta de la classe només veu que l'equip en té.</p>
+      <div class="ng-l">${G.teams.map((t, ti) => `<div class="ng-t"><b>${esc(projName(t))}</b>${t.members.filter(m => filled(m.name)).map(m => { const nm = nomBo(m.name) || m.name, mine = negList(t).filter(x => normNom(x.n) === normNom(nm));
+        return `<div class="ng-m"><span class="ng-n">${esc(nm)}</span><span class="ng-bs">${mine.map(x => `<span class="ng-b" title="${esc(NEG[x.k][1] + (x.c ? ': ' + x.c : '') + ' · ' + new Date(x.at).toLocaleDateString('ca-ES'))}">${NEG[x.k][0]} ${esc(NEG[x.k][1])}<button type="button" class="ng-x" data-ngdel="${ti}:${esc(x.id)}" aria-label="Retirar la insígnia" title="Retirar-la">×</button></span>`).join('')}</span><button type="button" class="btn ghost small" data-ngadd="${ti}" data-ngn="${esc(nm)}">+ 👎</button></div>`; }).join('') || '<p class="small muted">Sense integrants.</p>'}</div>`).join('')}</div>`))}`;
   $('#rkOn').onchange = e => { rkS().on = e.target.checked; save(); rankPush(); };
+  v.querySelectorAll('[data-ngdel]').forEach(b => b.onclick = () => { const [ti, id] = b.dataset.ngdel.split(':'), t = G.teams[+ti]; if (t && isObj(t.review._neg)) { delete t.review._neg[id]; save(); rankPush(); render(); toast('Insígnia retirada.'); } });
+  v.querySelectorAll('[data-ngadd]').forEach(b => b.onclick = () => { const t = G.teams[+b.dataset.ngadd], nm = b.dataset.ngn; if (!t) return;
+    bkDialog(`<div class="bkic">👎</div><b>Insígnia negativa per a ${esc(nm)}</b><p class="small muted">Resta ${RK_BADGE} punts a ${esc(projName(t))} fins que la retiris.</p>
+      <div class="ng-pick">${Object.entries(NEG).map(([k, [e, l]], i) => `<label class="choice"><input type="radio" name="ngk" value="${k}" ${i ? '' : 'checked'}><span>${e} ${esc(l)}</span></label>`).join('')}</div>
+      <label class="small" style="display:block;margin-top:10px">Comentari per a l'alumne (opcional)<textarea id="ngC" rows="2" maxlength="200" style="width:100%"></textarea></label>
+      <div class="row"><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button><button type="button" class="btn" id="ngOk">Posar la insígnia</button></div>`,
+      (o, close) => { $('#ngOk').onclick = () => { const k = (o.querySelector('[name=ngk]:checked') || {}).value; if (!NEG[k]) return;
+        t.review._neg = isObj(t.review._neg) ? t.review._neg : {}; t.review._neg[newId('n')] = { n: nm, k, c: $('#ngC').value.trim().slice(0, 200), at: Date.now() }; save(); rankPush(); close(); render(); toast('Insígnia negativa posada a ' + nm + '.'); }; }); });
   v.querySelectorAll('[data-rk]').forEach(b => b.onclick = () => { rkS().st = b.dataset.rk; save(); rankPush(); render(); toast(b.dataset.rk === 'open' ? 'Ronda oberta: l\'alumnat ja pot invertir.' : b.dataset.rk === 'closed' ? 'Ronda tancada: l\'alumnat ja veu els resultats.' : 'Resultats amagats.'); });
 }
 const VIEWS = { inici: vInici, equip: vEquip, idea: vIdea, empatia: vEmpatia, entrevistes: vEntrevistes, definir: vDefinir, prototip: vPrototip, micro: vMicro, pestel: vPestel, dafo: vDafo,
