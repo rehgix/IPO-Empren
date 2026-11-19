@@ -1668,6 +1668,15 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 #tbRole .rseg{background:#ECE8E1;box-shadow:none;border-radius:12px;padding:3px}
 #tbRole .rseg button{border-radius:9px;color:#6B655C}
 #tbRole .rseg button[aria-pressed="true"]{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+/* Selector «Vista de docent | Vista d'alumne»: ben visible (vora fosca i l'opció activa en negre) */
+.side .role .rseg,#tbRole .rseg{background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink);border-radius:999px;padding:4px}
+.side .role .rseg button,#tbRole .rseg button{color:var(--ink);font-weight:600;border-radius:999px}
+.side .role .rseg button[aria-pressed="true"],#tbRole .rseg button[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:0 2px 6px rgba(17,19,24,.25)}
+.side .role .rseg button:not([aria-pressed="true"]):hover:not(:disabled),#tbRole .rseg button:not([aria-pressed="true"]):hover:not(:disabled){background:#f1efea;color:var(--ink)}
+.rview{background:#fff;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.rview button{color:var(--ink)}
+.rview button[aria-pressed="true"]{background:var(--ink);color:#fff;box-shadow:0 2px 6px rgba(17,19,24,.25)}
+.rview button:not([aria-pressed="true"]):hover{background:#f1efea}
 #tbRole select{border-radius:11px}
 /* Franja del grup: etiquetes petites en lloc d'una caixa */
 .grpbar{background:none!important;border:0!important;box-shadow:none!important;padding:0!important;gap:8px;font-size:13px}
