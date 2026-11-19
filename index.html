@@ -2690,7 +2690,7 @@ function vInici(v) {
   const mil = PROG.find(s => access(s.k) === 'open' && milPending(t, s)), nx = mil || PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done') || sec('dossier');
   const names = t.members.map(x => esc(nomBo(x.name))).filter(Boolean);
   // Els noms de l'equip, un per línia
-  const chips = [names.length ? `<span class="inames">${names.map(n => `<span>${n}</span>`).join('')}</span>` : 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir'), t.delivered ? 'Dossier lliurat el ' + new Date(t.delivered).toLocaleDateString('ca-ES') : 'Dossier no lliurat'];
+  const chips = [names.length ? `<span class="inames">${names.map(n => `<span>${n}</span>`).join('')}</span>` : 'Encara no heu afegit ningú', esc(sectorLabel(t.data.idea.sector) || 'Sector per definir')]; // sense «Dossier lliurat»: el projecte encara és en curs
   const sub = filled(m.eslogan) ? m.eslogan : '';
   const groups = SECS.filter(g => g[0] !== 'lliura').map(g => [g, g[3].map(([k]) => sec(k)).filter(s => s.p && !amagat(s.k))]).filter(([, ss]) => ss.length);
   const acx = k => tancatProf(k) ? 'closed' : access(k); // el professor hi veu també quins estan tancats
