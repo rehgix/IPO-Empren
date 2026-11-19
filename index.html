@@ -1120,7 +1120,8 @@ table.fin{box-shadow:none}
 .ihero{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px}
 .iname{grid-row:span 2;position:relative;background:var(--hero);color:var(--hero-fg);border-radius:32px;padding:34px 36px;display:flex;flex-direction:column;justify-content:space-between;gap:32px;min-height:340px;min-width:0}
 .iname .k{margin:0;color:var(--hero-mu);font-size:15px;padding-right:90px}
-.iname h1{margin:8px 0 0;font:700 clamp(48px,7vw,104px)/.92 var(--font);letter-spacing:-.045em;overflow-wrap:anywhere;text-wrap:balance}
+.iname>div{min-width:0;max-width:100%}
+.iname h1{margin:8px 0 0;font:700 clamp(48px,7vw,104px)/.92 var(--font);letter-spacing:-.045em;overflow-wrap:normal;word-break:normal;hyphens:none;text-wrap:balance;max-width:100%;overflow:hidden}
 .iname .d{margin:14px 0 0;font-size:21px;color:#E3E6F2;overflow-wrap:anywhere}
 .iname .nlogo{position:absolute;top:26px;right:26px;width:72px;height:72px;border-radius:20px;background:#fff;padding:6px;display:grid;place-items:center}
 .iname .nlogo img{width:100%;height:100%;object-fit:contain}
@@ -1357,7 +1358,7 @@ table.fin{box-shadow:none}
 @media (max-width:620px){
   #view[data-g] > .head{padding:22px 20px;border-radius:26px}
   .grpbar{border-radius:20px}
-  .iname{padding:24px 20px;border-radius:28px}.iname .k{padding-right:64px}.iname .nlogo{width:54px;height:54px;top:20px;right:20px;border-radius:16px}
+  .iname{padding:24px 20px;border-radius:28px}.iname .k{padding-right:64px}.iname:has(.nlogo) h1{padding-right:64px}.iname .nlogo{width:54px;height:54px;top:20px;right:20px;border-radius:16px}
   .iname .d{font-size:18px}
   .iprog,.istats{border-radius:28px;padding:20px}
   .iprog{gap:18px}.inx{flex-basis:130px}
@@ -2478,8 +2479,13 @@ function render() {
   updateTeamBanner();
   if (CLOUD) { cloudAfterRender(v); applyLocks(); }
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-  navSave(); bellUpdate(); segBtnUpdate(); rankPushSoon();
+  navSave(); bellUpdate(); segBtnUpdate(); rankPushSoon(); fitHeroName();
 }
+// Nom de l'equip a la targeta de l'inici: les paraules no es parteixen; si una no hi cap, la lletra es fa més petita fins que hi cap
+function fitHeroName() { const h = document.querySelector('.iname h1'); if (!h) return;
+  h.style.fontSize = ''; let fs = parseFloat(getComputedStyle(h).fontSize), n = 0;
+  while (h.scrollWidth > h.clientWidth + 1 && fs > 16 && n++ < 40) { fs = Math.max(16, fs * .93); h.style.fontSize = fs + 'px'; } }
+let FIT_T = 0; window.addEventListener('resize', () => { clearTimeout(FIT_T); FIT_T = setTimeout(fitHeroName, 120); }); if (document.fonts && document.fonts.ready) document.fonts.ready.then(fitHeroName);
 // Botó «Seguiment» a dalt de tot, al costat del menú: torna a la vista de tots els equips des de qualsevol pàgina del professor
 function segBtnUpdate() {
   let b = $('#segBtn'); const show = false; // ara hi ha les pestanyes de dalt
