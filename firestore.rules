@@ -103,6 +103,19 @@ service cloud.firestore {
       allow create: if reqOk(email);
     }
 
+    // RÀNQUING DE TOT EL CENTRE: el document es diu com el grup. El desa el professorat d'aquell grup (nom del projecte, logo, punts i insígnies,
+    // mai notes ni noms de l'alumnat) i el pot llegir qualsevol compte de l'institut.
+    match /borsa/{gid} {
+      allow read: if signed();
+      allow create, update: if isProf(gid)
+        && request.resource.data.keys().hasOnly(['g', 'rows', 'at', 'expiresAt'])
+        && request.resource.data.g is string && request.resource.data.g.size() <= 100
+        && request.resource.data.rows is list && request.resource.data.rows.size() <= 40
+        && request.resource.data.at is number
+        && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt <= grp(gid).expiresAt;
+      allow delete: if isProf(gid);
+    }
+
     match /groups/{gid} {
       // Llegir el grup: els seus professors, els seus alumnes, qui té una invitació o qualsevol mentre l'entrada lliure és oberta
       allow get: if signed() && (me() in resource.data.profs || exists(memberDoc(gid))
@@ -148,6 +161,7 @@ service cloud.firestore {
         allow read: if isProf(gid) || (signed() && exists(memberDoc(gid)));
         allow write: if isProf(gid);
       }
+      // (el rànquing de tot el centre és a /borsa/{grup}, més avall)
       // RONDA D'INVERSORS: cada alumne desa la seva inversió (document amb el seu uid) només mentre la ronda és oberta,
       // i mai al seu equip. El professor comprova que no se surti del pressupost en sumar-ho.
       match /inver/{uid} {

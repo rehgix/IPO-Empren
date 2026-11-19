@@ -1198,6 +1198,7 @@ table.fin{box-shadow:none}
 .rk-l .rk-gap{background:none;padding:0 0 0 18px;color:var(--muted);line-height:.6}
 .rk-open.sm{padding:8px 12px;border-radius:14px;gap:10px;justify-content:space-between}.rk-open.sm span{flex:1}
 .rk-all{align-self:flex-start;margin-top:auto;font-weight:600}
+.rk-gl{align-self:flex-start;margin-top:10px}.rk-card .rk-gl{margin-top:14px}
 .iprow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;margin-top:16px}
 .rkdlg .bkbox{width:min(720px,100%)}.rk-dlg .rk-card{margin:0;padding:0;background:none}
 @media (max-width:900px){.iprow{grid-template-columns:minmax(0,1fr)}}
@@ -7252,7 +7253,8 @@ function rankCalc(live) {
   rows.forEach(r => { r.pt = r.p + r.b.length * RK_BADGE + Math.floor(r.c / 1000) - r.ng * RK_BADGE; });
   return rows.sort((a, b) => b.pt - a.pt || b.p - a.p || a.n.localeCompare(b.n, 'ca'));
 }
-const rankBuild = () => { const rows = rankCalc(false); return { st: rkSt(), on: rkOn(), rows, h: rkHist(rows) }; };
+const rkGlobOn = () => rkS().glob !== false; // el grup surt (i els seus alumnes veuen) al rànquing de tot el centre
+const rankBuild = () => { const rows = rankCalc(false); return { st: rkSt(), on: rkOn(), glob: rkGlobOn(), rows, h: rkHist(rows) }; };
 /* ---------- Borsa: historial de punts per dia (h: { 'AAAA-MM-DD': { equip: punts } }), codi de 4 lletres i variació respecte a fa 7 dies ---------- */
 const RK_DAYS = 7, RK_KEEP = 15;
 function rkHist(rows) {
@@ -7296,6 +7298,11 @@ async function rankPush() {
   if (!CLOUD || !ME || !ME.isProf || !GROUP || !GROUP.expiresAt) return;
   const d = rankBuild(), s = J(d); if (s === rkLast) return;
   try { await FB.set(gpath('pub', 'rank'), Object.assign({}, d, { at: Date.now(), expiresAt: { __ts: GROUP.expiresAt } })); rkLast = s; } catch (e) { console.warn(e); }
+  // Rànquing de tot el centre (borsa/{grup}): només nom del projecte, logo, color, progrés, insígnies i punts; mai notes ni noms de l'alumnat
+  try {
+    if (d.glob && d.on) await FB.set('borsa/' + GID, { g: String(G.name || '').slice(0, 100), rows: d.rows.map(r => ({ id: r.id, n: r.n, c1: r.c1, lg: r.lg, b: r.b, p: r.p, pt: r.pt })), at: Date.now(), expiresAt: { __ts: GROUP.expiresAt } });
+    else await FB.del('borsa/' + GID);
+  } catch (e) { console.warn(e); }
 }
 // D'on surten els punts de cada equip (perquè l'alumnat entengui per què dos equips sense insígnies no tenen els mateixos punts)
 function rkWhy(r) {
@@ -7340,7 +7347,7 @@ function rankCardHtml(t) {
   const banner = st === 'open' ? `<div class="rk-open"><span class="rk-oi">💼</span><div><b>Ronda d'inversors oberta!</b><p>Tens ${eur(INV_BUDGET)} per invertir en els projectes dels altres equips. Reparteix-los com vulguis i explica per què.</p></div><button type="button" class="btn" id="rkInv"${prof ? ' disabled title="Només ho pot fer l\'alumnat"' : ''}>Invertir</button></div>`
     : st === 'closed' ? '<div class="rk-done">💰 La ronda d\'inversors ha acabat: ja podeu veure quant ha rebut cada projecte.</div>' : '';
   return `<section class="rk-card"><div class="rk-h"><div><p class="k">Rànquing de la classe</p><h2>${pos >= 0 ? `Esteu en la posició ${pos + 1} de ${rows.length}` : 'Classificació dels equips'}</h2></div><span class="rk-trophy" aria-hidden="true">🏆</span></div>
-    ${banner}${rankListHtml(rows, t.id, st === 'closed')}${rkHowHtml()}</section>`;
+    ${banner}${rankListHtml(rows, t.id, st === 'closed')}${rkHowHtml()}${rkGlobBtn()}</section>`;
 }
 // Requadre petit de l'inici (al costat del nom de l'equip): els 3 primers i el vostre equip; la llista sencera s'obre en una finestra
 // Avís a l'inici de l'equip amb les insígnies negatives (amb el nom de l'alumne)
@@ -7357,10 +7364,44 @@ function rankMiniHtml(t) {
     ${rkTapeHtml(rows)}
     ${st === 'open' ? `<div class="rk-open sm"><span>💼 <b>Ronda d'inversors oberta</b></span><button type="button" class="btn small" id="rkInv"${prof ? ' disabled title="Només ho pot fer l\'alumnat"' : ''}>Invertir</button></div>` : ''}
     <table class="rk-tb"><thead><tr><th>#</th><th>Equip</th><th>Valor</th><th>${RK_DAYS} dies</th><th></th></tr></thead><tbody>${show.map(tr).join('')}</tbody></table>
-    <button type="button" class="linkbtn rk-all" id="rkAll">Veure tot el rànquing i d'on surten els punts →</button></section>`;
+    <button type="button" class="linkbtn rk-all" id="rkAll">Veure tot el rànquing i d'on surten els punts →</button>${rkGlobBtn()}</section>`;
+}
+const rkGlobBtn = () => rkGlobOn() ? '<button type="button" class="btn ghost small rk-gl" id="rkGlob">🏫 Rànquing de tot el centre</button>' : '';
+/* ---------- Rànquing de tot el centre: cada professor publica els seus equips a borsa/{grup} i tothom amb compte de l'institut els pot llegir ---------- */
+const tsMs = x => typeof x === 'number' ? x : x && x.toMillis ? x.toMillis() : x && x.seconds ? x.seconds * 1000 : 0;
+async function globLoad() {
+  if (!CLOUD) { // grup d'exemple: els equips d'aquí i alguns d'inventats d'altres grups
+    const mk = (g, l) => l.map(([n, c1, b, p, pt], i) => ({ id: 'x' + g + i, gid: 'x' + g, g, n, c1, lg: '', b, p, pt }));
+    return rankRows().map(r => Object.assign({}, r, { gid: GID || 'ex', g: G.name }))
+      .concat(mk('IPO II · 1r Cuina i gastronomia', [['Sabor de Casa', '#e4572e', ['temps', 'canvas'], 48, 78], ['Verd i Fresc', '#2e9e5b', ['temps'], 35, 52]]))
+      .concat(mk('IPO II · 2n Gestió administrativa', [['Paper Net', '#3b6fd4', ['temps', 'net', 'canvas', 'ods'], 62, 112], ['Al Punt', '#8a5cd0', [], 20, 20]]));
+  }
+  const now = Date.now(), l = await FB.list('borsa');
+  return l.filter(d => d.on !== false && Array.isArray(d.rows) && !(tsMs(d.expiresAt) && tsMs(d.expiresAt) < now))
+    .flatMap(d => d.rows.filter(isObj).map(r => Object.assign({}, r, { gid: d.id, g: String(d.g || '') })));
+}
+function globListHtml(rows, mineG, mineT) {
+  return `<ol class="rk-l">${rows.map((r, i) => { const me = r.gid === mineG && r.id === mineT;
+    return `<li class="${me ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>${rkSq(r)}
+    <span class="rk-n"><b>${esc(r.n)}${me ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b)}</span><small class="rk-bk">${esc(r.g)} · ${Number(r.p) || 0} % del projecte fet</small></span>
+    <span class="rk-pt"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`; }).join('')}</ol>`;
+}
+function globDialog() {
+  const t = T(), box = id => document.getElementById(id);
+  bkDialog(`<div class="rk-dlg"><section class="rk-card"><div class="rk-h"><div><p class="k">Tot el centre</p><h2>Rànquing de tots els grups</h2></div><span class="rk-trophy" aria-hidden="true">🏫</span></div>
+    <div id="glBox"><p class="muted">Carregant el rànquing…</p></div></section></div><div class="row"><button type="button" class="btn" data-bkclose>Tancar</button></div>`, o => {
+    o.classList.add('rkdlg');
+    globLoad().then(rows => {
+      const el = box('glBox'); if (!el || !o.isConnected) return;
+      rows.sort((a, b) => (Number(b.pt) || 0) - (Number(a.pt) || 0) || (Number(b.p) || 0) - (Number(a.p) || 0) || String(a.n).localeCompare(String(b.n), 'ca'));
+      const ng = new Set(rows.map(r => r.gid)).size;
+      el.innerHTML = rows.length ? `<p class="small muted" style="margin:0 0 10px">${rows.length} equips de ${ng} ${ng === 1 ? 'grup' : 'grups'}. Els punts es compten igual a tots els grups. Només es veu el nom del projecte, el logo, el progrés i les insígnies.</p>${globListHtml(rows, GID || 'ex', t && t.id)}` : '<p class="muted">Encara no hi ha cap grup al rànquing del centre.</p>';
+    }).catch(e => { console.warn(e); const el = box('glBox'); if (el) el.innerHTML = '<p class="muted">No s\'ha pogut carregar el rànquing. Torna-ho a provar d\'aquí una estona.</p>'; });
+  });
 }
 function rankBind(v) { const b = v.querySelector('#rkInv'); if (b) b.onclick = invDialog;
-  const a = v.querySelector('#rkAll'); if (a) a.onclick = () => bkDialog(`<div class="rk-dlg">${rankCardHtml(T())}</div><div class="row"><button type="button" class="btn" data-bkclose>Tancar</button></div>`, o => { o.classList.add('rkdlg'); const i = o.querySelector('#rkInv'); if (i) i.onclick = () => { o.remove(); invDialog(); }; }); }
+  const gl = v.querySelector('#rkGlob'); if (gl) gl.onclick = globDialog;
+  const a = v.querySelector('#rkAll'); if (a) a.onclick = () => bkDialog(`<div class="rk-dlg">${rankCardHtml(T())}</div><div class="row"><button type="button" class="btn" data-bkclose>Tancar</button></div>`, o => { o.classList.add('rkdlg'); const i = o.querySelector('#rkInv'); if (i) i.onclick = () => { o.remove(); invDialog(); }; const g = o.querySelector('#rkGlob'); if (g) g.onclick = () => { o.remove(); globDialog(); }; }); }
 // Finestra per invertir (alumnat): un import per a cada altre equip i el motiu
 async function invDialog() {
   const t = T(); if (!t || rkSt() !== 'open') return;
@@ -7401,6 +7442,7 @@ function vRanking(v) {
   const whyL = rows.filter(r => (I.why[r.id] || []).length).map(r => `<details class="rk-why"><summary><b>${esc(r.n)}</b> · ${eur(r.c)} de ${I.why[r.id].length} ${I.why[r.id].length === 1 ? 'inversor' : 'inversors'}</summary><ul class="plain">${I.why[r.id].sort((x, y) => y.v - x.v).map(x => `<li><b>${eur(x.v)}</b>${x.n ? ` · ${esc(x.n)}` : ''}${x.w ? `: «${esc(x.w)}»` : ''}</li>`).join('')}</ul></details>`).join('');
   v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Rànquing</h1></div></section>
     ${card('Rànquing a l\'inici dels equips', pad(`<label class="choice"><input type="checkbox" id="rkOn" ${rkOn() ? 'checked' : ''}><span><b>Mostrar el rànquing a la pàgina principal de cada equip</b><span class="small muted">Hi veuen la posició, els punts i les insígnies de tots els equips. Mai les notes.</span></span></label>
+      <label class="choice" style="margin-top:12px"><input type="checkbox" id="rkGl" ${rkGlobOn() ? 'checked' : ''}><span><b>Participar al rànquing de tot el centre</b><span class="small muted">Els vostres equips surten al rànquing global amb el nom del projecte, el logo, el progrés, les insígnies i els punts (mai notes ni noms de l'alumnat), i l'alumnat hi accedeix des d'un botó del seu rànquing. Si ho desmarques, desapareixen del rànquing global i el botó s'amaga.</span></span></label>
       ${CLOUD ? '<p class="small muted" style="margin:10px 0 0">El rànquing s\'actualitza quan tens el grup obert.</p>' : ''}`))}
     ${card('Ronda d\'inversors', pad(`<p style="margin-top:0">Cada alumne té <b>${eur(INV_BUDGET)}</b> ficticis per invertir en els projectes dels <b>altres</b> equips i ha d'explicar per què. Obre-la, per exemple, després dels pitchs. Mentre és oberta, l'alumnat no veu quant rep cada equip: ho veurà quan la tanquis.</p>
       <p><b>Estat:</b> ${stTxt} · <b>${I.n}</b> de ${nAl} ${nAl === 1 ? 'alumne ha' : 'alumnes han'} invertit.</p><div class="row">${btns}</div>`))}
@@ -7410,6 +7452,7 @@ function vRanking(v) {
       <div class="ng-l">${G.teams.map((t, ti) => `<div class="ng-t"><b>${esc(projName(t))}</b>${t.members.filter(m => filled(m.name)).map(m => { const nm = nomBo(m.name) || m.name, mine = negList(t).filter(x => normNom(x.n) === normNom(nm));
         return `<div class="ng-m"><span class="ng-n">${esc(nm)}</span><span class="ng-bs">${mine.map(x => `<span class="ng-b" title="${esc(NEG[x.k][1] + (x.c ? ': ' + x.c : '') + ' · ' + new Date(x.at).toLocaleDateString('ca-ES'))}">${NEG[x.k][0]} ${esc(NEG[x.k][1])}<button type="button" class="ng-x" data-ngdel="${ti}:${esc(x.id)}" aria-label="Retirar la insígnia" title="Retirar-la">×</button></span>`).join('')}</span><button type="button" class="btn ghost small" data-ngadd="${ti}" data-ngn="${esc(nm)}">+ 👎</button></div>`; }).join('') || '<p class="small muted">Sense integrants.</p>'}</div>`).join('')}</div>`))}`;
   $('#rkOn').onchange = e => { rkS().on = e.target.checked; save(); rankPush(); };
+  $('#rkGl').onchange = e => { rkS().glob = e.target.checked; save(); rankPush(); };
   v.querySelectorAll('[data-ngdel]').forEach(b => b.onclick = () => { const [ti, id] = b.dataset.ngdel.split(':'), t = G.teams[+ti]; if (t && isObj(t.review._neg)) { delete t.review._neg[id]; save(); rankPush(); render(); toast('Insígnia retirada.'); } });
   v.querySelectorAll('[data-ngadd]').forEach(b => b.onclick = () => { const t = G.teams[+b.dataset.ngadd], nm = b.dataset.ngn; if (!t) return;
     bkDialog(`<div class="bkic">👎</div><b>Insígnia negativa per a ${esc(nm)}</b><p class="small muted">Resta ${RK_BADGE} punts a ${esc(projName(t))} fins que la retiris.</p>
