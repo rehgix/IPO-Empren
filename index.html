@@ -1146,6 +1146,22 @@ table.fin{box-shadow:none}
 /* Rànquing de la classe i ronda d'inversors */
 .rk-card{background:var(--tile);border-radius:32px;padding:26px 28px;margin:16px 0;display:grid;gap:14px}
 .ihero.rk-on .rk-mini{grid-row:span 2}
+.rk-chg{font-weight:650;font-size:13px;white-space:nowrap;font-variant-numeric:tabular-nums}.rk-chg.up{color:#15803d}.rk-chg.dn{color:#dc2626}.rk-chg.fl,.rk-chg.nw{color:var(--muted)}
+.rk-chg.big{font-size:15px;padding:5px 10px;border-radius:999px;background:var(--soft)}.rk-chg.big.up{background:#dcfce7}.rk-chg.big.dn{background:#fee2e2}
+.rk-sp{width:60px;height:20px;display:block;flex:none}.rk-sp polyline{fill:none;stroke:#9ca3af;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}.rk-sp.up polyline{stroke:#16a34a}.rk-sp.dn polyline{stroke:#dc2626}
+.rk-tk{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;letter-spacing:.02em;font-size:.92em}
+.rk-tape{overflow:hidden;white-space:nowrap;border-radius:12px;background:#0F1222;color:#e5e7eb;padding:8px 0;font-size:13px;mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+.rk-tin{display:inline-block;animation:rkTape linear infinite}.rk-tape:hover .rk-tin{animation-play-state:paused}
+.rk-tin span{margin:0 16px}.rk-tin b{color:#fff}.rk-tape .rk-chg.up{color:#4ade80}.rk-tape .rk-chg.dn{color:#f87171}.rk-tape .rk-chg.fl,.rk-tape .rk-chg.nw{color:#9ca3af}
+@keyframes rkTape{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.rk-tin{animation:none}}
+.rk-tb{width:100%;border-collapse:collapse;font-size:14px}.rk-tb th{font:500 11.5px var(--font);color:var(--muted);text-align:left;padding:0 6px 4px}
+.rk-tb td{padding:6px;border-top:1px solid var(--line);vertical-align:middle}.rk-tb td small{display:block;font-size:12px;color:var(--muted);max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.rk-tb .rk-p{width:22px;font-weight:700;color:var(--muted)}.rk-tb .rk-v{font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}.rk-tb .rk-v small{display:inline;margin-left:2px}
+.rk-tb tr.me td{background:var(--accent-soft)}.rk-tb tr.me td:first-child{border-radius:10px 0 0 10px;color:var(--ink)}.rk-tb tr.me td:last-child{border-radius:0 10px 10px 0}
+.rk-tb .rk-gap td{border:0;padding:0 6px;color:var(--muted);line-height:.8}
+.rk-mv{display:flex;align-items:center;gap:8px}
+@media (max-width:620px){.rk-mv .rk-sp{display:none}}
 .rk-mini{background:var(--tile);border-radius:32px;padding:22px 24px;display:flex;flex-direction:column;gap:12px;min-width:0}
 .rk-mini .rk-h h2{font-size:26px}.rk-mini .rk-h h2 small{font-size:16px;color:var(--muted);font-weight:500}.rk-mini .rk-trophy{font-size:36px}
 .rk-l.sm{gap:6px}.rk-l.sm li{padding:7px 10px;border-radius:14px;gap:10px}.rk-l.sm .rk-sq{width:32px;height:32px;border-radius:10px;font-size:13px}.rk-l.sm .rk-pt b{font-size:19px}.rk-l.sm .rk-pos{width:24px;font-size:15px}
@@ -7019,9 +7035,45 @@ function rankCalc(live) {
   rows.forEach(r => { r.pt = r.p + r.b.length * RK_BADGE + Math.floor(r.c / 1000); });
   return rows.sort((a, b) => b.pt - a.pt || b.p - a.p || a.n.localeCompare(b.n, 'ca'));
 }
-const rankBuild = () => ({ st: rkSt(), on: rkOn(), rows: rankCalc(false) });
+const rankBuild = () => { const rows = rankCalc(false); return { st: rkSt(), on: rkOn(), rows, h: rkHist(rows) }; };
+/* ---------- Borsa: historial de punts per dia (h: { 'AAAA-MM-DD': { equip: punts } }), codi de 4 lletres i variació respecte a fa 7 dies ---------- */
+const RK_DAYS = 7, RK_KEEP = 15;
+function rkHist(rows) {
+  const h = Object.assign({}, isObj(rkS().h) ? rkS().h : {}); if (isStuCloud()) return h;
+  // Grup d'exemple: una setmana inventada perquè es vegin pujades i baixades
+  if (!CLOUD && G.example && !Object.keys(h).length) for (let i = RK_DAYS; i >= 1; i--) h[isoAdd(todayISO(), -i)] = Object.fromEntries(rows.map((r, j) => { const f = [0.75, 1.12, 0.9, 0.8][j % 4]; return [r.id, Math.round(r.pt * (1 - (1 - f) * i / RK_DAYS))]; }));
+  h[todayISO()] = Object.fromEntries(rows.map(r => [r.id, Number(r.pt) || 0]));
+  Object.keys(h).sort().slice(0, -RK_KEEP).forEach(k => delete h[k]);
+  if (!CLOUD) G.rk = Object.assign(rkS(), { h }); else rkS().h = h;
+  return h;
+}
+function rkTicker(n, used) {
+  const w = String(n || '').normalize('NFD').replace(/[^A-Za-z ]/g, '').toUpperCase().split(/\s+/).filter(Boolean), a = w.join('');
+  let t = a.length <= 4 ? a : w.length > 1 ? (w.map(x => x[0]).join('') + a.slice(1).replace(/[AEIOU]/g, '')).slice(0, 4) : (a[0] + a.slice(1).replace(/[AEIOU]/g, '') + a.slice(1)).slice(0, 4);
+  t = t || 'EQ'; let u = t, i = 2; while (used.has(u)) u = t.slice(0, 3) + i++; used.add(u); return u;
+}
+// Afegeix a cada fila el codi, la variació i la línia dels darrers dies
+function rkDecor(rows) {
+  const h = isStuCloud() ? (isObj(PUB.h) ? PUB.h : {}) : (isObj(rkS().h) ? rkS().h : {}), today = todayISO(), ks = Object.keys(h).filter(k => k < today).sort(), used = new Set();
+  const ref = ks.filter(k => k <= isoAdd(today, -RK_DAYS)).pop() || ks[0], days = Object.keys(h).filter(k => k <= today).sort().slice(-(RK_DAYS + 1));
+  return rows.map(r => { const pt = Number(r.pt) || 0, old = ref && isObj(h[ref]) && r.id in h[ref] ? Number(h[ref][r.id]) || 0 : null;
+    const sp = days.map(k => isObj(h[k]) && r.id in h[k] ? Number(h[k][r.id]) || 0 : null).filter(x => x !== null);
+    if (!days.includes(today)) sp.push(pt);
+    return Object.assign({}, r, { tk: rkTicker(r.n, used), ch: old === null ? null : pt - old, pct: old ? Math.round((pt - old) / old * 100) : null, sp }); });
+}
+const rkDir = r => r.ch === null ? 'nw' : r.ch > 0 ? 'up' : r.ch < 0 ? 'dn' : 'fl';
+const rkChg = r => r.ch === null ? '<span class="rk-chg nw" title="Encara no hi ha dades d\'abans">nou</span>' : `<span class="rk-chg ${rkDir(r)}" title="${r.ch > 0 ? '+' : ''}${r.ch} punts respecte a fa ${RK_DAYS} dies">${r.ch > 0 ? '▲' : r.ch < 0 ? '▼' : '='} ${r.pct !== null ? Math.abs(r.pct) + ' %' : Math.abs(r.ch) + ' pt'}</span>`;
+function rkSpark(r) {
+  const v = r.sp || []; if (v.length < 2) return '<span class="rk-sp"></span>';
+  const mn = Math.min(...v), mx = Math.max(...v), W = 60, H = 20, pts = v.map((x, i) => `${(i / (v.length - 1) * W).toFixed(1)},${(H - 2 - (mx === mn ? 0.5 : (x - mn) / (mx - mn)) * (H - 4)).toFixed(1)}`).join(' ');
+  return `<svg class="rk-sp ${rkDir(r)}" viewBox="0 0 ${W} ${H}" aria-hidden="true"><polyline points="${pts}"/></svg>`;
+}
+function rkTapeHtml(rows) {
+  const it = rows.map(r => `<span><b>${esc(r.tk)}</b> ${Number(r.pt) || 0} ${rkChg(r)}</span>`).join('');
+  return `<div class="rk-tape" aria-label="Cotitzacions dels equips"><div class="rk-tin" style="animation-duration:${Math.max(14, rows.length * 4)}s">${it}${it}</div></div>`;
+}
 // L'alumnat llegeix el rànquing que ha desat el professor; el professor (i la demo) el calculen
-const rankRows = () => isStuCloud() ? (Array.isArray(PUB.rows) ? PUB.rows.filter(isObj) : []) : rankCalc(false);
+const rankRows = () => { if (isStuCloud()) return Array.isArray(PUB.rows) ? PUB.rows.filter(isObj) : []; const r = rankCalc(false); rkHist(r); return r; };
 function rankPushSoon() { if (!CLOUD || !ME || !ME.isProf || !GID || !G || !GROUP) return; clearTimeout(rkT); rkT = setTimeout(rankPush, 1500); }
 async function rankPush() {
   if (!CLOUD || !ME || !ME.isProf || !GROUP || !GROUP.expiresAt) return;
@@ -7043,11 +7095,12 @@ const eur = n => (Number(n) || 0).toLocaleString('ca-ES') + ' €';
 const rkBadgesHtml = b => { const n = {}; (b || []).filter(k => BADGES[k]).forEach(k => { n[k] = (n[k] || 0) + 1; });
   return Object.entries(n).map(([k, c]) => `<span class="rk-bd" title="${esc(BADGES[k][1] + ': ' + BADGES[k][2])}" aria-label="${esc(BADGES[k][1] + (c > 1 ? ' × ' + c : ''))}">${BADGES[k][0]}${c > 1 ? `<small>×${c}</small>` : ''}</span>`).join(''); };
 function rankListHtml(rows, mine, cap) {
+  rows = rkDecor(rows);
   return `<ol class="rk-l">${rows.map((r, i) => `<li class="${r.id === mine ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>${rkSq(r)}
-    <span class="rk-n"><b>${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b)}</span><small class="rk-bk">${rkWhy(r)}</small></span>
-    ${cap ? `<span class="rk-c" title="Inversió rebuda">${eur(r.c)}</span>` : ''}<span class="rk-pt" title="${esc(rkWhy(r))}"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`).join('')}</ol>`;
+    <span class="rk-n"><b><span class="rk-tk">${esc(r.tk)}</span> ${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b)}</span><small class="rk-bk">${rkWhy(r)}</small></span>
+    ${cap ? `<span class="rk-c" title="Inversió rebuda">${eur(r.c)}</span>` : ''}<span class="rk-mv">${rkChg(r)}${rkSpark(r)}</span><span class="rk-pt" title="${esc(rkWhy(r))}"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`).join('')}</ol>`;
 }
-const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><p class="small" style="margin:8px 0 0">Els punts surten de tres coses. Per això dos equips sense insígnies poden tenir punts diferents: el que porta més projecte fet té més punts. Sota el nom de cada equip hi veieu d'on surten els seus.</p><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet (els apartats que heu omplert).</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li></ul>
+const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><p class="small" style="margin:8px 0 0">Els punts surten de tres coses. Per això dos equips sense insígnies poden tenir punts diferents: el que porta més projecte fet té més punts. Sota el nom de cada equip hi veieu d'on surten els seus. Com a la borsa, la fletxa <span class="rk-chg up">▲</span> o <span class="rk-chg dn">▼</span> diu quant ha pujat o baixat cada equip els darrers ${RK_DAYS} dies.</p><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet (els apartats que heu omplert).</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li></ul>
   <div class="rk-bl">${Object.values(BADGES).map(([e, n, d]) => `<div><span>${e}</span><span><b>${esc(n)}</b><small>${esc(d)}</small></span></div>`).join('')}</div></details>`;
 // Targeta de l'inici de l'equip
 function rankCardHtml(t) {
@@ -7061,12 +7114,14 @@ function rankCardHtml(t) {
 }
 // Requadre petit de l'inici (al costat del nom de l'equip): els 3 primers i el vostre equip; la llista sencera s'obre en una finestra
 function rankMiniHtml(t) {
-  if (!rkOn()) return ''; const rows = rankRows(), st = rkSt(); if (!rows.length) return '';
-  const pos = rows.findIndex(r => r.id === t.id), prof = CLOUD && ME && ME.isProf, show = rows.slice(0, 3).concat(pos > 2 ? [rows[pos]] : []);
-  const li = r => { const i = rows.indexOf(r); return `${i > 3 && r === rows[pos] ? '<li class="rk-gap" aria-hidden="true">···</li>' : ''}<li class="${r.id === t.id ? 'me' : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>${rkSq(r)}<span class="rk-n"><b>${esc(r.n)}</b></span>${st === 'closed' ? `<span class="rk-c">${eur(r.c)}</span>` : ''}<span class="rk-pt"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`; };
-  return `<section class="rk-mini"><div class="rk-h"><div><p class="k">Rànquing de la classe</p><h2>${pos >= 0 ? `Posició ${pos + 1} <small>de ${rows.length}</small>` : 'Classificació'}</h2></div><span class="rk-trophy" aria-hidden="true">🏆</span></div>
+  if (!rkOn()) return ''; const st = rkSt(), all = rankRows(); if (!all.length) return '';
+  const rows = rkDecor(all), pos = rows.findIndex(r => r.id === t.id), prof = CLOUD && ME && ME.isProf;
+  const show = rows.length <= 6 ? rows : rows.slice(0, 5).concat(pos > 4 ? [rows[pos]] : [rows[5]]);
+  const tr = r => { const i = rows.indexOf(r); return `${i > 5 && r === rows[pos] ? '<tr class="rk-gap" aria-hidden="true"><td colspan="5">···</td></tr>' : ''}<tr class="${r.id === t.id ? 'me' : ''}"><td class="rk-p">${i + 1}</td><td><b class="rk-tk">${esc(r.tk)}</b><small>${esc(r.n)}</small></td><td class="rk-v">${Number(r.pt) || 0}<small>pt</small></td><td>${rkChg(r)}</td><td>${rkSpark(r)}</td></tr>`; };
+  return `<section class="rk-mini"><div class="rk-h"><div><p class="k">Borsa de la classe</p><h2>${pos >= 0 ? `Posició ${pos + 1} <small>de ${rows.length}</small>` : 'Cotitzacions'}</h2></div>${pos >= 0 ? rkChg(rows[pos]).replace('rk-chg', 'rk-chg big') : ''}</div>
+    ${rkTapeHtml(rows)}
     ${st === 'open' ? `<div class="rk-open sm"><span>💼 <b>Ronda d'inversors oberta</b></span><button type="button" class="btn small" id="rkInv"${prof ? ' disabled title="Només ho pot fer l\'alumnat"' : ''}>Invertir</button></div>` : ''}
-    <ol class="rk-l sm">${show.map(li).join('')}</ol>
+    <table class="rk-tb"><thead><tr><th>#</th><th>Equip</th><th>Valor</th><th>${RK_DAYS} dies</th><th></th></tr></thead><tbody>${show.map(tr).join('')}</tbody></table>
     <button type="button" class="linkbtn rk-all" id="rkAll">Veure tot el rànquing i d'on surten els punts →</button></section>`;
 }
 function rankBind(v) { const b = v.querySelector('#rkInv'); if (b) b.onclick = invDialog;
@@ -7103,7 +7158,7 @@ async function invDialog() {
 }
 // Pestanya del professor
 function vRanking(v) {
-  const st = rkSt(), rows = rankCalc(true), I = invTotals(), nAl = CLOUD ? ROSTER.length : G.teams.reduce((a, t) => a + t.members.length, 0);
+  const st = rkSt(), rows = rankCalc(true), I = invTotals(), nAl = CLOUD ? ROSTER.length : G.teams.reduce((a, t) => a + t.members.length, 0); rkHist(rankCalc(false)); // apunta els punts d'avui a l'historial de la borsa
   const stTxt = { off: 'Encara no s\'ha obert', open: 'Oberta: l\'alumnat pot invertir', closed: 'Tancada: l\'alumnat veu els resultats' }[st];
   const btns = st === 'off' ? '<button type="button" class="btn" data-rk="open">Obrir la ronda d\'inversors</button>'
     : st === 'open' ? '<button type="button" class="btn" data-rk="closed">Tancar la ronda i ensenyar els resultats</button>'
