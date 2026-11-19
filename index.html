@@ -1137,6 +1137,33 @@ table.fin{box-shadow:none}
 .istats div{display:grid;gap:2px}
 .istats b{font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.1;font-variant-numeric:tabular-nums}
 .istats small{font-size:13.5px;color:var(--muted)}
+/* Rànquing de la classe i ronda d'inversors */
+.rk-card{background:var(--tile);border-radius:32px;padding:26px 28px;margin:16px 0;display:grid;gap:14px}
+.rk-h{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.rk-h .k{margin:0;color:var(--muted);font-size:14px}.rk-h h2{margin:4px 0 0;font:650 24px/1.15 var(--font);letter-spacing:-.02em}
+.rk-trophy{font-size:44px;line-height:1}
+.rk-l{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.rk-l li{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:18px;background:var(--soft)}
+.rk-l li.me{background:var(--accent-soft);box-shadow:inset 0 0 0 2px var(--pri)}
+.rk-pos{width:30px;text-align:center;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;flex:none}
+.rk-sq{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.35)}
+.rk-n{flex:1;min-width:0;display:grid;gap:3px}.rk-n b{overflow-wrap:anywhere}.rk-n em{font-style:normal;font-size:12px;font-weight:650;background:var(--pri);color:var(--pri-fg);padding:2px 8px;border-radius:999px;margin-left:4px}
+.rk-bs{display:flex;flex-wrap:wrap;gap:4px}.rk-bd{font-size:18px;line-height:1;cursor:help}
+.rk-c{font-weight:650;color:var(--st-ok-f);font-variant-numeric:tabular-nums;white-space:nowrap}
+.rk-pt{display:grid;justify-items:end;flex:none}.rk-pt b{font-size:24px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}.rk-pt small{font-size:12px;color:var(--muted)}
+.rk-open{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:20px;background:var(--st-ok-b);color:var(--st-ok-f)}
+.rk-open .rk-oi{font-size:32px}.rk-open div{flex:1 1 220px}.rk-open p{margin:2px 0 0;color:var(--ink-2)}
+.rk-done{padding:12px 16px;border-radius:16px;background:var(--accent-soft);font-weight:550}
+.rk-how summary,.rk-why summary{cursor:pointer;font-weight:600}.rk-how ul{margin:8px 0}
+.rk-bl{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,230px),1fr));gap:8px;margin-top:8px}
+.rk-bl div{display:flex;gap:10px;align-items:flex-start}.rk-bl div > span:first-child{font-size:22px}.rk-bl small{display:block;color:var(--muted)}
+.rk-why{padding:8px 0;border-bottom:1px solid var(--line)}.rk-why ul{margin:8px 0 0}
+.inv-l{display:grid;gap:10px;max-height:52vh;overflow:auto;margin:10px 0}
+.inv-i{display:grid;gap:6px;padding:10px;border-radius:14px;background:var(--soft)}.inv-i.on{box-shadow:inset 0 0 0 2px var(--pri)}
+.inv-r{display:flex;align-items:center;gap:10px}.inv-r b{flex:1;min-width:0}.inv-r select{width:auto}
+.inv-tot .bad{color:var(--bad)}
+.list-pad .rk-l li{background:var(--tile)}.list-pad .rk-l li.me{background:var(--accent-soft)}
+@media (max-width:620px){.rk-card{padding:20px 16px;border-radius:24px}.rk-l li{padding:9px 10px;gap:8px}.rk-sq{width:34px;height:34px}.rk-trophy{font-size:34px}.rk-c{font-size:13px}}
 /* Dues columnes on cada bloc fa l'alçada del seu contingut (sense forats) */
 .bento{columns:2;column-gap:16px}
 .bento .bl{break-inside:avoid;margin:0 0 16px}
@@ -2179,7 +2206,7 @@ const GICONS = {
 };
 const CHEV = '<svg class="chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const IC_OUT = '<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/>';
-const NAVIC = { seguiment: '<path d="M3 12h4l3-8 4 16 3-8h4"/>', obertura: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
+const NAVIC = { seguiment: '<path d="M3 12h4l3-8 4 16 3-8h4"/>', ranking: '<path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0z"/><path d="M7 6H4a3 3 0 0 0 3 4M17 6h3a3 3 0 0 1-3 4"/>', obertura: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>',
   revisio: '<path d="M9 11l3 3 8-8"/><path d="M20 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>', qualificacio: '<path d="M22 10L12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 2 9 2 12 0v-5"/>',
   informe: '<path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z"/><path d="M14 3v6h6M8 13h8M8 17h6"/>', guia: '<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z"/><path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5"/>',
   rubriques: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 10h18M3 15h18M9 4v16"/>', config: '<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
@@ -2202,7 +2229,7 @@ function radios(path, opts, rerender) { const cur = getP(T().data, path); return
 
 /* ---------- Menú lateral ---------- */
 function menu() {
-  if (role === 'prof') return [['Grup classe', 'prof', [['seguiment', 'Seguiment dels equips'], ['obertura', 'Obertura dels apartats'], ['revisio', 'Revisió dels projectes'], ['qualificacio', 'Qualificació per activitats'], ['informe', 'Informes dels equips']]], ['Recursos', 'rec', [['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques'], ['config', 'Configuració']]]];
+  if (role === 'prof') return [['Grup classe', 'prof', [['seguiment', 'Seguiment dels equips'], ['obertura', 'Obertura dels apartats'], ['revisio', 'Revisió dels projectes'], ['qualificacio', 'Qualificació per activitats'], ['ranking', 'Rànquing i ronda d\'inversors'], ['informe', 'Informes dels equips']]], ['Recursos', 'rec', [['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques'], ['config', 'Configuració']]]];
   return SECS.map(g => [g[1], g[2], g[3].filter(s => (s[0] !== 'criteris' || !G.rubHide) && !amagat(s[0])).map(s => [s[0], s[1]]).concat(g[0] === 'lliura' && G.showGrades ? [['notes', 'Les vostres notes']] : [])]).filter(g => g[2].length);
 }
 function renderSide() {
@@ -2364,7 +2391,7 @@ function render() {
   updateTeamBanner();
   if (CLOUD) { cloudAfterRender(v); applyLocks(); }
   v.querySelectorAll('[data-go]').forEach(b => b.addEventListener('click', () => go(b.dataset.go)));
-  navSave(); bellUpdate(); segBtnUpdate();
+  navSave(); bellUpdate(); segBtnUpdate(); rankPushSoon();
 }
 // Botó «Seguiment» a dalt de tot, al costat del menú: torna a la vista de tots els equips des de qualsevol pàgina del professor
 function segBtnUpdate() {
@@ -2375,7 +2402,7 @@ function segBtnUpdate() {
 }
 /* ---------- Capçalera del professorat: pestanyes de dalt (substitueixen el menú lateral) ---------- */
 const isProfUser = () => !CLOUD || !!(ME && ME.isProf);
-const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Avaluar'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
+const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura', 'Obertura dels apartats', 'Obertura'], ['revisio', 'Revisió dels projectes', 'Revisió'], ['qualificacio', 'Qualificació per activitats', 'Avaluar'], ['ranking', 'Rànquing i ronda d\'inversors', 'Rànquing'], ['informe', 'Informes dels equips', 'Informes'], ['guia', 'Guia i rúbriques', 'Guia'], ['config', 'Configuració del grup', 'Configuració']];
 // Capçalera del menú lateral: logo (porta a l'inici) i nom de la secció
 const railHead = l => `<a class="rbrand" href="#" title="Anar a l'inici"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</a><span class="rsec">${l}</span>`;
 const tabBtn = (k, l, on, n, sh) => `<button type="button" data-ptab="${k}" aria-selected="${on}" title="${esc(l)}" aria-label="${esc(l)}">${nic(k)}<span class="tl">${sh || l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
@@ -2592,8 +2619,10 @@ function vInici(v) {
       <div class="inx${mil ? ' mil' : ''}"><small>${mil ? PR('El') + ' us demana millores a' : 'Següent apartat'}</small><strong>${esc(nx.l)}</strong><button class="btn" data-go="${nx.k}">${mil ? 'Millorar-lo' : 'Continuar'}</button></div></div>
     <div class="istats"><div><b style="color:var(--st-ok-f)">${wc.correcte}</b><small>correctes</small></div><div><b style="color:var(--st-sent-f)">${wc.sent}</b><small>enviats</small></div><div><b style="color:var(--st-mil-f)">${wc.millorar}</b><small>a millorar</small></div><div><b style="color:var(--st-edit-f)">${wc.edit}</b><small>en edició</small></div></div>
   </section>
+  ${rankCardHtml(t)}
   <section class="bento">${tiles}</section>
   ${G.rubHide ? '' : '<div class="row" style="margin-top:14px"><button type="button" class="btn ghost" data-go="criteris">Veure com s\'avaluarà el projecte (rúbriques)</button></div>'}`;
+  rankBind(v);
 }
 
 /* ---------- Equip ---------- */
@@ -5510,8 +5539,9 @@ async function openProf() {
   G.teams.forEach(snapTeam); SNAP.group = J(groupFields());
   if (J(groupFields()) !== J({ name: GROUP.name, profs: GROUP.profs, showGrades: !!GROUP.showGrades, cfg: GROUP.cfg, teamList: GROUP.teamList, teamIds: GROUP.teamIds, w: GROUP.w, join: GROUP.join !== false })) { SNAP.group = ''; cloudSave(); }
   ROSTER = await FB.list(gpath('members')).catch(() => []); INVITES = await FB.list(gpath('invites')).catch(() => []);
+  PUB = (await FB.get(gpath('pub', 'rank')).catch(() => null)) || {}; INVS = []; rkLast = J({ st: PUB.st || 'off', on: PUB.on !== false, rows: PUB.rows || [] });
   if (purgeTrash()) cloudSave(); // els equips que fa més d'una setmana que són a la paperera s'eliminen del tot
-  const PT = ['seguiment', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'], nv = lastGid === null ? navLoad() : null; // en recarregar, torna on eres
+  const PT = ['seguiment', 'ranking', 'obertura', 'revisio', 'qualificacio', 'informe', 'guia', 'rubriques', 'config', 'alumnes'], nv = lastGid === null ? navLoad() : null; // en recarregar, torna on eres
   if (nv) { role = Number.isInteger(nv.role) && nv.role >= 0 && nv.role < G.teams.length ? nv.role : 'prof'; tab = nv.tab; if (Number.isInteger(nv.team) && nv.team >= 0 && nv.team < G.teams.length) profTeam = nv.team; if (role === 'prof' && !PT.includes(tab)) tab = 'seguiment'; }
   else { role = 'prof'; if (lastGid !== GID || !tab || !PT.includes(tab)) tab = 'seguiment'; }
   let goK = null;
@@ -5523,6 +5553,7 @@ async function openProf() {
   UNSUB.push(FB.listenCol(gpath('teams'), list => { list.forEach(applyTeamDoc); const ids = new Set(list.map(d => d.id)); const gone = G.teams.filter(t => !ids.has(t.id) && SNAP.teams[t.id]); if (gone.length && !syncT && !syncBusy) { G.teams = G.teams.filter(t => !gone.includes(t)); gone.forEach(t => delete SNAP.teams[t.id]); softRender(); } }, () => {}));
   UNSUB.push(FB.listenCol(gpath('members'), list => { ROSTER = list; stuBtn(); if (tab === 'alumnes') softRender(); }, () => {}));
   UNSUB.push(FB.listenCol(gpath('invites'), list => { INVITES = list; if (tab === 'alumnes') softRender(); }, () => {}));
+  UNSUB.push(FB.listenCol(gpath('inver'), list => { INVS = list; if (tab === 'ranking') softRender(); else rankPushSoon(); }, () => {}));
   G.teams.forEach(t => UNSUB.push(FB.listenCol(gpath('teams', t.id, 'prof'), list => list.forEach(p => applyProf(t.id, p.id, p)), () => {})));
 }
 // Carrega del núvol un equip que no és a la llista (recuperat de la paperera)
@@ -5557,6 +5588,7 @@ async function openStudent(tid) {
   UNSUB.push(FB.listenDoc(gpath('teams', tid), x => x ? applyTeamDoc(Object.assign({ id: tid }, x)) : route(), () => route()));
   UNSUB.push(FB.listenDoc(gpath('teams', tid, 'prof', 'review'), x => applyProf(tid, 'review', x), () => {}));
   UNSUB.push(FB.listenDoc(gpath('members', USER.uid), x => { if (!x || x.team !== tid) route(); }, () => {}));
+  PUB = {}; UNSUB.push(FB.listenDoc(gpath('pub', 'rank'), x => { const was = J(PUB); PUB = isObj(x) ? x : {}; if (was !== J(PUB) && tab === 'inici') softRender(); }, () => {}));
   listenGrades(); listenLocks(tid);
 }
 function joinView(g, m) {
@@ -6306,6 +6338,9 @@ async function deleteGroupDeep(gid) {
   mem.forEach(m => ops.push({ op: 'del', path: base + '/members/' + m.id }));
   const inv = await FB.list(base + '/invites').catch(() => []);
   inv.forEach(m => ops.push({ op: 'del', path: base + '/invites/' + m.id }));
+  const ivr = await FB.list(base + '/inver').catch(() => []);
+  ivr.forEach(m => ops.push({ op: 'del', path: base + '/inver/' + m.id }));
+  ops.push({ op: 'del', path: base + '/pub/rank' });
   ops.push({ op: 'del', path: base });
   await FB.batch(ops);
 }
@@ -6833,9 +6868,146 @@ function vConfig(v) {
 
 /* ================= Dades d'exemple ================= */
 /* ================= Arrencada ================= */
+/* ---------- Rànquing de la classe: punts, insígnies i ronda d'inversors ----------
+   El professor calcula el rànquing (té les dades de tots els equips) i el desa a groups/{gid}/pub/rank, que pot llegir tot el grup.
+   Cada alumne desa la seva inversió a groups/{gid}/inver/{uid} = { a: { equip: euros }, why: { equip: text }, team, n, at }.
+   Punts: 1 per cada % de progrés, RK_BADGE per insígnia i 1 per cada 1.000 € rebuts (només quan la ronda està tancada). */
+const INV_BUDGET = 10000, INV_STEP = 1000, RK_BADGE = 15;
+const BADGES = {
+  temps: ['⏱️', 'Puntuals', 'Han enviat a temps tots els apartats amb el termini acabat (mínim 2).'],
+  net: ['✅', 'Feina ben feta', 'Tenen almenys 3 apartats correctes i res pendent de millorar.'],
+  canvas: ['🧩', 'Canvas complet', 'Han acabat el Lean Canvas sostenible.'],
+  ods: ['🌍', 'Compromís ODS', 'Han acabat l\'apartat d\'ODS i sostenibilitat.'],
+  fin: ['💶', 'Números clars', 'Han acabat inversió, préstec, tresoreria i viabilitat.'],
+  mkt: ['📣', 'A punt per vendre', 'Han acabat les 7 P i la comunicació del projecte.'],
+  tot: ['🏁', 'Projecte complet', 'Tenen tots els apartats fets.'],
+  dos: ['📦', 'Dossier lliurat', 'Han lliurat el dossier del projecte.'],
+  top: ['💰', 'Projecte més finançat', 'Han rebut més inversió que ningú a la ronda d\'inversors.']
+};
+let PUB = {}, INVS = [], rkT = null, rkLast = '', rkView = null;
+const rkS = () => CLOUD ? (PUB = isObj(PUB) ? PUB : {}) : (G.rk = isObj(G.rk) ? G.rk : {});
+const rkSt = () => ['open', 'closed'].includes(rkS().st) ? rkS().st : 'off', rkOn = () => rkS().on !== false;
+const isStuCloud = () => CLOUD && ME && !ME.isProf;
+function invList() {
+  if (CLOUD) return INVS || [];
+  if (G.example && !G.invDemo && G.teams.length >= 3) { const [a, b, c] = G.teams.map(t => t.id); G.invDemo = [
+    { id: 'd1', team: a, n: 'Alumne d\'exemple', a: { [b]: 6000, [c]: 4000 }, why: { [b]: 'Tenen clients clars.', [c]: 'Idea útil.' } },
+    { id: 'd2', team: b, n: 'Alumna d\'exemple', a: { [a]: 7000, [c]: 3000 }, why: { [a]: 'Molt sostenible.', [c]: 'Bon preu.' } },
+    { id: 'd3', team: c, n: 'Alumne d\'exemple', a: { [a]: 5000, [b]: 5000 }, why: { [a]: 'M\'agrada el pitch.', [b]: 'Mercat gran.' } }]; }
+  return G.invDemo || [];
+}
+// Suma les inversions vàlides (les que se surten del pressupost o van al propi equip no compten)
+function invTotals() {
+  const ids = new Set(G.teams.map(t => t.id)), cap = {}, why = {}; let n = 0;
+  invList().forEach(d => {
+    const a = isObj(d.a) ? d.a : {}, ok = Object.entries(a).map(([id, v]) => [id, Math.floor(Math.max(0, Number(v) || 0) / INV_STEP) * INV_STEP]).filter(([id, v]) => ids.has(id) && id !== d.team && v > 0);
+    if (!ok.length || ok.reduce((s, [, v]) => s + v, 0) > INV_BUDGET) return; n++;
+    ok.forEach(([id, v]) => { cap[id] = (cap[id] || 0) + v; const w = isObj(d.why) ? String(d.why[id] || '').trim().slice(0, 300) : ''; (why[id] = why[id] || []).push({ v, w, n: nomBo(d.n) }); });
+  });
+  return { cap, why, n };
+}
+function teamBadges(t) {
+  const done = k => !!sec(k) && secState(t, sec(k)) === 'done', b = [];
+  const dl = PROG.filter(s => { const a = (G.access || {})[s.k]; return a && a.until && todayISO() > a.until; });
+  if (dl.length >= 2 && dl.every(s => { const se = sentOf(t, s.k); return okDone(t, s) || (se && se.at <= secWindow(G.access[s.k])[1]); })) b.push('temps');
+  if (PROG.filter(s => okDone(t, s)).length >= 3 && !PROG.some(s => milPending(t, s))) b.push('net');
+  if (done('lean')) b.push('canvas');
+  if (done('sost')) b.push('ods');
+  if (['inversio', 'prestec', 'treso', 'viab'].every(done)) b.push('fin');
+  if (['p7', 'pitch'].every(done)) b.push('mkt');
+  if (progress(t) >= 1) b.push('tot');
+  if (t.delivered) b.push('dos');
+  return b;
+}
+// live: el professor veu el capital abans de tancar la ronda (l'alumnat només quan es tanca)
+function rankCalc(live) {
+  const I = invTotals(), show = live || rkSt() === 'closed';
+  const rows = G.teams.map(t => ({ id: t.id, n: projName(t), c1: col(t.data.marca.color1, '#f7a21b'), b: teamBadges(t), p: Math.round(progress(t) * 100), c: show ? I.cap[t.id] || 0 : 0 }));
+  if (rkSt() === 'closed') { const mx = Math.max(0, ...rows.map(r => r.c)); if (mx > 0) rows.filter(r => r.c === mx).forEach(r => r.b.push('top')); }
+  rows.forEach(r => { r.pt = r.p + r.b.length * RK_BADGE + Math.floor(r.c / 1000); });
+  return rows.sort((a, b) => b.pt - a.pt || b.p - a.p || a.n.localeCompare(b.n, 'ca'));
+}
+const rankBuild = () => ({ st: rkSt(), on: rkOn(), rows: rankCalc(false) });
+// L'alumnat llegeix el rànquing que ha desat el professor; el professor (i la demo) el calculen
+const rankRows = () => isStuCloud() ? (Array.isArray(PUB.rows) ? PUB.rows.filter(isObj) : []) : rankCalc(false);
+function rankPushSoon() { if (!CLOUD || !ME || !ME.isProf || !GID || !G || !GROUP) return; clearTimeout(rkT); rkT = setTimeout(rankPush, 1500); }
+async function rankPush() {
+  if (!CLOUD || !ME || !ME.isProf || !GROUP || !GROUP.expiresAt) return;
+  const d = rankBuild(), s = J(d); if (s === rkLast) return;
+  try { await FB.set(gpath('pub', 'rank'), Object.assign({}, d, { at: Date.now(), expiresAt: { __ts: GROUP.expiresAt } })); rkLast = s; } catch (e) { console.warn(e); }
+}
+const rkIni = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '·';
+const eur = n => (Number(n) || 0).toLocaleString('ca-ES') + ' €';
+const rkBadgesHtml = b => (b || []).filter(k => BADGES[k]).map(k => `<span class="rk-bd" title="${esc(BADGES[k][1] + ': ' + BADGES[k][2])}" aria-label="${esc(BADGES[k][1])}">${BADGES[k][0]}</span>`).join('');
+function rankListHtml(rows, mine, cap) {
+  return `<ol class="rk-l">${rows.map((r, i) => `<li class="${r.id === mine ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="rk-sq" style="background:${col(r.c1, '#f7a21b')}">${esc(rkIni(r.n))}</span>
+    <span class="rk-n"><b>${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b) || '<small class="muted">Encara sense insígnies</small>'}</span></span>
+    ${cap ? `<span class="rk-c" title="Inversió rebuda">${eur(r.c)}</span>` : ''}<span class="rk-pt"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`).join('')}</ol>`;
+}
+const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet.</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li></ul>
+  <div class="rk-bl">${Object.values(BADGES).map(([e, n, d]) => `<div><span>${e}</span><span><b>${esc(n)}</b><small>${esc(d)}</small></span></div>`).join('')}</div></details>`;
+// Targeta de l'inici de l'equip
+function rankCardHtml(t) {
+  if (!rkOn()) return '';
+  const rows = rankRows(), st = rkSt(); if (!rows.length) return '';
+  const pos = rows.findIndex(r => r.id === t.id), prof = CLOUD && ME && ME.isProf;
+  const banner = st === 'open' ? `<div class="rk-open"><span class="rk-oi">💼</span><div><b>Ronda d'inversors oberta!</b><p>Tens ${eur(INV_BUDGET)} per invertir en els projectes dels altres equips. Reparteix-los com vulguis i explica per què.</p></div><button type="button" class="btn" id="rkInv"${prof ? ' disabled title="Només ho pot fer l\'alumnat"' : ''}>Invertir</button></div>`
+    : st === 'closed' ? '<div class="rk-done">💰 La ronda d\'inversors ha acabat: ja podeu veure quant ha rebut cada projecte.</div>' : '';
+  return `<section class="rk-card"><div class="rk-h"><div><p class="k">Rànquing de la classe</p><h2>${pos >= 0 ? `Esteu en la posició ${pos + 1} de ${rows.length}` : 'Classificació dels equips'}</h2></div><span class="rk-trophy" aria-hidden="true">🏆</span></div>
+    ${banner}${rankListHtml(rows, t.id, st === 'closed')}${rkHowHtml()}</section>`;
+}
+function rankBind(v) { const b = v.querySelector('#rkInv'); if (b) b.onclick = invDialog; }
+// Finestra per invertir (alumnat): un import per a cada altre equip i el motiu
+async function invDialog() {
+  const t = T(); if (!t || rkSt() !== 'open') return;
+  const others = rankRows().filter(r => r.id !== t.id);
+  let mine = null;
+  if (CLOUD) { try { mine = await FB.get(gpath('inver', USER.uid)); } catch (e) { mine = null; } }
+  else mine = invList().find(d => d.id === 'demo' + role) || null;
+  const a = isObj(mine && mine.a) ? mine.a : {}, why = isObj(mine && mine.why) ? mine.why : {};
+  const opts = cur => Array.from({ length: INV_BUDGET / INV_STEP + 1 }, (_, i) => i * INV_STEP).map(x => `<option value="${x}" ${Number(cur) === x ? 'selected' : ''}>${eur(x)}</option>`).join('');
+  bkDialog(`<div class="bkic">💼</div><b>Ronda d'inversors</b><p class="small muted">Tens <b>${eur(INV_BUDGET)}</b> per invertir. No pots invertir en el teu equip. Pensa-ho com un inversor: on posaries els teus diners de veritat?</p>
+    <div class="inv-l">${others.map(r => `<div class="inv-i" data-id="${esc(r.id)}"><div class="inv-r"><span class="rk-sq" style="background:${col(r.c1, '#f7a21b')}">${esc(rkIni(r.n))}</span><b>${esc(r.n)}</b><select class="field-sel" aria-label="Import per a ${esc(r.n)}">${opts(a[r.id] || 0)}</select></div>
+      <textarea rows="2" maxlength="300" placeholder="Per què hi inverteixes? (obligatori si hi poses diners)" aria-label="Motiu per invertir en ${esc(r.n)}">${esc(why[r.id] || '')}</textarea></div>`).join('') || '<p class="muted">Encara no hi ha altres equips.</p>'}</div>
+    <p class="inv-tot" id="invTot"></p><div class="row"><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button><button type="button" class="btn" id="invOk">Desar la inversió</button></div>`,
+    (o, close) => {
+      const read = () => [...o.querySelectorAll('.inv-i')].map(x => ({ id: x.dataset.id, v: Number(x.querySelector('select').value) || 0, w: x.querySelector('textarea').value.trim() }));
+      const upd = () => { const l = read(), s = l.reduce((x, y) => x + y.v, 0), falta = l.some(x => x.v > 0 && !x.w);
+        o.querySelectorAll('.inv-i').forEach(x => x.classList.toggle('on', Number(x.querySelector('select').value) > 0));
+        $('#invTot').innerHTML = s > INV_BUDGET ? `<b class="bad">Has repartit ${eur(s)}: et passes ${eur(s - INV_BUDGET)}.</b>` : `Has repartit <b>${eur(s)}</b>. Et queden <b>${eur(INV_BUDGET - s)}</b>.${falta ? ' <span class="bad">Explica per què inverteixes a cada projecte.</span>' : ''}`;
+        $('#invOk').disabled = s > INV_BUDGET || falta || !s; };
+      o.addEventListener('input', upd); o.addEventListener('change', upd); upd();
+      $('#invOk').onclick = async () => {
+        const l = read().filter(x => x.v > 0), d = { a: {}, why: {}, team: t.id, n: nomBo(USER && USER.name) || 'Alumne', at: Date.now() };
+        l.forEach(x => { d.a[x.id] = x.v; d.why[x.id] = x.w.slice(0, 300); });
+        $('#invOk').disabled = true;
+        if (CLOUD) { try { await FB.set(gpath('inver', USER.uid), Object.assign(d, { expiresAt: { __ts: GROUP.expiresAt } })); } catch (e) { console.warn(e); toast('No s\'ha pogut desar. Potser la ronda ja s\'ha tancat.'); $('#invOk').disabled = false; return; } }
+        else { G.invDemo = invList().filter(x => x.id !== 'demo' + role).concat(Object.assign(d, { id: 'demo' + role })); save(); }
+        close(); toast('Inversió desada. Fins que es tanqui la ronda la pots canviar.');
+      };
+    });
+}
+// Pestanya del professor
+function vRanking(v) {
+  const st = rkSt(), rows = rankCalc(true), I = invTotals(), nAl = CLOUD ? ROSTER.length : G.teams.reduce((a, t) => a + t.members.length, 0);
+  const stTxt = { off: 'Encara no s\'ha obert', open: 'Oberta: l\'alumnat pot invertir', closed: 'Tancada: l\'alumnat veu els resultats' }[st];
+  const btns = st === 'off' ? '<button type="button" class="btn" data-rk="open">Obrir la ronda d\'inversors</button>'
+    : st === 'open' ? '<button type="button" class="btn" data-rk="closed">Tancar la ronda i ensenyar els resultats</button>'
+    : '<button type="button" class="btn ghost" data-rk="open">Tornar-la a obrir</button><button type="button" class="btn ghost" data-rk="off">Amagar els resultats</button>';
+  const whyL = rows.filter(r => (I.why[r.id] || []).length).map(r => `<details class="rk-why"><summary><b>${esc(r.n)}</b> · ${eur(r.c)} de ${I.why[r.id].length} ${I.why[r.id].length === 1 ? 'inversor' : 'inversors'}</summary><ul class="plain">${I.why[r.id].sort((x, y) => y.v - x.v).map(x => `<li><b>${eur(x.v)}</b>${x.n ? ` · ${esc(x.n)}` : ''}${x.w ? `: «${esc(x.w)}»` : ''}</li>`).join('')}</ul></details>`).join('');
+  v.innerHTML = `<section class="shead"><div class="sttl"><p>${esc(G.name)} · Projecte emprenedor RA4 i RA5</p><h1>Rànquing</h1></div></section>
+    ${card('Rànquing a l\'inici dels equips', pad(`<label class="choice"><input type="checkbox" id="rkOn" ${rkOn() ? 'checked' : ''}><span><b>Mostrar el rànquing a la pàgina principal de cada equip</b><span class="small muted">Hi veuen la posició, els punts i les insígnies de tots els equips. Mai les notes.</span></span></label>
+      ${CLOUD ? '<p class="small muted" style="margin:10px 0 0">El rànquing s\'actualitza quan tens el grup obert.</p>' : ''}`))}
+    ${card('Ronda d\'inversors', pad(`<p style="margin-top:0">Cada alumne té <b>${eur(INV_BUDGET)}</b> ficticis per invertir en els projectes dels <b>altres</b> equips i ha d'explicar per què. Obre-la, per exemple, després dels pitchs. Mentre és oberta, l'alumnat no veu quant rep cada equip: ho veurà quan la tanquis.</p>
+      <p><b>Estat:</b> ${stTxt} · <b>${I.n}</b> de ${nAl} ${nAl === 1 ? 'alumne ha' : 'alumnes han'} invertit.</p><div class="row">${btns}</div>`))}
+    ${card('Classificació', pad(`${st !== 'closed' ? '<p class="small muted" style="margin-top:0">Tu ja veus la inversió que porta cada equip; l\'alumnat no la veurà fins que tanquis la ronda.</p>' : ''}${rankListHtml(rows, null, true)}${rkHowHtml()}`), rows.length + ' equips')}
+    ${whyL ? card('Per què hi han invertit', pad(whyL)) : ''}`;
+  $('#rkOn').onchange = e => { rkS().on = e.target.checked; save(); rankPush(); };
+  v.querySelectorAll('[data-rk]').forEach(b => b.onclick = () => { rkS().st = b.dataset.rk; save(); rankPush(); render(); toast(b.dataset.rk === 'open' ? 'Ronda oberta: l\'alumnat ja pot invertir.' : b.dataset.rk === 'closed' ? 'Ronda tancada: l\'alumnat ja veu els resultats.' : 'Resultats amagats.'); });
+}
 const VIEWS = { inici: vInici, equip: vEquip, idea: vIdea, empatia: vEmpatia, entrevistes: vEntrevistes, definir: vDefinir, prototip: vPrototip, micro: vMicro, pestel: vPestel, dafo: vDafo,
   lean: vLean, sost: vSost, ebc: vEbc, agents: vAgents, juridica: vJuridica, fiscal: vFiscal, inversio: vInversio, prestec: vPrestec, treso: vTreso, viab: vViab, marca: vMarca, p7: vP7, pitch: vPitch, dossier: vDossier,
-  seguiment: vSeguiment, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, rubriques: vRubriques, config: vConfig, alumnes: vAlumnes, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, criteris: vCriteris, grups: () => { location.hash = ''; } };
+  seguiment: vSeguiment, ranking: vRanking, revisio: vRevisio, avaluacio: vAvaluacio, guia: vGuia, rubriques: vRubriques, config: vConfig, alumnes: vAlumnes, qualificacio: vQualificacio, obertura: vObertura, informe: vInforme, notes: vNotes, criteris: vCriteris, grups: () => { location.hash = ''; } };
 $('#tabs').insertAdjacentHTML('beforebegin', '<button class="menu-toggle" id="menuToggle" type="button" aria-expanded="false"></button>');
 document.querySelector('.side-foot').insertAdjacentHTML('beforeend', '<div id="sideAction"></div>');
 $('#menuToggle').onclick = () => setNav(!document.querySelector('.side').classList.contains('open'));

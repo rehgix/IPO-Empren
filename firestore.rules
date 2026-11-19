@@ -143,6 +143,27 @@ service cloud.firestore {
         allow create, update: if isProf(gid) && request.resource.data.team in grp(gid).teamIds;
       }
 
+      // RÀNQUING: el calcula i el desa el professor; el pot llegir tot el grup. També diu si la ronda d'inversors és oberta (st)
+      match /pub/{d} {
+        allow read: if isProf(gid) || (signed() && exists(memberDoc(gid)));
+        allow write: if isProf(gid);
+      }
+      // RONDA D'INVERSORS: cada alumne desa la seva inversió (document amb el seu uid) només mentre la ronda és oberta,
+      // i mai al seu equip. El professor comprova que no se surti del pressupost en sumar-ho.
+      match /inver/{uid} {
+        allow get: if isProf(gid) || (signed() && request.auth.uid == uid);
+        allow list, delete: if isProf(gid);
+        allow create, update: if signed() && request.auth.uid == uid && exists(memberDoc(gid))
+          && get(/databases/$(database)/documents/groups/$(gid)/pub/rank).data.get('st', '') == 'open'
+          && request.resource.data.keys().hasOnly(['a', 'why', 'team', 'n', 'at', 'expiresAt'])
+          && request.resource.data.team == get(memberDoc(gid)).data.team
+          && request.resource.data.a is map && request.resource.data.a.size() <= 40 && !(request.resource.data.team in request.resource.data.a)
+          && request.resource.data.why is map && request.resource.data.why.size() <= 40
+          && request.resource.data.n is string && request.resource.data.n.size() <= 150
+          && request.resource.data.at is number
+          && request.resource.data.expiresAt is timestamp && request.resource.data.expiresAt <= grp(gid).expiresAt;
+      }
+
       match /teams/{tid} {
         allow read: if isProf(gid) || inTeam(gid, tid);
         allow create, delete: if isProf(gid);
