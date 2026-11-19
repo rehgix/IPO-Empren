@@ -1148,7 +1148,8 @@ table.fin{box-shadow:none}
 .rk-pos{width:30px;text-align:center;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;flex:none}
 .rk-sq{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 .rk-n{flex:1;min-width:0;display:grid;gap:3px}.rk-n b{overflow-wrap:anywhere}.rk-n em{font-style:normal;font-size:12px;font-weight:650;background:var(--pri);color:var(--pri-fg);padding:2px 8px;border-radius:999px;margin-left:4px}
-.rk-bs{display:flex;flex-wrap:wrap;gap:4px}.rk-bd{font-size:18px;line-height:1;cursor:help;display:inline-flex;align-items:baseline}.rk-bd small{font-size:12px;font-weight:700;margin-left:1px}
+.rk-sq.lt{color:#111318;text-shadow:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}.rk-bk{font-size:12.5px;color:var(--muted)}
+.rk-bs{display:flex;flex-wrap:wrap;gap:4px}.rk-bs:empty{display:none}.rk-bd{font-size:18px;line-height:1;cursor:help;display:inline-flex;align-items:baseline}.rk-bd small{font-size:12px;font-weight:700;margin-left:1px}
 .rk-c{font-weight:650;color:var(--st-ok-f);font-variant-numeric:tabular-nums;white-space:nowrap}
 .rk-pt{display:grid;justify-items:end;flex:none}.rk-pt b{font-size:24px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}.rk-pt small{font-size:12px;color:var(--muted)}
 .rk-open{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:20px;background:var(--st-ok-b);color:var(--st-ok-f)}
@@ -6987,16 +6988,26 @@ async function rankPush() {
   const d = rankBuild(), s = J(d); if (s === rkLast) return;
   try { await FB.set(gpath('pub', 'rank'), Object.assign({}, d, { at: Date.now(), expiresAt: { __ts: GROUP.expiresAt } })); rkLast = s; } catch (e) { console.warn(e); }
 }
+// D'on surten els punts de cada equip (perquè l'alumnat entengui per què dos equips sense insígnies no tenen els mateixos punts)
+function rkWhy(r) {
+  const p = Number(r.p) || 0, nb = (r.b || []).filter(k => BADGES[k]).length, ci = Math.floor((Number(r.c) || 0) / 1000);
+  return [`${p} pt pel ${p} % del projecte fet`, nb ? `${nb * RK_BADGE} pt per ${nb === 1 ? '1 insígnia' : nb + ' insígnies'}` : 'cap insígnia encara', ci ? `${ci} pt per la inversió` : ''].filter(Boolean).join(' · ');
+}
+// Quadrat amb les inicials: lletra blanca o fosca segons el color de l'equip (perquè es llegeixi sempre)
+function rkSq(r) {
+  const c = col(r.c1, '#f7a21b'), x = /^#([0-9a-f]{6})$/i.exec(c), n = x ? parseInt(x[1], 16) : 0, l = x ? (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 : 0;
+  return `<span class="rk-sq${l > 0.68 ? ' lt' : ''}" style="background:${c}">${esc(rkIni(r.n))}</span>`;
+}
 const rkIni = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '·';
 const eur = n => (Number(n) || 0).toLocaleString('ca-ES') + ' €';
 const rkBadgesHtml = b => { const n = {}; (b || []).filter(k => BADGES[k]).forEach(k => { n[k] = (n[k] || 0) + 1; });
   return Object.entries(n).map(([k, c]) => `<span class="rk-bd" title="${esc(BADGES[k][1] + ': ' + BADGES[k][2])}" aria-label="${esc(BADGES[k][1] + (c > 1 ? ' × ' + c : ''))}">${BADGES[k][0]}${c > 1 ? `<small>×${c}</small>` : ''}</span>`).join(''); };
 function rankListHtml(rows, mine, cap) {
-  return `<ol class="rk-l">${rows.map((r, i) => `<li class="${r.id === mine ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="rk-sq" style="background:${col(r.c1, '#f7a21b')}">${esc(rkIni(r.n))}</span>
-    <span class="rk-n"><b>${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b) || '<small class="muted">Encara sense insígnies</small>'}</span></span>
-    ${cap ? `<span class="rk-c" title="Inversió rebuda">${eur(r.c)}</span>` : ''}<span class="rk-pt"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`).join('')}</ol>`;
+  return `<ol class="rk-l">${rows.map((r, i) => `<li class="${r.id === mine ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>${rkSq(r)}
+    <span class="rk-n"><b>${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b)}</span><small class="rk-bk">${rkWhy(r)}</small></span>
+    ${cap ? `<span class="rk-c" title="Inversió rebuda">${eur(r.c)}</span>` : ''}<span class="rk-pt" title="${esc(rkWhy(r))}"><b>${Number(r.pt) || 0}</b><small>punts</small></span></li>`).join('')}</ol>`;
 }
-const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet.</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li></ul>
+const rkHowHtml = () => `<details class="rk-how"><summary>Com es guanyen punts?</summary><p class="small" style="margin:8px 0 0">Els punts surten de tres coses. Per això dos equips sense insígnies poden tenir punts diferents: el que porta més projecte fet té més punts. Sota el nom de cada equip hi veieu d'on surten els seus.</p><ul class="plain"><li><b>1 punt</b> per cada % del projecte fet (els apartats que heu omplert).</li><li><b>${RK_BADGE} punts</b> per cada insígnia.</li><li><b>1 punt</b> per cada 1.000 € que us inverteixin els companys a la ronda d'inversors.</li></ul>
   <div class="rk-bl">${Object.values(BADGES).map(([e, n, d]) => `<div><span>${e}</span><span><b>${esc(n)}</b><small>${esc(d)}</small></span></div>`).join('')}</div></details>`;
 // Targeta de l'inici de l'equip
 function rankCardHtml(t) {
@@ -7019,7 +7030,7 @@ async function invDialog() {
   const a = isObj(mine && mine.a) ? mine.a : {}, why = isObj(mine && mine.why) ? mine.why : {};
   const opts = cur => Array.from({ length: INV_BUDGET / INV_STEP + 1 }, (_, i) => i * INV_STEP).map(x => `<option value="${x}" ${Number(cur) === x ? 'selected' : ''}>${eur(x)}</option>`).join('');
   bkDialog(`<div class="bkic">💼</div><b>Ronda d'inversors</b><p class="small muted">Tens <b>${eur(INV_BUDGET)}</b> per invertir. No pots invertir en el teu equip. Pensa-ho com un inversor: on posaries els teus diners de veritat?</p>
-    <div class="inv-l">${others.map(r => `<div class="inv-i" data-id="${esc(r.id)}"><div class="inv-r"><span class="rk-sq" style="background:${col(r.c1, '#f7a21b')}">${esc(rkIni(r.n))}</span><b>${esc(r.n)}</b><select class="field-sel" aria-label="Import per a ${esc(r.n)}">${opts(a[r.id] || 0)}</select></div>
+    <div class="inv-l">${others.map(r => `<div class="inv-i" data-id="${esc(r.id)}"><div class="inv-r">${rkSq(r)}<b>${esc(r.n)}</b><select class="field-sel" aria-label="Import per a ${esc(r.n)}">${opts(a[r.id] || 0)}</select></div>
       <textarea rows="2" maxlength="300" placeholder="Per què hi inverteixes? (obligatori si hi poses diners)" aria-label="Motiu per invertir en ${esc(r.n)}">${esc(why[r.id] || '')}</textarea></div>`).join('') || '<p class="muted">Encara no hi ha altres equips.</p>'}</div>
     <p class="inv-tot" id="invTot"></p><div class="row"><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button><button type="button" class="btn" id="invOk">Desar la inversió</button></div>`,
     (o, close) => {
