@@ -4512,6 +4512,25 @@ function autoLevel(t, a) {
 }
 // Alguna tasca de l'activitat es va enviar per primer cop després de la seva data límit
 const actTard = (t, a) => (a.ev || []).some(([k]) => sec(k) && sec(k).p && lliuraOf(t, k) === 'tard');
+// Activitats amb la mateixa rúbrica (p. ex. una activitat dividida en dues): comparteixen el que es marca
+const RUB_SHARED = ['rub', 'rl', 'ri', 'ind', 'nota', 'nivell', 'rat'];
+// La mateixa rúbrica: el mateix identificador o una còpia amb els mateixos criteris
+const rubSig = r => J((r.crit || []).map(c => [c.k, String(c.t || '').trim(), Number(c.w) || 0, (c.d || []).map(x => String(x || '').trim())]));
+const sameRub = (r1, r2) => !!r1 && !!r2 && (r1.id === r2.id || rubSig(r1) === rubSig(r2));
+const rubTwins = a => { const r = rubOf(a); return r ? G.acts.filter(b => b !== a && !b.ext && sameRub(rubOf(b), r)) : []; };
+// Posa al dia les activitats germanes amb la marca més recent (per a les notes posades abans d'enllaçar-les)
+function rubShare(t) {
+  let ch = false; const done = new Set();
+  G.acts.filter(a => !a.ext && rubOf(a)).forEach(a => { if (done.has(a.c)) return;
+    const grp = [a].concat(rubTwins(a)); grp.forEach(b => done.add(b.c)); if (grp.length < 2) return;
+    const src = grp.map(b => [b, t.grades[b.c]]).filter(([b, g]) => g && rubOf(b) && g.rub === rubOf(b).id && (g.rl || g.ri)).sort((x, y) => (y[1].rat || 0) - (x[1].rat || 0))[0]; if (!src) return;
+    const [sa, sg] = src;
+    grp.forEach(b => { const g = t.grades[b.c] || {}; if (b === sa || J(RUB_SHARED.filter(k => k !== 'rub').map(k => g[k])) === J(RUB_SHARED.filter(k => k !== 'rub').map(k => sg[k]))) return;
+      const n = t.grades[b.c] = Object.assign(g, JSON.parse(JSON.stringify(Object.fromEntries(RUB_SHARED.filter(k => k in sg).map(k => [k, sg[k]])))), { rub: rubOf(b).id });
+      if (actTard(t, b) && n.nota !== '' && Number(n.nota) > NOTA_TARD) { n.nota = NOTA_TARD; n.nivell = noteToLvl(NOTA_TARD); }
+      ch = true; }); });
+  return ch;
+}
 function raGradeAct(t, ra) {
   const acts = G.acts.filter(a => a.ra === ra && Number(a.w) > 0);
   const graded = acts.filter(a => t.grades[a.c] && t.grades[a.c].nota !== '' && t.grades[a.c].nota !== undefined && !isNaN(t.grades[a.c].nota));
@@ -4678,6 +4697,7 @@ function gradeCard(t, a) {
   const noteIn = `<label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label>`;
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="gmeta small muted">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
+    ${rubTwins(a).length ? `<div class="notice info" style="margin:8px 0 0"><b>Rúbrica compartida</b> amb ${rubTwins(a).map(b => esc(b.c + ' · ' + b.n)).join(', ')}: el que marquis aquí també queda marcat allà.</div>` : ''}
     ${actTard(t, a) ? `<div class="notice" style="margin:8px 0 0"><b>Lliurada després de la data límit:</b> la nota màxima és un ${NOTA_TARD}.</div>` : ''}
     ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? (subActs(a).length ? 'Es fa fora de l\'eina: escriu la nota grupal i la de la coavaluació. Cada una compta amb el seu pes al ' + esc(a.ra) + '.' : 'Nota externa: escriu la nota que han tret.') : 'Aquesta activitat es fa fora de l\'eina (en paper o a classe): corregeix-la amb la rúbrica.'}</p>`}
     ${a.ext ? '' : `<div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>`}
@@ -4715,6 +4735,7 @@ function qGrid(v) {
 }
 function vQualificacio(v) {
   ensureEval();
+  if (G.teams.reduce((c, t) => rubShare(t) || c, false)) save(); // rúbriques compartides al dia
   if (qView !== 'equip') return qGrid(v);
   const t = G.teams[profTeam]; if (!t) { v.innerHTML = '<p class="muted">No hi ha cap equip.</p>'; return; }
   const r4 = raGradeAct(t, 'RA4'), r5 = raGradeAct(t, 'RA5');
@@ -4756,11 +4777,14 @@ function vQualificacio(v) {
   // Activar o desactivar la IA es fa des de dins del desplegable: ha de continuar obert i sense moure la pàgina
   if (aoff) aoff.onclick = () => { QH_OPEN = true; aiCfg().enabled = false; manualScope = null; save(); const y = window.scrollY; render(); window.scrollTo(0, y); };
   if (aon) aon.onclick = () => { QH_OPEN = true; aiCfg().enabled = true; save(); const y = window.scrollY; render(); window.scrollTo(0, y); };
-  const setG = (c, patch) => { const g = t.grades[c] = Object.assign(t.grades[c] || {}, patch), a = G.acts.find(x => x.c === c);
+  const setG = (c, patch, twin) => { if ('rl' in patch || 'ri' in patch) patch.rat = Date.now();
+    const g = t.grades[c] = Object.assign(t.grades[c] || {}, patch), a = G.acts.find(x => x.c === c);
+    // Rúbrica compartida: el que es marca en una activitat queda marcat a les altres que fan servir la mateixa rúbrica
+    if (!twin && ('rl' in patch || 'ri' in patch) && a) rubTwins(a).forEach(b => setG(b.c, Object.assign(Object.fromEntries(Object.entries(patch).filter(([k]) => RUB_SHARED.includes(k))), { rub: rubOf(b).id }), true));
     // Amb la nota es guarda com estava cada apartat: consta com a lliurat mentre l'equip no hi faci canvis
     if ('nota' in patch && a) { g.h = {}; (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) g.h[k] = secHash(t, k); }); }
     // Lliurada després de la data límit (i abans del tancament): la nota màxima és un NOTA_TARD
-    if ('nota' in patch && a && actTard(t, a) && g.nota !== '' && Number(g.nota) > NOTA_TARD) { g.nota = NOTA_TARD; g.nivell = noteToLvl(NOTA_TARD); if (Array.isArray(g.ind)) g.ind.forEach(x => { if (x.nota > NOTA_TARD) x.nota = NOTA_TARD; }); toast('Lliurada tard: la nota queda en un ' + NOTA_TARD + '.'); }
+    if ('nota' in patch && a && actTard(t, a) && g.nota !== '' && Number(g.nota) > NOTA_TARD) { g.nota = NOTA_TARD; g.nivell = noteToLvl(NOTA_TARD); if (Array.isArray(g.ind)) g.ind.forEach(x => { if (x.nota > NOTA_TARD) x.nota = NOTA_TARD; }); if (!twin) toast('Lliurada tard: la nota queda en un ' + NOTA_TARD + '.'); }
     save(); };
   const rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const n = +b.dataset.v; setG(b.dataset.lvl, { nivell: n, nota: LVL_NOTE(n) }); rerender(); });
