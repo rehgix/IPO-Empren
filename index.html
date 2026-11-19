@@ -4495,12 +4495,23 @@ const LVL_NOTE = l => l * 2.5;
 const noteToLvl = n => n >= 9 ? 4 : n >= 7 ? 3 : n >= 5 ? 2 : n >= 2.5 ? 1 : 0;
 const gcls = x => x === null || x === undefined || x === '' || isNaN(x) ? 'g-none' : x >= 9 ? 'g-hi' : x >= 7 ? 'g-ok' : x >= 5 ? 'g-mid' : 'g-low';
 const f1 = x => x === null || x === undefined || x === '' || isNaN(x) ? '—' : Number(x).toLocaleString('ca-ES', { maximumFractionDigits: 2 });
+// Tasca no lliurada abans del tancament: la nota de l'activitat és un 0 (es guarda la d'abans a z0 per si s'amplia el termini i l'envien)
+const actZero = (t, a) => !a.ext && (a.ev || []).some(([k]) => dueState(t, k) === 'zero');
+function zeroSync(t) {
+  let ch = false; t.grades = t.grades || {};
+  (G.acts || []).forEach(a => { if (a.ext) return; const z = actZero(t, a), g = t.grades[a.c];
+    if (z && !(g && g.zero && Number(g.nota) === 0)) { const n = t.grades[a.c] = g || {}; if (!n.zero) n.z0 = JSON.parse(JSON.stringify({ nota: n.nota === undefined ? '' : n.nota, nivell: n.nivell === undefined ? '' : n.nivell, ind: n.ind })); n.zero = 1; n.nota = 0; n.nivell = 0;
+      if (isObj(n.ind)) Object.keys(n.ind).forEach(k => { n.ind[k] = 0; }); else if (Array.isArray(n.ind)) n.ind = n.ind.map(x => isObj(x) ? Object.assign(x, { nota: 0 }) : 0); ch = true; }
+    else if (!z && g && g.zero) { const o = g.z0 || {}; g.nota = o.nota === undefined ? '' : o.nota; g.nivell = o.nivell === undefined ? '' : o.nivell; if (o.ind !== undefined) g.ind = o.ind; delete g.zero; delete g.z0; ch = true; } });
+  return ch;
+}
 function ensureEval() {
   aiCfg();
   if (!G.acts) { G.acts = JSON.parse(JSON.stringify(ACTS_DEFAULT)); if (!Array.isArray(G.rubs)) G.evalV = 6; }
   if (!Array.isArray(G.rubs)) G.rubs = JSON.parse(JSON.stringify(RUBS_DEFAULT));
   if (G.evalV !== 6) evalMigrate();
   G.teams.forEach(t => { t.grades = t.grades || {}; t.ai = t.ai || {}; });
+  if (G.teams && !(CLOUD && ME && !ME.isProf) && G.teams.reduce((c, t) => zeroSync(t) || c, false)) setTimeout(save, 0); // tasques no lliurades: un 0
 }
 // Grups creats amb la versió anterior: passen a les activitats i rúbriques noves (es respecten els pesos, les activitats afegides i les rúbriques pròpies)
 function evalMigrate() {
@@ -4739,7 +4750,7 @@ function gradeCard(t, a) {
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="gmeta small muted">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
     ${rubTwins(a).length ? `<div class="notice info" style="margin:8px 0 0"><b>Rúbrica compartida</b> amb ${rubTwins(a).map(b => esc(b.c + ' · ' + b.n)).join(', ')}: el que marquis aquí també queda marcat allà.</div>` : ''}
-    ${(a.ev || []).some(([k]) => dueState(t, k) === 'zero') ? `<div class="notice" style="margin:8px 0 0"><b>No lliurada:</b> ${(a.ev || []).filter(([k]) => dueState(t, k) === 'zero').map(([k]) => esc(sec(k).l)).join(', ')} no es va enviar abans del tancament. Per a l'alumnat, la nota és un 0.</div>` : ''}
+    ${(a.ev || []).some(([k]) => dueState(t, k) === 'zero') ? `<div class="notice" style="margin:8px 0 0"><b>No lliurada:</b> ${(a.ev || []).filter(([k]) => dueState(t, k) === 'zero').map(([k]) => esc(sec(k).l)).join(', ')} no es va enviar abans del tancament: la nota de l'activitat queda en un 0. Si amplies la data de tancament i l'envien, es recupera la nota que hi havia.</div>` : ''}
     ${actTard(t, a) ? `<div class="notice" style="margin:8px 0 0"><b>Lliurada després de la data límit:</b> la nota màxima és un ${NOTA_TARD}.</div>` : ''}
     ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? (subActs(a).length ? 'Es fa fora de l\'eina: escriu la nota grupal i la de la coavaluació. Cada una compta amb el seu pes al ' + esc(a.ra) + '.' : 'Nota externa: escriu la nota que han tret.') : 'Aquesta activitat es fa fora de l\'eina (en paper o a classe): corregeix-la amb la rúbrica.'}</p>`}
     ${a.ext ? '' : `<div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>`}
@@ -4825,6 +4836,7 @@ function vQualificacio(v) {
     if (!twin && ('rl' in patch || 'ri' in patch) && a) rubTwins(a).forEach(b => setG(b.c, Object.assign(Object.fromEntries(Object.entries(patch).filter(([k]) => RUB_SHARED.includes(k))), { rub: rubOf(b).id }), true));
     // Amb la nota es guarda com estava cada apartat: consta com a lliurat mentre l'equip no hi faci canvis
     if ('nota' in patch && a) { g.h = {}; (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) g.h[k] = secHash(t, k); }); }
+    if ('nota' in patch && a && actZero(t, a) && g.nota !== '') { g.z0 = { nota: g.nota, nivell: g.nivell, ind: JSON.parse(JSON.stringify(g.ind === undefined ? null : g.ind)) }; g.zero = 1; g.nota = 0; g.nivell = 0; if (!twin) toast('Tasca no lliurada: la nota queda en un 0.'); save(); return; }
     // Lliurada després de la data límit (i abans del tancament): la nota màxima és un NOTA_TARD
     if ('nota' in patch && a && actTard(t, a) && g.nota !== '' && Number(g.nota) > NOTA_TARD) { g.nota = NOTA_TARD; g.nivell = noteToLvl(NOTA_TARD); if (Array.isArray(g.ind)) g.ind.forEach(x => { if (x.nota > NOTA_TARD) x.nota = NOTA_TARD; }); if (!twin) toast('Lliurada tard: la nota queda en un ' + NOTA_TARD + '.'); }
     save(); };
