@@ -1210,7 +1210,8 @@ table.fin{box-shadow:none}
 .rk-pos{width:30px;text-align:center;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;flex:none}
 .rk-sq{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 .rk-n{flex:1;min-width:0;display:grid;gap:3px}.rk-n b{overflow-wrap:anywhere}.rk-n em{font-style:normal;font-size:12px;font-weight:650;background:var(--pri);color:var(--pri-fg);padding:2px 8px;border-radius:999px;margin-left:4px}
-.rk-sq.lt{color:#111318;text-shadow:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}.rk-bk{font-size:12.5px;color:var(--muted)}
+.rk-sq.lt{color:#111318;text-shadow:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.12)}
+.rk-sq.lg{display:block;padding:0;background:#fff;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.1)}.rk-sq.lg img{width:100%;height:100%;object-fit:cover;display:block}.rk-bk{font-size:12.5px;color:var(--muted)}
 .rk-bs{display:flex;flex-wrap:wrap;gap:4px}.rk-bs:empty{display:none}.rk-bd{font-size:18px;line-height:1;cursor:help;display:inline-flex;align-items:baseline}.rk-bd small{font-size:12px;font-weight:700;margin-left:1px}
 .rk-c{font-weight:650;color:var(--st-ok-f);font-variant-numeric:tabular-nums;white-space:nowrap}
 .rk-pt{display:grid;justify-items:end;flex:none}.rk-pt b{font-size:24px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}.rk-pt small{font-size:12px;color:var(--muted)}
@@ -7246,7 +7247,7 @@ function teamBadges(t) {
 // live: el professor veu el capital abans de tancar la ronda (l'alumnat només quan es tanca)
 function rankCalc(live) {
   const I = invTotals(), show = live || rkSt() === 'closed';
-  const rows = G.teams.map(t => ({ id: t.id, ng: negList(t).length, n: projName(t), c1: col(t.data.marca.color1, '#f7a21b'), b: teamBadges(t), p: Math.round(progress(t) * 100), c: show ? I.cap[t.id] || 0 : 0 }));
+  const rows = G.teams.map(t => ({ id: t.id, ng: negList(t).length, n: projName(t), c1: col(t.data.marca.color1, '#f7a21b'), lg: rkLogo(t.data.marca.logo), b: teamBadges(t), p: Math.round(progress(t) * 100), c: show ? I.cap[t.id] || 0 : 0 }));
   if (rkSt() === 'closed') { const mx = Math.max(0, ...rows.map(r => r.c)); if (mx > 0) rows.filter(r => r.c === mx).forEach(r => r.b.push('top')); }
   rows.forEach(r => { r.pt = r.p + r.b.length * RK_BADGE + Math.floor(r.c / 1000) - r.ng * RK_BADGE; });
   return rows.sort((a, b) => b.pt - a.pt || b.p - a.p || a.n.localeCompare(b.n, 'ca'));
@@ -7302,9 +7303,21 @@ function rkWhy(r) {
   const ng = Number(r.ng) || 0;
   return [`${p} pt pel ${p} % del projecte fet`, nb ? `${nb * RK_BADGE} pt per ${nb === 1 ? '1 insígnia' : nb + ' insígnies'}` : 'cap insígnia encara', ci ? `${ci} pt per la inversió` : '', ng ? `−${ng * RK_BADGE} pt per ${ng === 1 ? '1 insígnia negativa' : ng + ' insígnies negatives'}` : ''].filter(Boolean).join(' · ');
 }
-// Quadrat amb les inicials: lletra blanca o fosca segons el color de l'equip (perquè es llegeixi sempre)
+// Logo petit de cada equip per al rànquing (l'alumnat no pot llegir els altres equips: el professor el desa reduït a 64 px)
+const RK_LG = new Map(), rkLgKey = l => l.length + ':' + l.slice(-40);
+function rkLogo(l) {
+  const src = logoSrc(l); if (!src) return ''; const k = rkLgKey(src); if (RK_LG.has(k)) return RK_LG.get(k) || '';
+  RK_LG.set(k, null); const im = new Image();
+  im.onload = () => { try { const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), f = Math.min(S / im.width, S / im.height) * .9, w = im.width * f, h = im.height * f;
+    x.fillStyle = logoDark(l) ? '#111318' : '#ffffff'; x.fillRect(0, 0, S, S); x.drawImage(im, (S - w) / 2, (S - h) / 2, w, h); RK_LG.set(k, c.toDataURL('image/jpeg', .85)); } catch (e) { RK_LG.set(k, ''); }
+    clearTimeout(rkLgT); rkLgT = setTimeout(() => { if (G && !isStuCloud()) { render(); rankPushSoon(); } }, 300); };
+  im.onerror = () => RK_LG.set(k, ''); im.src = src; return '';
+}
+let rkLgT = 0;
+// Quadrat amb el logo de l'equip o, si no en té, les inicials: lletra blanca o fosca segons el color de l'equip (perquè es llegeixi sempre)
 function rkSq(r) {
   const c = col(r.c1, '#f7a21b'), x = /^#([0-9a-f]{6})$/i.exec(c), n = x ? parseInt(x[1], 16) : 0, l = x ? (0.299 * (n >> 16 & 255) + 0.587 * (n >> 8 & 255) + 0.114 * (n & 255)) / 255 : 0;
+  if (logoSrc(r.lg)) return `<span class="rk-sq lg"><img src="${imgSrc(r.lg)}" alt=""></span>`;
   return `<span class="rk-sq${l > 0.68 ? ' lt' : ''}" style="background:${c}">${esc(rkIni(r.n))}</span>`;
 }
 const rkIni = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '·';
