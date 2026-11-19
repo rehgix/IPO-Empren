@@ -1148,7 +1148,7 @@ table.fin{box-shadow:none}
 .rk-pos{width:30px;text-align:center;font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;flex:none}
 .rk-sq{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;color:#fff;font-weight:700;font-size:15px;flex:none;text-shadow:0 1px 2px rgba(0,0,0,.35)}
 .rk-n{flex:1;min-width:0;display:grid;gap:3px}.rk-n b{overflow-wrap:anywhere}.rk-n em{font-style:normal;font-size:12px;font-weight:650;background:var(--pri);color:var(--pri-fg);padding:2px 8px;border-radius:999px;margin-left:4px}
-.rk-bs{display:flex;flex-wrap:wrap;gap:4px}.rk-bd{font-size:18px;line-height:1;cursor:help}
+.rk-bs{display:flex;flex-wrap:wrap;gap:4px}.rk-bd{font-size:18px;line-height:1;cursor:help;display:inline-flex;align-items:baseline}.rk-bd small{font-size:12px;font-weight:700;margin-left:1px}
 .rk-c{font-weight:650;color:var(--st-ok-f);font-variant-numeric:tabular-nums;white-space:nowrap}
 .rk-pt{display:grid;justify-items:end;flex:none}.rk-pt b{font-size:24px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1}.rk-pt small{font-size:12px;color:var(--muted)}
 .rk-open{display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding:14px 18px;border-radius:20px;background:var(--st-ok-b);color:var(--st-ok-f)}
@@ -1390,7 +1390,15 @@ body.navopen{overflow:hidden}
 .whatis{font-size:14px;line-height:1.55;color:var(--ink-2,var(--ink));background:var(--soft);border-radius:14px;padding:12px 14px;margin-bottom:14px}
 .whatis b:first-child{color:var(--ink)}
 /* ---------- Planificació, llegenda, tresoreria i filtres (retocs) ---------- */
-.accrow{grid-template-columns:minmax(0,1fr) auto auto}
+.accrow{grid-template-columns:minmax(0,1fr) auto auto auto}
+.accrow .accwarn,.accrow .accdates{grid-column:1/-1;margin:0}.accwarn{color:var(--bad)}
+.accdl{display:flex;align-items:flex-end;gap:8px}
+.accdate.dl span,.accdate.tc span{font-weight:600;color:var(--ink-2)}.accdate.bad input{border-color:var(--bad)}
+.accx{border:0;background:none;color:var(--muted);font-size:20px;line-height:1;cursor:pointer;padding:4px 6px;border-radius:8px}.accx:hover{color:var(--ink);background:var(--soft)}
+.duehelp{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:10px;margin:0 0 18px}
+.duehelp div{background:var(--tile);border-radius:16px;padding:12px 14px;display:grid;gap:3px;font-size:13.5px}.duehelp span{color:var(--muted)}
+.sb-due{margin-top:6px;font-size:13.5px;padding:6px 10px;border-radius:10px;background:var(--soft)}.sb-due.temps{background:var(--st-ok-b);color:var(--st-ok-f)}.sb-due.tard{background:var(--st-mil-b);color:var(--st-mil-f)}
+@media (max-width:1100px){.accrow{grid-template-columns:minmax(0,1fr) auto}.accrow .accdl{grid-column:1/-1;grid-row:2}}
 .accprog{display:inline-flex;align-items:center;gap:6px;font:600 13px var(--font);color:var(--muted);background:none;border:1px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer;white-space:nowrap}
 .accprog svg{width:15px;height:15px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .accprog:hover{color:var(--ink);border-color:var(--ink)}.accprog.on{color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 45%,transparent);background:var(--accent-soft)}
@@ -2072,13 +2080,20 @@ function access(k) {
 const amagat = k => !!stuView() && !!sec(k) && !!sec(k).p && access(k) === 'closed';
 const tancatProf = k => !!(CLOUD && ME && ME.isProf && role !== 'prof') && !!sec(k) && !!sec(k).p && stuAccess(k) === 'closed';
 // Estat de l'apartat per a l'alumnat (el que veuen ells)
-function stuAccess(k) {
+// Estat de l'apartat segons la planificació (sense mirar l'equip): obert, tancat o només lectura per data
+function stuAccess0(k) {
   if (!G || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
   const a = (G.access || {})[k] || {};
   let s = a.state === 'closed' && a.from && todayISO() >= a.from ? 'open' : (a.state || 'open');
   if (s === 'open' && a.until && todayISO() > a.until) s = 'readonly';
+  return s;
+}
+function stuAccess(k) {
+  if (!G || k === 'inici' || k === 'dossier' || k === 'notes' || k === 'criteris') return 'open';
+  let s = stuAccess0(k);
   // Per equip: quan una activitat independent ja té nota, els seus apartats no es poden tocar (un apartat tancat, a mà o per data, no es reobre mai)
   if (role !== 'prof' && s === 'open' && secOv(T(), k) === 'x') s = 'readonly';
+  if (role !== 'prof' && s === 'open' && sendLocked(T(), k)) s = 'readonly'; // ja enviada
   return s;
 }
 // Estat de cada apartat per a un equip: 'x' = una activitat independent (lock) de l'apartat ja té nota i queda tancat;
@@ -2097,6 +2112,20 @@ const SEND_SRC = { equip: t => t.members.map(({ uid, ...m }) => m), lean: t => [
   prototip: t => Object.assign({}, t.data.prototip, { fitxers: (t.data.prototip.fitxers || []).map(f => (f.name || '') + '|' + (f.size || 0)) }), marca: t => Object.assign({}, t.data.marca, { logo: (t.data.marca.logo || '').length ? 1 : 0, esbossos: (t.data.marca.esbossos || []).map(f => (f.name || '') + '|' + (f.size || 0)) }) };
 function secHash(t, k) { const v = (SEND_SRC[k] || (x => x.data[k]))(t); const s = JSON.stringify(v === undefined ? null : v); let h = 5381; for (let i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + s.length.toString(36); }
 const sentOf = (t, k) => ((t.data._meta || {}).sent || {})[k];
+/* ---------- Dates de cada tasca: data límit de lliurament (insígnia ⏱️) i tancament (G.access[k].due i .until) ---------- */
+const firstSent = (t, k) => { const se = sentOf(t, k); return se ? Number(se.f || se.at) || 0 : 0; };
+const dayEnd = iso => { const [y, m, d] = String(iso).split('-').map(Number); return new Date(y, m - 1, d + 1).getTime(); };
+const dueOf = k => (((G && G.access) || {})[k] || {}).due || '';
+const isoAdd = (iso, n) => { const [y, m, d] = String(iso).split('-').map(Number), x = new Date(y, m - 1, d + n); return x.getFullYear() + '-' + String(x.getMonth() + 1).padStart(2, '0') + '-' + String(x.getDate()).padStart(2, '0'); };
+const DUE_MARGE = 5, NOTA_TARD = 5; // dies entre la data límit i el tancament; nota màxima si es lliura en aquests dies
+// Com s'ha lliurat la tasca: 'temps' (abans de la data límit), 'tard' (després) o '' (sense data límit o sense enviar)
+function lliuraOf(t, k) { const d = dueOf(k), f = firstSent(t, k); return !d || !f ? '' : f < dayEnd(d) ? 'temps' : 'tard'; }
+// Una tasca enviada ja no es pot editar, tret que el professor demani millores o obri l'edició a l'equip (review[k].ob) després de l'enviament
+function sendLocked(t, k) {
+  const se = t && sentOf(t, k); if (!se || !sec(k) || !sec(k).p || se.h !== secHash(t, k)) return false;
+  const rv = t.review[k] || {};
+  return !((rv.status === 'millorar' && Number(rv.at) > se.at) || Number(rv.ob) > se.at);
+}
 function workState(t, s) {
   if (!s || !s.p) return null;
   const se = sentOf(t, s.k), rv = t.review[s.k] || {}, h = secHash(t, s.k), same = !!se && se.h === h;
@@ -2120,12 +2149,22 @@ const profFem = () => { const c = G && (G.profName || G.profFem) ? G : JCFG; ret
 // PR('el') → «el professor» / «la professora»; també 'El', 'al', 'pel', 'del' i 'n' (només la paraula)
 function PR(w) { const f = profFem(), n = f ? 'professora' : 'professor'; return { n, el: (f ? 'la ' : 'el ') + n, El: (f ? 'La ' : 'El ') + n, al: (f ? 'a la ' : 'al ') + n, pel: (f ? 'per la ' : 'pel ') + n, del: (f ? 'de la ' : 'del ') + n }[w] || n; }
 const WS_LABEL = { none: 'Sense fer', edit: 'En edició', sent: 'Enviat', correcte: 'Correcte', millorar: 'A millorar' };
-function sendSection(k) { const t = T(); t.data._meta = t.data._meta || {}; t.data._meta.sent = Object.assign({}, t.data._meta.sent || {}, { [k]: { at: Date.now(), h: secHash(t, k) } }); t.updated = Date.now(); save(); }
+function sendSection(k) { const t = T(), now = Date.now(); t.data._meta = t.data._meta || {}; const o = (t.data._meta.sent || {})[k]; t.data._meta.sent = Object.assign({}, t.data._meta.sent || {}, { [k]: { at: now, h: secHash(t, k), f: (o && (Number(o.f) || Number(o.at))) || now } }); t.updated = Date.now(); save(); } // f: el primer enviament (compta per a la data límit)
 function sendBarHtml(t, s, ac) {
   const ws = workState(t, s), se = sentOf(t, s.k), when = se ? new Date(se.at).toLocaleString('ca-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
-  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: se ? `<b>✓ Enviat ${PR('al')}</b> el ${when}.${ac === 'open' ? ' Si hi feu canvis, l\'haureu de tornar a enviar.' : ''}` : '<b>✓ Consta com a lliurat.</b>', correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
+  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: se ? `<b>✓ Enviat ${PR('al')}</b> el ${when}.${ac === 'open' ? ' Si hi feu canvis, l\'haureu de tornar a enviar.' : sendLocked(t, s.k) ? ` Ja no el podeu modificar. Si l'heu enviat per error, demaneu ${PR('al')} que us n'obri l'edició.` : ''}` : '<b>✓ Consta com a lliurat.</b>', correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
   const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar ' + PR('al')}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar ${PR('al')}</button>` : '';
-  return `<div class="sendbar ws-${ws}"><i class="wsdot ${ws}"></i><div class="sb-t">${msg}</div>${btn}</div>`;
+  return `<div class="sendbar ws-${ws}"><i class="wsdot ${ws}"></i><div class="sb-t">${msg}${dueHtml(t, s.k)}</div>${btn}</div>`;
+}
+// Avís de dates a la barra d'enviament: data límit (insígnia ⏱️) i tancament (nota màxima 5 si s'envia entre totes dues)
+function dueHtml(t, k) {
+  const d = dueOf(k), u = ((G.access || {})[k] || {}).until; if (!d) return '';
+  const dd = iso => new Date(iso + 'T00:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'long' }), l = lliuraOf(t, k), now = Date.now();
+  const m = l === 'temps' ? `⏱️ <b>Lliurat a temps:</b> heu guanyat la insígnia d'aquesta tasca.`
+    : l === 'tard' ? `Lliurat després de la data límit (${dd(d)}): la nota màxima d'aquesta tasca serà un ${NOTA_TARD}.`
+    : now < dayEnd(d) ? `⏱️ <b>Data límit: ${dd(d)}.</b> Si l'envieu abans, guanyeu la insígnia.${u ? ` Després, fins al ${dd(u)}, encara la podreu enviar, però la nota màxima serà un ${NOTA_TARD}.` : ''}`
+    : u && now < dayEnd(u) ? `<b>Ha passat la data límit (${dd(d)}).</b> Encara la podeu enviar fins al ${dd(u)}, però la nota màxima serà un ${NOTA_TARD}.` : '';
+  return m ? `<div class="sb-due ${l || (now < dayEnd(d) ? 'ok' : 'tard')}">${m}</div>` : '';
 }
 function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'prof') return; const s = sec(tab); el.innerHTML = sendBarHtml(T(), s, access(tab)); bindSendBar(); }
 function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); }; }
@@ -2609,7 +2648,7 @@ function vInici(v) {
     const cl = ss.every(s => acx(s.k) === 'closed'), from = cl ? openFrom(ss.map(s => s.k)) : '';
     const ok = ss.filter(s => workState(t, s) === 'correcte').length;
     const rows = ss.map(s => { const ac = acx(s.k), w = workState(t, s), rv = t.review[s.k];
-      const meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : ''].filter(Boolean).join(' · ');
+      const du = dueOf(s.k), lo = lliuraOf(t, s.k), meta = [s.act || s.ca, ac === 'readonly' ? (secOv(t, s.k) === 'x' ? 'Avaluat: ja no es pot canviar' : sendLocked(t, s.k) && stuAccess0(s.k) === 'open' ? 'Enviat: ja no es pot canviar' : w === 'sent' ? 'Termini acabat: ' + PR('el') + ' ho revisarà' : 'Termini acabat: ja no es pot canviar') : '', lo === 'temps' ? '⏱️ A temps' : lo === 'tard' ? 'Lliurat tard (màx. ' + NOTA_TARD + ')' : du && ac === 'open' ? 'Data límit: ' + dayCa(du) : ''].filter(Boolean).join(' · ');
       return `<button type="button" class="bit" data-go="${s.k}"><span class="n">${esc(s.l)}${meta ? `<em>${meta}</em>` : ''}</span>${ac === 'closed' ? '<span class="bst">Tancat</span>' : `<span class="bst ${w}">${WS_LABEL[w]}</span>`}${ac !== 'closed' && w === 'millorar' && rv && filled(rv.comment) ? `<span class="bfb"><b>${PR('El')} us demana millores:</b> ${esc(rv.comment)}</span>` : ''}</button>`; }).join('');
     return `<section class="bl ${cl ? 'cl' : ''} ${i % 2 === Math.floor(i / 2) % 2 ? 's5' : 's7'}" data-g="${gk}"><div class="bh"><h2><span class="bnum" aria-label="Bloc ${i + 1}">${i + 1}</span>${esc(gl)}</h2>${cl ? `<span class="blk">${ico(LOCK)}${from ? 'S\'obre el ' + dayCa(from) : 'Encara tancat'}</span>` : `<span class="bcnt" title="Apartats correctes">${ok} / ${ss.length}</span>`}</div>${rows}</section>`; }).join('');
   v.innerHTML = `${flashHtml()}<section class="ihero">
@@ -4369,6 +4408,8 @@ function autoLevel(t, a) {
   if (l === 4 && !secs.every(k => t.review[k] && t.review[k].status === 'correcte')) l = 3; // l'excel·lència la confirma el professor
   return l;
 }
+// Alguna tasca de l'activitat es va enviar per primer cop després de la seva data límit
+const actTard = (t, a) => (a.ev || []).some(([k]) => sec(k) && sec(k).p && lliuraOf(t, k) === 'tard');
 function raGradeAct(t, ra) {
   const acts = G.acts.filter(a => a.ra === ra && Number(a.w) > 0);
   const graded = acts.filter(a => t.grades[a.c] && t.grades[a.c].nota !== '' && t.grades[a.c].nota !== undefined && !isNaN(t.grades[a.c].nota));
@@ -4535,6 +4576,7 @@ function gradeCard(t, a) {
   const noteIn = `<label class="notein">Nota<input type="number" min="0" max="10" step="0.1" data-nota="${a.c}" value="${g.nota ?? ''}" inputmode="decimal"></label>`;
   return card(`<span class="actcode">${esc(a.c)}</span> ${esc(a.n)} <span class="gmeta small muted">${a.ra}${a.ca ? ' · CA ' + esc(a.ca) : ''} · pes ${f1(a.w)}%</span>`, pad(`
     ${a.crit ? `<p class="small muted" style="margin:0">${esc(a.crit)}</p>` : ''}
+    ${actTard(t, a) ? `<div class="notice" style="margin:8px 0 0"><b>Lliurada després de la data límit:</b> la nota màxima és un ${NOTA_TARD}.</div>` : ''}
     ${ev.length ? details(`Feina de l'equip${a.ext ? ' (relacionada)' : ''}`, ev.map(gr => `<p class="small" style="margin:10px 0 4px"><b>${esc(gr.title)}</b> ${gr.k ? whoChips(t, gr.k) : ''}</p>` + (gr.pairs.length ? gr.pairs.map(([l, x]) => { const [c, h] = x && String(x).trim() ? (gr.k ? whoRow(t, gr.k, x) : ['', esc(x).replace(/\n/g, '<br>')]) : ['', '<span class="muted small"><i>Sense respondre</i></span>']; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; }).join('') : '<p class="muted small">Sense contingut.</p>')).join('')) : `<p class="small muted" style="margin:0">${a.ext ? (subActs(a).length ? 'Es fa fora de l\'eina: escriu la nota grupal i la de la coavaluació. Cada una compta amb el seu pes al ' + esc(a.ra) + '.' : 'Nota externa: escriu la nota que han tret.') : 'Aquesta activitat es fa fora de l\'eina (en paper o a classe): corregeix-la amb la rúbrica.'}</p>`}
     ${a.ext ? '' : `<div class="rubsel"><span class="small muted">Rúbrica</span>${rubSel(a, `data-rubsel="${esc(a.c)}"`)}<button type="button" class="linkbtn small" data-go="rubriques">Editar les rúbriques</button></div>`}
     ${r ? (r.crit.some(c => c.ind) && !ms.length ? '<div class="notice info" style="margin-top:10px">Aquesta rúbrica té criteris individuals, però l\'equip encara no té alumnes: de moment es marquen per a tot l\'equip.</div>' : '') + rubGrid(a, r, rl, aiCfg().enabled ? airl : null, ri, ms) + (rg.per ? `<p class="rindn"><b>Nota de cada alumne:</b>${rg.per.map(x => `<span>${esc(x.n)}: <b>${f1(x.nota)}</b></span>`).join('')}</p>` : '') + `<div class="gradebar"><p class="small" style="margin:0;flex:1;min-width:200px">${rg.per ? 'Nota de l\'equip (mitjana dels alumnes)' : 'Nota segons la rúbrica'}: <b>${rg.nota === null ? `falten ${rg.total - rg.done} de ${rg.total} criteris` : f1(rg.nota) + ' · ' + LVL_NAMES[noteToLvl(rg.nota)]}</b><span class="muted"> · Si cal, pots canviar la nota a mà.</span></p>${noteIn}</div>`
@@ -4615,6 +4657,8 @@ function vQualificacio(v) {
   const setG = (c, patch) => { const g = t.grades[c] = Object.assign(t.grades[c] || {}, patch), a = G.acts.find(x => x.c === c);
     // Amb la nota es guarda com estava cada apartat: consta com a lliurat mentre l'equip no hi faci canvis
     if ('nota' in patch && a) { g.h = {}; (a.ev || []).forEach(([k]) => { if (sec(k) && sec(k).p) g.h[k] = secHash(t, k); }); }
+    // Lliurada després de la data límit (i abans del tancament): la nota màxima és un NOTA_TARD
+    if ('nota' in patch && a && actTard(t, a) && g.nota !== '' && Number(g.nota) > NOTA_TARD) { g.nota = NOTA_TARD; g.nivell = noteToLvl(NOTA_TARD); if (Array.isArray(g.ind)) g.ind.forEach(x => { if (x.nota > NOTA_TARD) x.nota = NOTA_TARD; }); toast('Lliurada tard: la nota queda en un ' + NOTA_TARD + '.'); }
     save(); };
   const rerender = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-lvl]').forEach(b => b.onclick = () => { const n = +b.dataset.v; setG(b.dataset.lvl, { nivell: n, nota: LVL_NOTE(n) }); rerender(); });
@@ -6690,18 +6734,25 @@ function vObertura(v) {
   const nOpen = PROG.filter(s => access(s.k) === 'open').length;
   const seg = k => { const a = st(k); return `<div class="seg" role="group" aria-label="Estat">${[['closed', 'Tancat'], ['open', 'Obert'], ['readonly', '<span class="lg">Només lectura</span><span class="sh">Lectura</span>']].map(([v2, l]) => `<button type="button" class="${a.state === v2 ? 'on' : ''} s-${v2}" data-acc="${k}" data-v="${v2}">${l}</button>`).join('')}</div>`; };
   v.innerHTML = `${head('Planificació del projecte', `${nOpen} <span class="muted" style="font-weight:500">de ${PROG.length} apartats oberts</span>`, '<button class="btn ghost" id="accAllOpen">Obrir-ho tot</button><button class="btn ghost" id="accAllClose">Tancar-ho tot</button>')}
-    <p class="muted intro">Obre els apartats a mesura que els treballeu a classe. Els tancats no es poden veure ni omplir. Amb «Només lectura», l'alumnat veu la feina feta però ja no la pot canviar (per exemple, després de la data de lliurament). També pots programar que un apartat s'obri sol en una data i fins quan es pot editar: passada aquesta data, queda en «Només lectura».</p>
+    <p class="muted intro">Obre els apartats a mesura que els treballeu a classe. Els tancats no es poden veure ni omplir. Amb «Només lectura», l'alumnat veu la feina feta però ja no la pot canviar. També pots programar que un apartat s'obri sol en una data.</p>
+    <div class="duehelp"><div><b>⏱️ Data límit</b><span>Si l'equip envia la tasca abans d'aquesta data, guanya la insígnia de lliurament a temps al rànquing.</span></div><div><b>🔒 Tancament</b><span>Per defecte, ${DUE_MARGE} dies després de la data límit. Si l'envien entre totes dues dates, la nota màxima és un ${NOTA_TARD}. Passat el tancament, ja no la poden enviar.</span></div><div><b>📨 Un cop enviada</b><span>L'equip ja no la pot editar, tret que marquis «A millorar» o li obris l'edició a «Revisió» (per exemple, si l'han enviat per error).</span></div></div>
     ${groups.map(([gk, gl, , items]) => card(gl, items.filter(([k]) => sec(k).p).map(([k]) => { const s = sec(k), a = st(k), eff = access(k);
-      return `<div class="accrow"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}${a.state === 'closed' && a.from ? ` · ${eff === 'open' ? 'obert automàticament des del' : 's\'obrirà el'} ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES')}` : ''}${a.until && a.state !== 'readonly' ? ` · ${eff === 'readonly' ? 'tancat per a l\'edició des del' : 'es podrà editar fins al'} ${new Date(a.until + 'T00:00').toLocaleDateString('ca-ES')}` : ''}</div></div>
-        ${seg(k)}<button type="button" class="accprog ${a.from || a.until ? 'on' : ''}" data-accprog="${k}" aria-expanded="${ACC_OPEN.has(k)}" title="Programar dates" aria-label="Programar dates de ${esc(s.l)}">${ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>')}<span>${a.from || a.until ? 'Programat' : 'Programar'}</span></button>
-        ${ACC_OPEN.has(k) ? `<div class="accdates"><label class="accdate">S'obre el<input type="date" data-accdate="${k}" value="${esc(a.from || '')}" ${a.state !== 'closed' ? 'disabled' : ''}></label><label class="accdate">Editable fins al<input type="date" data-accuntil="${k}" value="${esc(a.until || '')}" ${a.state === 'readonly' ? 'disabled' : ''}></label>${a.from || a.until ? `<button type="button" class="linkbtn small" data-accclr="${k}">Treure les dates</button>` : ''}<p class="small muted">${a.state !== 'closed' ? 'La data d\'obertura només s\'aplica als apartats tancats. ' : ''}${a.state === 'readonly' ? 'En «Només lectura» no cal data límit.' : ''}</p></div>` : ''}</div>`; }).join(''),
+      const late = a.due && a.until && a.until < a.due;
+      return `<div class="accrow"><div style="min-width:0"><div class="t">${esc(s.l)}</div><div class="s">${[s.ca, s.act].filter(Boolean).join(' · ')}${a.state === 'closed' && a.from ? ` · ${eff === 'open' ? 'obert automàticament des del' : 's\'obrirà el'} ${new Date(a.from + 'T00:00').toLocaleDateString('ca-ES')}` : ''}${a.until && todayISO() > a.until && a.state === 'open' ? ' · <b>tancat: ja no es pot enviar</b>' : ''}</div></div>
+        <div class="accdl"><label class="accdate dl"><span>⏱️ Data límit</span><input type="date" data-accdue="${k}" value="${esc(a.due || '')}" aria-label="Data límit de lliurament de ${esc(s.l)}"></label><label class="accdate tc${late ? ' bad' : ''}"><span>🔒 Tancament</span><input type="date" data-accuntil="${k}" value="${esc(a.until || '')}" ${a.due ? `min="${esc(a.due)}"` : ''} aria-label="Data de tancament de ${esc(s.l)}"></label>${a.due || a.until ? `<button type="button" class="accx" data-accclr2="${k}" title="Treure les dates de lliurament" aria-label="Treure les dates de lliurament de ${esc(s.l)}">×</button>` : '<span class="accx" aria-hidden="true" style="visibility:hidden">×</span>'}</div>
+        ${seg(k)}<button type="button" class="accprog ${a.from ? 'on' : ''}" data-accprog="${k}" aria-expanded="${ACC_OPEN.has(k)}" title="Programar quan s'obre" aria-label="Programar quan s'obre ${esc(s.l)}">${ico('<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>')}<span>${a.from ? 'S\'obre ' + new Date(a.from + 'T00:00').toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : 'Obertura'}</span></button>
+        ${late ? '<p class="small accwarn">El tancament és abans de la data límit: canvia\'l.</p>' : ''}
+        ${ACC_OPEN.has(k) ? `<div class="accdates"><label class="accdate">S'obre el<input type="date" data-accdate="${k}" value="${esc(a.from || '')}" ${a.state !== 'closed' ? 'disabled' : ''}></label>${a.from ? `<button type="button" class="linkbtn small" data-accclr="${k}">Treure la data</button>` : ''}<p class="small muted">${a.state !== 'closed' ? 'La data d\'obertura només s\'aplica als apartats tancats.' : 'L\'apartat s\'obrirà sol aquest dia.'}</p></div>` : ''}</div>`; }).join(''),
       `<button type="button" class="linkbtn" data-accgrp="${gk}" data-v="open">Obrir el bloc</button> · <button type="button" class="linkbtn" data-accgrp="${gk}" data-v="closed">Tancar-lo</button>`)).join('')}`;
   const rr = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
   v.querySelectorAll('[data-acc]').forEach(b => b.onclick = () => { st(b.dataset.acc).state = b.dataset.v; save(); rr(); });
   v.querySelectorAll('[data-accprog]').forEach(b => b.onclick = () => { const k = b.dataset.accprog; ACC_OPEN.has(k) ? ACC_OPEN.delete(k) : ACC_OPEN.add(k); rr(); });
-  v.querySelectorAll('[data-accclr]').forEach(b => b.onclick = () => { const a = st(b.dataset.accclr); a.from = ''; delete a.until; save(); rr(); });
+  v.querySelectorAll('[data-accclr]').forEach(b => b.onclick = () => { st(b.dataset.accclr).from = ''; save(); rr(); });
+  v.querySelectorAll('[data-accclr2]').forEach(b => b.onclick = () => { const a = st(b.dataset.accclr2); delete a.due; delete a.until; save(); rr(); });
+  // Data límit: el tancament es posa sol DUE_MARGE dies més tard (si no n'hi havia o quedava abans)
+  v.querySelectorAll('[data-accdue]').forEach(i => i.onchange = () => { const a = st(i.dataset.accdue); if (!i.value) delete a.due; else { const old = a.due; a.due = i.value; if (!a.until || a.until < i.value || (old && a.until === isoAdd(old, DUE_MARGE))) a.until = isoAdd(i.value, DUE_MARGE); } save(); rr(); });
   v.querySelectorAll('[data-accdate]').forEach(i => i.onchange = () => { st(i.dataset.accdate).from = i.value; save(); rr(); });
-  v.querySelectorAll('[data-accuntil]').forEach(i => i.onchange = () => { st(i.dataset.accuntil).until = i.value; save(); rr(); });
+  v.querySelectorAll('[data-accuntil]').forEach(i => i.onchange = () => { const a = st(i.dataset.accuntil); if (i.value) a.until = i.value; else delete a.until; save(); rr(); });
   v.querySelectorAll('[data-accgrp]').forEach(b => b.onclick = () => { SECS.find(g => g[0] === b.dataset.accgrp)[3].forEach(([k]) => { if (sec(k).p) st(k).state = b.dataset.v; }); save(); rr(); });
   $('#accAllOpen').onclick = () => { PROG.forEach(s => { st(s.k).state = 'open'; }); save(); rr(); };
   $('#accAllClose').onclick = () => { PROG.forEach(s => { st(s.k).state = 'closed'; }); save(); rr(); };
@@ -6746,7 +6797,7 @@ function vRevisio(v) {
         <div class="rbadges">${whoChips(t, s.k)}<span class="wsbadge ${w}">${WS_LABEL[w]}${w === 'sent' && se ? ' · ' + new Date(se.at).toLocaleDateString('ca-ES', { day: 'numeric', month: 'short' }) : ''}</span>${rv.status && w !== rv.status ? `<span class="wsbadge rvb ${rv.status}">Revisió: ${rv.status === 'correcte' ? 'correcte' : 'a millorar'}</span>` : ''}${ss === 'part' ? `<span class="rfill part" title="Camps omplerts">${Math.min(d, n)} de ${n} camps</span>` : ''}</div></header>
       <div class="rbody">${secHtml(t, s.k, true)}</div>
       <footer class="rrev">
-        <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">${ico('<path d="M20 6L9 17l-5-5"/>')}Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">${ico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>')}A millorar</button></div>
+        <div class="rbtns"><button type="button" class="rb ok ${rv.status === 'correcte' ? 'on' : ''}" data-st="${s.k}" data-v="correcte">${ico('<path d="M20 6L9 17l-5-5"/>')}Correcte</button><button type="button" class="rb warn ${rv.status === 'millorar' ? 'on' : ''}" data-st="${s.k}" data-v="millorar">${ico('<circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5h.01"/>')}A millorar</button>${sendLocked(t, s.k) ? `<button type="button" class="rb" data-reob="${s.k}" title="Per si l'han enviat per error: l'equip la podrà tornar a editar fins que la torni a enviar">${ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 7.5-2"/>')}Obrir l'edició</button>` : ''}${lliuraOf(t, s.k) ? `<span class="wsbadge ${lliuraOf(t, s.k) === 'temps' ? 'correcte' : 'millorar'}">${lliuraOf(t, s.k) === 'temps' ? '⏱️ A temps' : 'Lliurat tard · màx. ' + NOTA_TARD}</span>` : ''}</div>
         <div class="rquick">${REV_QUICK.map(q => `<button type="button" data-q="${s.k}">${esc(q)}</button>`).join('')}</div>
         ${repsOf(t, s.k).length ? `<div class="rconv"><p class="small"><b>Conversa amb l'equip</b></p>${convoHtml(t, s.k, REV_SEEN[t.id + s.k] != null ? REV_SEEN[t.id + s.k] : Number((isObj(t.review._vist) ? t.review._vist : {})[s.k]) || 0)}
           <div class="rep-f"><textarea rows="2" maxlength="1000" data-prep="${s.k}" placeholder="Respondre a l'equip (ho veuran a la pàgina de l'apartat i a la seva campaneta)" aria-label="Respondre a l'equip"></textarea><div class="row"><button type="button" class="btn small" data-prepgo="${s.k}">Respondre a l'equip</button></div></div></div>` : ''}
@@ -6774,6 +6825,7 @@ function vRevisio(v) {
   v.querySelectorAll('[data-jump]').forEach(b => b.onclick = () => { revK = b.dataset.jump; render(); const l = $('.rlayout'); if (l && l.getBoundingClientRect().top < 0) l.scrollIntoView({ block: 'start' }); });
   $('#rHide').onchange = e => { revHide = e.target.checked; rr(); };
   if ($('#rSel')) $('#rSel').onchange = e => { revK = e.target.value; rr(); };
+  v.querySelectorAll('[data-reob]').forEach(b => b.onclick = () => { const k = b.dataset.reob; t.review[k] = t.review[k] || {}; t.review[k].ob = Date.now(); save(); rr(); toast('Edició oberta: l\'equip la pot tornar a editar i enviar.'); });
   v.querySelectorAll('[data-st]').forEach(b => b.onclick = () => { const k = b.dataset.st; t.review[k] = t.review[k] || {}; t.review[k].status = t.review[k].status === b.dataset.v ? '' : b.dataset.v; t.review[k].at = Date.now(); t.review[k].h = secHash(t, k); revLog(t, k); save(); rr(); });
   v.querySelectorAll('[data-cm]').forEach(a => { a.oninput = () => { const k = a.dataset.cm; t.review[k] = t.review[k] || {}; t.review[k].comment = a.value; save(); }; a.onchange = () => { revLog(t, a.dataset.cm); save(); }; });
   v.querySelectorAll('[data-q]').forEach(b => b.onclick = () => { const k = b.dataset.q, a = v.querySelector(`[data-cm="${k}"]`); a.value = (a.value.trim() ? a.value.trim() + ' ' : '') + b.textContent; a.dispatchEvent(new Event('input')); a.focus(); });
@@ -6874,7 +6926,7 @@ function vConfig(v) {
    Punts: 1 per cada % de progrés, RK_BADGE per insígnia i 1 per cada 1.000 € rebuts (només quan la ronda està tancada). */
 const INV_BUDGET = 10000, INV_STEP = 1000, RK_BADGE = 15;
 const BADGES = {
-  temps: ['⏱️', 'Puntuals', 'Han enviat a temps tots els apartats amb el termini acabat (mínim 2).'],
+  temps: ['⏱️', 'Lliurat a temps', 'Una per cada tasca enviada abans de la seva data límit.'],
   net: ['✅', 'Feina ben feta', 'Tenen almenys 3 apartats correctes i res pendent de millorar.'],
   canvas: ['🧩', 'Canvas complet', 'Han acabat el Lean Canvas sostenible.'],
   ods: ['🌍', 'Compromís ODS', 'Han acabat l\'apartat d\'ODS i sostenibilitat.'],
@@ -6908,8 +6960,7 @@ function invTotals() {
 }
 function teamBadges(t) {
   const done = k => !!sec(k) && secState(t, sec(k)) === 'done', b = [];
-  const dl = PROG.filter(s => { const a = (G.access || {})[s.k]; return a && a.until && todayISO() > a.until; });
-  if (dl.length >= 2 && dl.every(s => { const se = sentOf(t, s.k); return okDone(t, s) || (se && se.at <= secWindow(G.access[s.k])[1]); })) b.push('temps');
+  PROG.forEach(s => { if (lliuraOf(t, s.k) === 'temps') b.push('temps'); }); // una ⏱️ per cada tasca lliurada a temps
   if (PROG.filter(s => okDone(t, s)).length >= 3 && !PROG.some(s => milPending(t, s))) b.push('net');
   if (done('lean')) b.push('canvas');
   if (done('sost')) b.push('ods');
@@ -6938,7 +6989,8 @@ async function rankPush() {
 }
 const rkIni = n => String(n || '').split(/\s+/).filter(Boolean).slice(0, 2).map(w => w[0]).join('').toUpperCase() || '·';
 const eur = n => (Number(n) || 0).toLocaleString('ca-ES') + ' €';
-const rkBadgesHtml = b => (b || []).filter(k => BADGES[k]).map(k => `<span class="rk-bd" title="${esc(BADGES[k][1] + ': ' + BADGES[k][2])}" aria-label="${esc(BADGES[k][1])}">${BADGES[k][0]}</span>`).join('');
+const rkBadgesHtml = b => { const n = {}; (b || []).filter(k => BADGES[k]).forEach(k => { n[k] = (n[k] || 0) + 1; });
+  return Object.entries(n).map(([k, c]) => `<span class="rk-bd" title="${esc(BADGES[k][1] + ': ' + BADGES[k][2])}" aria-label="${esc(BADGES[k][1] + (c > 1 ? ' × ' + c : ''))}">${BADGES[k][0]}${c > 1 ? `<small>×${c}</small>` : ''}</span>`).join(''); };
 function rankListHtml(rows, mine, cap) {
   return `<ol class="rk-l">${rows.map((r, i) => `<li class="${r.id === mine ? 'me' : ''}${i < 3 ? ' top' + (i + 1) : ''}"><span class="rk-pos">${i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span><span class="rk-sq" style="background:${col(r.c1, '#f7a21b')}">${esc(rkIni(r.n))}</span>
     <span class="rk-n"><b>${esc(r.n)}${r.id === mine ? ' <em>Vosaltres</em>' : ''}</b><span class="rk-bs">${rkBadgesHtml(r.b) || '<small class="muted">Encara sense insígnies</small>'}</span></span>
