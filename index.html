@@ -2542,9 +2542,13 @@ function render() {
   renderSide(); liveFn = null;
   const v = $('#view'); v.dataset.g = role === 'prof' ? 'prof' : (sec(tab) && sec(tab).g !== 'ini' ? sec(tab).g : 'proj');
   // Animació d'entrada només quan canvia la pàgina (no en redibuixar la mateixa)
-  const vk = `${role}|${tab}|${profTeam}`; v.classList.toggle('vin', vk !== render.k); render.k = vk;
+  const vk = `${role}|${tab}|${profTeam}`; v.classList.toggle('vin', vk !== render.k);
+  // Si es redibuixa la mateixa pàgina (dades noves, desat...), els desplegables oberts continuen oberts
+  const dKeys = () => { const n = {}; return [...v.querySelectorAll('details')].map(d => { const t = (d.querySelector('summary') || {}).textContent || ''; n[t] = (n[t] || 0) + 1; return [d, t + '#' + n[t]]; }); },
+    dOpen = vk === render.k ? dKeys().filter(([d]) => d.open).map(([, k]) => k) : []; render.k = vk;
   if (role !== 'prof' && sec(tab) && sec(tab).p && access(tab) === 'closed') lockedPage(v, tab);
   else (VIEWS[tab] || (() => { v.innerHTML = ''; }))(v);
+  if (dOpen.length) dKeys().forEach(([d, k]) => { if (dOpen.includes(k)) d.open = true; });
   topGroup();
   updateTeamBanner();
   if (CLOUD) { cloudAfterRender(v); applyLocks(); }
