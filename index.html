@@ -2263,10 +2263,19 @@ const profFem = () => { const c = G && (G.profName || G.profFem) ? G : JCFG; ret
 function PR(w) { const f = profFem(), n = f ? 'professora' : 'professor'; return { n, el: (f ? 'la ' : 'el ') + n, El: (f ? 'La ' : 'El ') + n, al: (f ? 'a la ' : 'al ') + n, pel: (f ? 'per la ' : 'pel ') + n, del: (f ? 'de la ' : 'del ') + n }[w] || n; }
 const WS_LABEL = { none: 'Sense fer', edit: 'En edició', sent: 'Enviat', correcte: 'Correcte', millorar: 'A millorar' };
 function sendSection(k) { const t = T(), now = Date.now(); t.data._meta = t.data._meta || {}; const o = (t.data._meta.sent || {})[k]; t.data._meta.sent = Object.assign({}, t.data._meta.sent || {}, { [k]: { at: now, h: secHash(t, k), f: (o && (Number(o.f) || Number(o.at))) || now } }); t.updated = Date.now(); save(); } // f: el primer enviament (compta per a la data límit)
+// L'equip pot desfer l'enviament mentre no hagi passat la data límit (o si no n'hi ha, mentre l'apartat sigui obert),
+// sempre que el professor encara no l'hagi revisat ni avaluat després d'enviar-lo
+function canUnsend(t, k) {
+  if (role === 'prof' || (CLOUD && ME && ME.isProf) || !sendLocked(t, k) || stuAccess0(k) !== 'open' || secOv(t, k) === 'x') return false;
+  const se = sentOf(t, k), rv = t.review[k], d = dueOf(k);
+  if (rv && rv.status && Number(rv.at) > se.at) return false;
+  return !d || Date.now() < dayEnd(d);
+}
+function unsendSection(k) { const t = T(); if (!canUnsend(t, k)) return; const m = Object.assign({}, (t.data._meta || {}).sent || {}); delete m[k]; t.data._meta.sent = m; t.updated = Date.now(); save(); }
 function sendBarHtml(t, s, ac) {
   const ws = workState(t, s), se = sentOf(t, s.k), when = se ? new Date(se.at).toLocaleString('ca-ES', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
-  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: se ? `<b>✓ Enviat ${PR('al')}</b> el ${when}.${ac === 'open' ? ' Si hi feu canvis, l\'haureu de tornar a enviar.' : sendLocked(t, s.k) ? ` Ja no el podeu modificar. Si l'heu enviat per error, demaneu ${PR('al')} que us n'obri l'edició.` : ''}` : '<b>✓ Consta com a lliurat.</b>', correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
-  const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar ' + PR('al')}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar ${PR('al')}</button>` : '';
+  const msg = { none: 'Quan hàgiu treballat aquest apartat, envieu-lo ' + PR('al') + ' perquè sàpiga que ja està fet.', edit: se ? '<b>Heu fet canvis després d\'enviar-lo.</b> Quan acabeu, torneu-lo a enviar.' : '<b>En edició.</b> Quan l\'apartat estigui enllestit, envieu-lo ' + PR('al') + '.', sent: se ? `<b>✓ Enviat ${PR('al')}</b> el ${when}.${ac === 'open' ? ' Si hi feu canvis, l\'haureu de tornar a enviar.' : sendLocked(t, s.k) ? (canUnsend(t, s.k) ? ` Si l'heu enviat per error, podeu desfer l'enviament${dueOf(s.k) ? ` fins a la data límit (${dayCa(dueOf(s.k))})` : ''}.` : ` Ja no el podeu modificar. Si l'heu enviat per error, demaneu ${PR('al')} que us n'obri l'edició.`) : ''}` : '<b>✓ Consta com a lliurat.</b>', correcte: '<b>✓ Revisat ' + PR('pel') + ': correcte.</b>', millorar: '<b>' + PR('El') + ' us demana millores.</b> Feu els canvis i torneu-lo a enviar.' }[ws];
+  const btn = ac === 'open' && (ws === 'edit') ? `<button type="button" class="btn" id="sendSec">${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}${se ? 'Tornar a enviar' : 'Enviar ' + PR('al')}</button>` : ac === 'open' && ws === 'none' ? `<button type="button" class="btn" disabled>${ico('<path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/>')}Enviar ${PR('al')}</button>` : canUnsend(t, s.k) ? `<button type="button" class="btn ghost" id="unsendSec">${ico('<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>')}Desfer l'enviament</button>` : '';
   return `<div class="sendbar ws-${ws}"><i class="wsdot ${ws}"></i><div class="sb-t">${msg}${dueHtml(t, s.k)}</div>${btn}</div>`;
 }
 // Avís de dates a la barra d'enviament: data límit (insígnia ⏱️) i tancament (nota màxima 5 si s'envia entre totes dues)
@@ -2281,7 +2290,9 @@ function dueHtml(t, k) {
   return m ? `<div class="sb-due ${l || (now < dayEnd(d) ? 'ok' : u && now >= dayEnd(u) ? 'zero' : 'tard')}">${m}</div>` : '';
 }
 function updateSendBar() { const el = $('#sendBarWrap'); if (!el || role === 'prof') return; const s = sec(tab); el.innerHTML = sendBarHtml(T(), s, access(tab)); bindSendBar(); }
-function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); }; }
+function bindSendBar() { const b = $('#sendSec'); if (b) b.onclick = () => { sendSection(tab); updateSendBar(); renderSide(); toast('Apartat enviat al professor.'); };
+  const u = $('#unsendSec'); if (u) u.onclick = () => { const k = tab; bkDialog(`<div class="bkic">↩️</div><b>Desfer l'enviament?</b><p class="small">L'apartat tornarà a quedar «En edició» i el podreu modificar. Recordeu tornar-lo a enviar${dueOf(k) ? ` abans de la data límit (${dayCa(dueOf(k))}) per no perdre la insígnia ⏱️ ni tenir la nota màxima de ${NOTA_TARD}` : ''}.</p><div class="row"><button type="button" class="btn ghost" data-bkclose>Cancel·lar</button><button type="button" class="btn" id="unsOk">Desfer l'enviament</button></div>`,
+    (o, close) => { $('#unsOk').onclick = () => { close(); unsendSection(k); render(); toast('Enviament desfet: ja podeu editar l\'apartat.'); }; }); }; }
 function defaultAccess(openKeys) { const o = {}; ALL.filter(s => s.p).forEach(s => { o[s.k] = { state: openKeys.includes(s.k) ? 'open' : 'closed', from: '' }; }); return o; }
 // Els grups nous comencen amb tots els apartats tancats: el professor els obre a «Obertura dels apartats»
 // Paperera: els equips esborrats es poden recuperar durant uns dies abans d'eliminar-se del tot
