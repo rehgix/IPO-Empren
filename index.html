@@ -1124,7 +1124,8 @@ table.fin{box-shadow:none}
 .iname h1{margin:8px 0 0;font:700 clamp(48px,7vw,104px)/.92 var(--font);letter-spacing:-.045em;overflow-wrap:normal;word-break:normal;hyphens:none;text-wrap:balance;max-width:100%;overflow:hidden}
 .iname .d{margin:14px 0 0;font-size:21px;color:#E3E6F2;overflow-wrap:anywhere}
 .iname .nlogo{position:absolute;top:26px;right:26px;width:72px;height:72px;border-radius:20px;background:#fff;padding:6px;display:grid;place-items:center}
-.iname .nlogo img{width:100%;height:100%;object-fit:contain}
+.iname .nlogo img{width:100%;height:100%;object-fit:contain;min-height:0;min-width:0;display:block}.iname .nlogo{overflow:hidden;box-sizing:border-box}
+.nlogo:has(img.lgdk),.hlogo:has(img.lgdk),.ssq:has(img.lgdk),.tbanner img.lgdk,img.dlogo.lgdk,img.rlogo.lgdk{background:#111318}
 .iname .nlogo b{width:100%;height:100%;border-radius:14px;display:grid;place-items:center;background:var(--tb1);color:#fff;font-size:28px}
 .ichips{display:flex;flex-wrap:wrap;gap:8px}
 .iname{align-items:stretch}.iname>div:not(.ifoot){align-self:flex-start} /* el nom sempre a l'esquerra (abans quedava centrat) */
@@ -2575,7 +2576,7 @@ const PROF_TEAM_TABS = ['revisio', 'qualificacio', 'avaluacio', 'informe'];
 function bannerTeam() { return role !== 'prof' ? (tab === 'inici' ? null : T()) : PROF_TEAM_TABS.includes(tab) && !(tab === 'qualificacio' && qView !== 'equip') ? G.teams[profTeam] : null; }
 function teamBannerHtml(t) {
   const m = t.data.marca, logo = logoSrc(m.logo);
-  return `<div class="tbanner" style="--tb1:${col(m.color1, '#f7a21b')};--tb2:${col(m.color2, '#111113')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
+  return `<div class="tbanner" style="--tb1:${col(m.color1, '#f7a21b')};--tb2:${col(m.color2, '#111113')}">${logo ? logoImg(m.logo, '', 'Logo de ' + m.nom) : `<span class="tb-ph">${esc(m.nom.slice(0, 1).toUpperCase())}</span>`}<div class="tb-txt"><div class="tb-n">${esc(m.nom)}</div>${m.eslogan ? `<div class="tb-s">${esc(m.eslogan)}</div>` : ''}</div><span class="tb-team">${esc(t.name)}</span></div>`;
 }
 // Targeta de l'inici de l'alumnat amb els colors corporatius, quan l'equip ja té nom i ha triat colors
 function heroBrand(t) {
@@ -2593,7 +2594,7 @@ function heroBrand(t) {
 }
 function teamLogoHtml(t, cls = 'hlogo') {
   const m = t.data.marca, logo = logoSrc(m.logo);
-  return `<span class="${cls}" style="--tb1:${col(m.color1, '#f7a21b')}">${logo ? `<img src="${esc(logo)}" alt="Logo de ${esc(m.nom)}">` : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
+  return `<span class="${cls}" style="--tb1:${col(m.color1, '#f7a21b')}">${logo ? logoImg(m.logo, '', 'Logo de ' + m.nom) : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
 }
 function updateTeamBanner() {
   const v = $('#view'), old = v.querySelector(':scope > .tbanner'), t = bannerTeam();
@@ -4198,7 +4199,7 @@ function secHtml(t, k, who = false) {
   const ps = pairs(t, k).filter(r => r[1] !== null && (who || full(r)));
   let extra = '';
   if (k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img')) extra = protoFilesHtml(t.data.prototip.fitxers.filter(f => f.kind === 'img'), false);
-  if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = `<img class="dlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo de ${esc(t.data.marca.nom)}">`;
+  if (k === 'marca' && logoSrc(t.data.marca.logo)) extra = logoImg(t.data.marca.logo, 'dlogo', 'Logo de ' + t.data.marca.nom);
   if (k === 'marca' && esbImgs(t).length) extra += `<div class="small muted">Esbossos del logo</div>` + protoFilesHtml(esbImgs(t), false);
   if (!ps.length) return extra + (who ? '<p class="muted"><i>Encara no han fet res d\'aquest apartat.</i></p>' : '<p class="muted">Sense contingut.</p>');
   const row = ([l, x]) => { if (!full([l, x])) return empty(l); const [c, h] = who ? whoRow(t, k, x) : ['', esc(x).replace(/\n/g, '<br>')]; return `<div class="sumrow"><span class="muted small">${esc(l)}${c}</span><div>${h}</div></div>`; };
@@ -4809,7 +4810,7 @@ function reportBody(t, forStudents) {
       ${forStudents && rubUsed(g) ? `<div class="rv-rub">${rubFull(rubUsed(g), g.rl, (g.ri || {})[CLOUD && ME ? ME.uid : ''])}</div>` : rubRep(g)}${g.comentari ? `<p class="rcom"><b>Comentari del professor:</b> ${esc(g.comentari)}</p>` : ''}
       ${ev.length ? ev.map(gr => `<h4>${esc(gr.title)}</h4>` + (gr.k === 'prototip' && (t.data.prototip.fitxers || []).some(f => f.kind === 'img') ? `<div class="rimgs">${t.data.prototip.fitxers.filter(f => f.kind === 'img').map(f => `<img src="${imgSrc(f.data)}" alt="${esc(f.name)}">`).join('')}</div>` : '') + (gr.k === 'marca' && esbImgs(t).length ? `<div class="rimgs">${esbImgs(t).map((f, i) => `<img src="${imgSrc(f.data)}" alt="Esbós ${i + 1}">`).join('')}</div>` : '') + (gr.pairs.filter(([, x]) => x && String(x).trim()).length ? groupPairs(gr.k, gr.pairs.filter(([, x]) => x && String(x).trim())).map(sg => `${sg.title ? `<h5 class="rsub">${esc(sg.title)}</h5>` : ''}<dl>${sg.rows.map(([l, x]) => `<dt>${esc(l)}</dt><dd>${esc(x).replace(/\n/g, '<br>')}</dd>`).join('')}</dl>`).join('') : '<p class="rempty">Sense contingut.</p>')).join('') : `<p class="rempty">${a.ext ? 'Activitat feta fora de l\'eina.' : 'Sense feina associada.'}</p>`}</section>`; }).join('');
   return `<header class="rhead"><div class="rk">Projecte emprenedor · IPO II · RA4 i RA5</div><h1>${esc(projName(t))}</h1><div class="rmeta">${esc(G.name)}${t.data.idea.sector ? ' · ' + esc(sectorLabel(t.data.idea.sector)) : ''} · ${new Date().toLocaleDateString('ca-ES')}</div>
-      ${logoSrc(t.data.marca.logo) ? `<img class="rlogo" src="${imgSrc(t.data.marca.logo)}" alt="Logo">` : ''}</header>
+      ${logoImg(t.data.marca.logo, 'rlogo', 'Logo')}</header>
     <div class="rgrades"><div class="ra-ra4"><span>RA4</span><b class="${gcls(r4.nota)}">${f1(r4.nota)}</b></div><div class="ra-ra5"><span>RA5</span><b class="${gcls(r5.nota)}">${f1(r5.nota)}</b></div></div>
     ${roles ? `<h2>Equip</h2><table class="rtab fin zebra"><thead><tr><th>Persona</th><th>Rols</th><th>Responsabilitats</th></tr></thead><tbody>${roles}</tbody></table>` : ''}
     <h2>Resum de les qualificacions</h2><table class="rtab fin"><thead><tr><th>Codi</th><th>Activitat</th><th>RA</th><th class="n">Pes</th><th>Nivell</th><th class="n">Nota</th></tr></thead><tbody>${summary}</tbody></table>
@@ -5125,6 +5126,52 @@ function restore3(b, l, r) {
 const logoSrc = l => /^data:image\//.test(String(l || '')) ? String(l) : '';
 // Imatges i colors que venen de l'alumnat: protegits perquè no hi puguin colar codi a la pàgina
 const imgSrc = l => esc(logoSrc(l));
+/* ---------- Logo net: si el logo té un fons llis (blanc, negre o d'un sol color), es fa transparent i es retalla perquè ompli el requadre ----------
+   Es fa al navegador amb un canvas i es guarda a la memòria (LOGO_FIX). Mentre es calcula, es mostra l'original; quan està fet, s'actualitzen les imatges. */
+const LOGO_FIX = new Map();
+function logoView(l) {
+  const src = logoSrc(l); if (!src) return '';
+  const f = LOGO_FIX.get(src); if (f && f.u) return f.u;
+  if (!f) { LOGO_FIX.set(src, 1); logoClean(src).then(out => { out = out && out.u ? out : { u: src }; LOGO_FIX.set(src, out); if (out.u !== src) document.querySelectorAll('img[data-lg]').forEach(im => { if (im.dataset.lg === String(logoKey(src))) { im.src = out.u; im.classList.toggle('lgdk', !!out.dk); } }); }).catch(() => LOGO_FIX.set(src, { u: src })); }
+  return src;
+}
+// Logo clar (tret d'un fons fosc): necessita un requadre fosc per veure's
+const logoDark = l => { const f = LOGO_FIX.get(logoSrc(l)); return !!(f && f.dk); };
+const logoKey = src => { let h = 5381; for (let i = 0; i < src.length; i += 7) h = ((h << 5) + h + src.charCodeAt(i)) | 0; return (h >>> 0).toString(36) + src.length.toString(36); };
+const logoImg = (l, cls, alt) => { const src = logoSrc(l); if (!src) return ''; const u = logoView(l), c = [cls, logoDark(l) ? 'lgdk' : ''].filter(Boolean).join(' '); return `<img${c ? ` class="${c}"` : ''} src="${esc(u)}" data-lg="${logoKey(src)}" alt="${esc(alt || 'Logo')}">`; };
+function logoClean(src) {
+  return new Promise(res => {
+    const im = new Image(); im.onerror = () => res({ u: src });
+    im.onload = () => { try {
+      const k = Math.min(1, 600 / Math.max(im.naturalWidth || 1, im.naturalHeight || 1)), w = Math.max(1, Math.round((im.naturalWidth || 300) * k)), h = Math.max(1, Math.round((im.naturalHeight || 300) * k));
+      const c = document.createElement('canvas'); c.width = w; c.height = h; const x = c.getContext('2d', { willReadFrequently: true }); x.drawImage(im, 0, 0, w, h);
+      const D = x.getImageData(0, 0, w, h), d = D.data, at = (i, j) => (j * w + i) * 4;
+      // Color de fons: el de les cantonades, si almenys tres s'assemblen i són opaques
+      const cs = [[0, 0], [w - 1, 0], [0, h - 1], [w - 1, h - 1]].map(([i, j]) => { const p = at(i, j); return [d[p], d[p + 1], d[p + 2], d[p + 3]]; });
+      const dist = (a, b) => Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) + Math.abs(a[2] - b[2]);
+      let bg = null; for (const a of cs) if (a[3] > 200 && cs.filter(b => b[3] > 200 && dist(a, b) < 60).length >= 3) { bg = a; break; }
+      if (bg) { // Omple des de les vores tot el que s'assembla al fons i ho fa transparent (amb una vora suau)
+        const T = 70, seen = new Uint8Array(w * h), st = [];
+        for (let i = 0; i < w; i++) st.push(i, (h - 1) * w + i); for (let j = 0; j < h; j++) st.push(j * w, j * w + w - 1);
+        while (st.length) { const q = st.pop(); if (seen[q]) continue; seen[q] = 1; const p = q * 4, e = dist([d[p], d[p + 1], d[p + 2]], bg);
+          if (d[p + 3] < 10 || e < T) { d[p + 3] = e < T * 0.6 ? 0 : Math.min(d[p + 3], Math.round(255 * (e - T * 0.6) / (T * 0.4))); const i = q % w, j = (q - i) / w;
+            if (i > 0) st.push(q - 1); if (i < w - 1) st.push(q + 1); if (j > 0) st.push(q - w); if (j < h - 1) st.push(q + w); } }
+        x.putImageData(D, 0, 0);
+      }
+      // Retalla els marges buits perquè el logo ompli el requadre
+      let x0 = w, y0 = h, x1 = -1, y1 = -1; for (let j = 0; j < h; j++) for (let i = 0; i < w; i++) if (d[at(i, j) + 3] > 16) { if (i < x0) x0 = i; if (i > x1) x1 = i; if (j < y0) y0 = j; if (j > y1) y1 = j; }
+      if (x1 < 0) return res({ u: src }); // tot transparent: es deixa l'original
+      // Si el fons tret era fosc i el logo té parts blanques, es mostrarà sobre un requadre fosc
+      let n = 0, lt = 0; for (let q = 0; q < d.length; q += 16) if (d[q + 3] > 128) { n++; if (d[q] + d[q + 1] + d[q + 2] > 660) lt++; }
+      const dk = !!bg && bg[0] + bg[1] + bg[2] < 200 && n > 0 && lt / n > 0.04;
+      const pad = Math.round(Math.max(x1 - x0, y1 - y0) * 0.04), cw = x1 - x0 + 1 + pad * 2, ch = y1 - y0 + 1 + pad * 2;
+      if (!bg && cw >= w - 2 && ch >= h - 2) return res({ u: src }); // res a netejar
+      const o = document.createElement('canvas'); o.width = cw; o.height = ch; o.getContext('2d').drawImage(c, x0, y0, x1 - x0 + 1, y1 - y0 + 1, pad, pad, x1 - x0 + 1, y1 - y0 + 1);
+      res({ u: o.toDataURL('image/png'), dk });
+    } catch (e) { res({ u: src }); } };
+    im.src = src;
+  });
+}
 const col = (c, d) => /^#[0-9a-f]{3,8}$/i.test(String(c || '')) ? c : d;
 const isObj = x => !!x && typeof x === 'object' && !Array.isArray(x);
 
@@ -6782,7 +6829,7 @@ function vSeguiment(v) {
     const nx = PROG.find(s => access(s.k) === 'open' && secState(t, s) !== 'done');
     const bars = groups.map(([gk, gl, ss]) => { if (ss.every(s => access(s.k) === 'closed')) return `<span class="sb" data-g="${gk}"><i class="x" title="${esc(gl)}: tancat"></i>${ico(GICONS[gk])}</span>`;
       const p = ss.reduce((a, s) => { const [d, n] = s.p(t); return a + Math.min(1, d / n); }, 0) / ss.length; return `<span class="sb" data-g="${gk}"><i style="--p:${Math.round(p * 100)}%" title="${esc(gl)}: ${Math.round(p * 100)} %"></i>${ico(GICONS[gk])}</span>`; }).join('');
-    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">${ico('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')}</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? `<img src="${esc(logo)}" alt="">` : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
+    return `<div class="srow"><button type="button" class="sedit" data-ed="${i}" aria-label="Editar l'equip ${esc(projName(t))}" aria-expanded="${edTeam === i}" title="Editar l'equip">${ico('<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>')}</button><button type="button" class="stm" data-rev="${i}"><span class="swho"><span class="ssq" style="background:${SQ_COL[i % SQ_COL.length]}">${logo ? logoImg(m.logo, '', '') : esc(ini)}</span><span style="min-width:0"><b>${esc(projName(t))}</b>${(() => { const ns = teamNames(t); return `<small class="smem">${ns.length ? ns.map(n => `<span>${esc(n)}</span>`).join('') : '<span>Encara sense alumnes</span>'}</small>`; })()}</span></span>
       <span class="sseg" aria-hidden="true">${bars}</span><span class="spc">${Math.round(progress(t) * 100)} %</span>
       <span class="stg"><span class="bst ${rev ? 'rev' : ''}"${rev ? ' data-pill="sent" title="Obrir el primer apartat per revisar"' : ''}>${rev} per revisar</span><span class="bst ${mil ? 'mil' : ''}"${mil ? ' data-pill="mil" title="Obrir el primer apartat a millorar"' : ''}>${mil} a millorar</span></span>
       <span class="snx"><small>${nx ? 'Ara han de fer' : 'Apartats oberts'}</small>${nx ? esc(nx.l) : PROG.some(s => access(s.k) === 'open') ? '✓ Tot fet' : 'Cap apartat obert'}<small class="snx-n" title="Nota actual de l'equip amb les notes que ja has posat">Nota: <span>RA4 <b>${f1(raGradeAct(t, 'RA4').nota)}</b></span> · <span>RA5 <b>${f1(raGradeAct(t, 'RA5').nota)}</b></span></small></span></button>${edTeam === i ? edPanel(t, i) : ''}</div>`; }).join('');
