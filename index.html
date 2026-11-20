@@ -1198,7 +1198,8 @@ table.fin{box-shadow:none}
 .rk-l .rk-gap{background:none;padding:0 0 0 18px;color:var(--muted);line-height:.6}
 .rk-open.sm{padding:8px 12px;border-radius:14px;gap:10px;justify-content:space-between}.rk-open.sm span{flex:1}
 .rk-all{align-self:flex-start;margin-top:auto;font-weight:600}
-.rk-gl{align-self:flex-start;margin-top:10px}.rk-card .rk-gl{margin-top:14px}
+.rk-gl{align-self:flex-start;margin-top:10px}
+.admbar{background:#fff4e0;border:1px solid #f7c46b;border-radius:10px;padding:8px 12px;margin:0 0 8px;font-size:14px}.admbar a{font-weight:600;color:inherit}.rk-card .rk-gl{margin-top:14px}
 .iprow{display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:16px;margin-top:16px}
 .rkdlg .bkbox{width:min(720px,100%)}.rk-dlg .rk-card{margin:0;padding:0;background:none}
 @media (max-width:900px){.iprow{grid-template-columns:minmax(0,1fr)}}
@@ -2620,7 +2621,7 @@ function topGroup() {
   if (!G || !isProfUser()) { topOff(); return; }
   $('#topHead').hidden = false; document.body.classList.add('has-top'); document.body.classList.toggle('has-rail', role === 'prof'); $('#tbRole').hidden = false;
   const cur = tab === 'rubriques' ? 'guia' : tab, pr = role === 'prof';
-  $('#tbGrp').innerHTML = grpBar();
+  $('#tbGrp').innerHTML = admBar() + grpBar();
   $('#tbTabs').innerHTML = railHead('Docent') + rviewHtml() + PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
   $('#tbSub').innerHTML = pr && cur === 'guia' ? `<div class="tsub" role="group" aria-label="Guia i rúbriques">${[['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques']].map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>` : '';
 }
@@ -2631,6 +2632,7 @@ function topHome(cur) {
   $('#tbTabs').innerHTML = railHead('General') + [tabBtn('grups', 'Els meus grups', cur === 'grups', 0, 'Grups'), isAdmin() ? tabBtn('admin', 'Panell d\'administrador', cur === 'admin', h.nReq, 'Admin') : '', prof ? tabBtn('copies', 'Còpies de seguretat', cur === 'copies', 0, 'Còpies') : '', tabBtn('config', 'Configuració', cur === 'config', 0, 'Configuració')].join('');
 }
 // Franja de dalt de les pàgines del professor: nom del grup i tipus d'empresa
+const admBar = () => ME && ME.adm ? `<div class="admbar">🛡️ <b>Mode administrador</b>: estàs dins del grup de ${esc((GROUP && (GROUP.profs || [])[0]) || 'un altre docent')} com si en fossis docent. Els canvis es desen al seu grup. <a href="#admin">Tornar al panell</a></div>` : '';
 function grpBar() {
   const S = PE.SECTORS[G.sector], alt = G.teams.filter(t => t.data.idea.sector && t.data.idea.sector !== G.sector).length;
   return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s"><span class="gb-i"><span class="muted">${S && S.group === 'cicle' ? 'Cicle' : 'Sector'}:</span> <b>${esc(S ? S.label : 'Sense triar')}</b></span>${S && S.family ? `<span class="gb-i"><span class="muted">Sector professional:</span> <b>${esc(S.family)}</b></span>` : ''}${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre cicle o sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
@@ -5358,7 +5360,7 @@ const domainOk = e => !DOMAINS().length || DOMAINS().some(d => e.endsWith('@' + 
 function nextExpiry(now = new Date()) { let y = now.getFullYear(); let d = new Date(y, 6, 15, 12); if (now > new Date(d - 30 * 864e5)) d = new Date(y + 1, 6, 15, 12); return d.getTime(); }
 const fmtDay = ms => new Date(ms).toLocaleDateString('ca-ES', { day: 'numeric', month: 'long', year: 'numeric' });
 // És el professor que ha creat el grup? (sense sessió, sempre sí)
-const groupOwner = () => !CLOUD || !GROUP || !USER || !GROUP.owner || GROUP.owner === USER.uid;
+const groupOwner = () => !CLOUD || !GROUP || !USER || !GROUP.owner || GROUP.owner === USER.uid || !!(ME && ME.adm);
 const gpath = (...p) => ['groups', GID, ...p].join('/');
 
 /* ---------- Dades d'un equip: text a la fitxa, imatges i documents a part ---------- */
@@ -5423,7 +5425,7 @@ function teamFromDoc(d) {
 const groupFields = () => {
   const cfg = {}; ['sector', 'color', 'emoji', 'acts', 'rubs', 'evalV', 'aiCfg', 'access', 'allowPaste', 'rubHide', 'profName', 'profFem'].forEach(k => { if (G[k] !== undefined) cfg[k] = G[k]; });
   if ((G.trash || []).length) cfg.trash = G.trash.map(x => ({ id: x.id, name: x.name, at: x.at }));
-  const profs = Array.from(new Set([ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
+  const profs = Array.from(new Set([ME.adm ? '' : ME.email].concat((G.profs || []).map(x => String(x).toLowerCase())))).filter(Boolean);
   return { name: G.name || 'Grup', profs, showGrades: !!G.showGrades, cfg: J(cfg), teamList: G.teams.map(t => ({ id: t.id, name: t.name })), teamIds: G.teams.map(t => t.id), w: writeWindows(), join: G.join !== false };
 };
 /* ---------- Quan pot escriure l'alumnat cada dada (ho comproven també les regles de seguretat) ---------- */
@@ -5804,8 +5806,9 @@ async function route(retry = 0) {
   if (seq !== ROUTE_SEQ) return;
   if (!g) return cloudMsg('No s\'ha trobat el grup', 'Comprova l\'enllaç que t\'ha donat el professor. Si l\'entrada al grup està tancada, demana-li que l\'obri o que et convidi. També pot ser que el grup s\'hagi esborrat en acabar el curs.', '<div class="row" style="margin-top:14px"><a class="btn ghost" href="#">Anar a l\'inici</a></div>');
   GID = gid; GROUP = Object.assign({ id: gid }, g);
-  const isProf = (g.profs || []).includes(USER.email);
-  ME = { email: USER.email, uid: USER.uid, isProf };
+  const own = (g.profs || []).includes(USER.email), adm = !own && isAdmin(); // l'administrador entra a qualsevol grup com si en fos docent
+  const isProf = own || adm;
+  ME = { email: USER.email, uid: USER.uid, isProf, adm };
   SNAP = { group: '', teams: {} }; FILES = {}; PREV = {};
   G = groupToG(g);
   if (isProf) return guarded(openProf, seq, retry);
@@ -6304,8 +6307,9 @@ function okMailUrl(r) {
 }
 function adminView() {
   bareView(); homeRole().then(() => homeNav('admin')); homeNav('admin');
-  const v = $('#view'); let reqs = null, profs = null;
+  const v = $('#view'); let reqs = null, profs = null, gAll = null;
   v.innerHTML = '<div class="cloud-load"><span class="spin"></span> Carregant...</div>';
+  FB.list('groups').then(l => { gAll = l; }, e => { console.warn(e); gAll = 'err'; }).then(() => draw());
   const who = x => `<span class="rostwho"><span><b>${esc(nomBo(x.name) || x.email)}</b></span>${x.name ? `<span class="small muted">${esc(x.email)}</span>` : ''}</span>`;
   const draw = () => {
     if (!reqs || !profs) return;
@@ -6323,6 +6327,7 @@ function adminView() {
         <div class="invform"><div class="pfield"><label for="apName">Nom i cognoms</label><input type="text" id="apName" autocomplete="off" value="${esc(keep.n)}"></div>
         <div class="pfield"><label for="apMail">Correu de l'institut</label><input type="text" inputmode="email" id="apMail" autocomplete="off" placeholder="nom.cognom@${esc(DOMAINS()[0] || 'institut.cat')}" value="${esc(keep.m)}"></div></div>
         <div id="apInfo"></div><div class="row"><button type="button" class="btn ghost" id="apAdd">Autoritzar</button></div>`), `${ps.length + 1} professors`)}
+      ${card('Grups de tot el professorat', pad(gAll === null ? '<p class="muted">Carregant els grups...</p>' : gAll === 'err' ? '<p class="muted">No s\'han pogut carregar els grups.</p>' : `<p class="small muted" style="margin-top:0">Pots entrar a qualsevol grup i fer el mateix que el seu docent: veure-ho tot, corregir, canviar la configuració... Els canvis es desen al grup del docent.</p>${gAll.length ? gAll.slice().sort((a, b) => String(a.name || '').localeCompare(String(b.name || ''), 'ca')).map(g => `<div class="rost"><div class="adrow"><span class="rostwho"><span><b>${esc(g.name || 'Grup')}</b></span><span class="small muted">${esc((g.profs || []).join(', '))}${g.course ? ' · ' + esc(g.course) : ''} · ${(g.teamIds || []).length} equips</span></span><span class="rostbtn"><a class="btn small" href="#g=${esc(g.id)}">Entrar com a docent</a></span></div></div>`).join('') : '<p class="muted">Encara no hi ha cap grup.</p>'}`), Array.isArray(gAll) ? gAll.length + ' grups' : '')}
       ${rej.length ? card('Sol·licituds rebutjades', pad(`<p class="small muted">Si n'esborres una, aquella persona podrà tornar a demanar accés.</p>${rej.map(r => `<div class="rost"><div class="adrow">${who(r)}<span class="rostbtn"><button type="button" class="btn ghost small" data-ok="${esc(r.id)}">Aprovar</button><button type="button" class="btn ghost small" data-del="${esc(r.id)}">Esborrar</button></span></div></div>`).join('')}`)) : ''}`;
     const fail = b => e => { console.warn(e); toast('No s\'ha pogut fer.'); if (b) b.disabled = false; };
     const approve = (r, b) => { // El Gmail s'obre en el mateix clic perquè el navegador no el bloquegi

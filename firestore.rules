@@ -10,7 +10,8 @@ service cloud.firestore {
     function signed() { return request.auth != null && request.auth.token.email_verified == true && domainOk(); }
     function me() { return request.auth.token.email.lower(); }
     function grp(gid) { return get(/databases/$(database)/documents/groups/$(gid)).data; }
-    function isProf(gid) { return signed() && me() in grp(gid).profs; }
+    // L'administrador pot fer a qualsevol grup el mateix que els seus professors
+    function isProf(gid) { return signed() && (me() in grp(gid).profs || isAdmin()); }
     function isOwner(gid) { return resource.data.get('owner', null) == request.auth.uid; }
     function memberDoc(gid) { return /databases/$(database)/documents/groups/$(gid)/members/$(request.auth.uid); }
     function inTeam(gid, tid) { return signed() && exists(memberDoc(gid)) && get(memberDoc(gid)).data.team == tid; }
@@ -118,15 +119,15 @@ service cloud.firestore {
 
     match /groups/{gid} {
       // Llegir el grup: els seus professors, els seus alumnes, qui té una invitació o qualsevol mentre l'entrada lliure és oberta
-      allow get: if signed() && (me() in resource.data.profs || exists(memberDoc(gid))
+      allow get: if signed() && (me() in resource.data.profs || isAdmin() || exists(memberDoc(gid))
         || resource.data.get('join', true) != false || exists(/databases/$(database)/documents/groups/$(gid)/invites/$(me())));
-      allow list: if signed() && me() in resource.data.profs;
+      allow list: if signed() && (me() in resource.data.profs || isAdmin());
       allow create: if canCreate() && request.resource.data.owner == request.auth.uid && me() in request.resource.data.profs;
       // Només qui ha creat el grup pot canviar la llista de professors; el creador no es pot canviar
-      allow update: if isProf(gid) && me() in request.resource.data.profs
+      allow update: if isProf(gid) && (me() in request.resource.data.profs || isAdmin())
         && request.resource.data.get('owner', null) == resource.data.get('owner', null)
-        && (isOwner(gid) || (request.resource.data.profs.hasAll(resource.data.profs) && resource.data.profs.hasAll(request.resource.data.profs)));
-      allow delete: if isProf(gid) && isOwner(gid);
+        && (isOwner(gid) || isAdmin() || (request.resource.data.profs.hasAll(resource.data.profs) && resource.data.profs.hasAll(request.resource.data.profs)));
+      allow delete: if isProf(gid) && (isOwner(gid) || isAdmin());
 
       match /members/{uid} {
         allow get: if (signed() && request.auth.uid == uid) || isProf(gid);
