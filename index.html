@@ -1869,6 +1869,25 @@ body.has-rail .ttabs{width:224px;padding:18px 14px;gap:2px;border-right-color:va
 .tbanner.big .tb-team{order:2;align-self:flex-start}
 @media (max-width:620px){.tbanner.big{padding:20px;min-height:0;border-radius:22px;gap:14px;flex-wrap:wrap}.tbanner.big > img,.tbanner.big > .tb-ph{width:64px;height:64px;order:0}.tbanner.big .tb-txt{flex-basis:100%;order:4}}
 @media (max-width:620px){.tbanner .tb-m span{font-size:13px;padding:3px 9px}}
+
+/* Revisió visual (novembre 2026) */
+.grpbar .gb-t{display:none}
+@media (max-width:620px){
+  .grpbar{flex-wrap:wrap}
+  .grpbar .gb-t{display:grid;place-items:center;width:30px;height:30px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--ink);cursor:pointer;padding:0}
+  .grpbar .gb-t svg{stroke:var(--ink);transition:transform var(--t-fast)}
+  .grpbar.open .gb-t svg{transform:rotate(180deg)}
+  .grpbar:not(.open) .gb-s,.grpbar:not(.open) > .linkbtn{display:none}
+  .grpbar .gb-s{flex-basis:100%}
+}
+html.dark .grpbar .gb-t{background:var(--bg)}
+.roic{display:inline-grid;place-items:center;margin-left:auto;flex:none;color:var(--side-muted);opacity:.8}
+.roic svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+[aria-selected="true"] .roic{color:inherit;opacity:.75}
+[aria-selected="true"] .rotag{color:inherit;border-color:currentColor;opacity:.8}
+.qgridw{position:relative}
+.qgridw::after{content:"";position:absolute;top:14px;bottom:14px;right:16px;width:28px;pointer-events:none;background:linear-gradient(to left,rgba(20,16,10,.10),transparent);border-radius:0 10px 10px 0;opacity:0;transition:opacity var(--t-fast)}
+.qgridw.qmore::after{opacity:1}
 </style>
 <script src="config.js?v=2"></script><script src="fbapi.js?v=2"></script>
 <script>
@@ -2397,7 +2416,7 @@ function renderSide() {
     const st = role === 'prof' ? null : secState(T(), sec(k)); const rv = role !== 'prof' && T().review[k];
     const ac = role === 'prof' ? 'open' : access(k);
     const dc = role === 'prof' || ac === 'closed' || !sec(k) ? '' : dueCls(T(), k);
-    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}${dc}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${tancatProf(k) ? '<span class="rotag">tancat</span>' : ac === 'readonly' ? '<span class="rotag">lectura</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}${dc ? `<span class="nbadge due${dc === ' due-zero' ? ' zero' : ''}" title="${dc === ' due-zero' ? 'No lliurada: un 0' : 'Venç: nota màxima ' + NOTA_TARD + ' si s\'envia tard'}">${dc === ' due-zero' ? '0' : '!'}</span>` : ''}</button>`; }).join('')}</div>`).join('');
+    return `<button role="tab" class="${ac === 'closed' ? 'locked' : ''}${dc}" aria-selected="${k === tab}" data-tab="${k}" title="${esc(l)}">${nic(k)}${ac === 'closed' ? '<span class="lockic" aria-label="Tancat">' + ico('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>') + '</span>' : `<span class="bullet ${role === 'prof' ? (st ? 'st-' + st : '') : 'ws ws-' + (workState(T(), sec(k)) || 'x')}"></span>`}<span class="nl">${l}</span>${tancatProf(k) ? '<span class="rotag">tancat</span>' : ac === 'readonly' ? '<span class="roic" title="Només lectura" aria-label="Només lectura">' + ico('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>') + '</span>' : ''}${rv && rv.comment && rv.status === 'millorar' ? '<span class="nbadge" title="Comentari del professor">!</span>' : ''}${dc ? `<span class="nbadge due${dc === ' due-zero' ? ' zero' : ''}" title="${dc === ' due-zero' ? 'No lliurada: un 0' : 'Venç: nota màxima ' + NOTA_TARD + ' si s\'envia tard'}">${dc === ' due-zero' ? '0' : '!'}</span>` : ''}</button>`; }).join('')}</div>`).join('');
   const cur = all.find(x => x[0] === tab);
   $('#menuToggle').innerHTML = `<span>${cur ? cur[1] : tab === 'alumnes' ? 'Gestiona l\'alumnat' : 'Menú'}</span><span class="small">Menú ▾</span>`;
   if (CLOUD) sideUser(); else $('#sideAction').innerHTML = '';
@@ -2570,6 +2589,7 @@ function render() {
     dOpen = vk === render.k ? dKeys().filter(([d]) => d.open).map(([, k]) => k) : []; render.k = vk;
   if (role !== 'prof' && sec(tab) && sec(tab).p && access(tab) === 'closed') lockedPage(v, tab);
   else (VIEWS[tab] || (() => { v.innerHTML = ''; }))(v);
+  requestAnimationFrame(() => qMore());
   if (dOpen.length) dKeys().forEach(([d, k]) => { if (dOpen.includes(k)) d.open = true; });
   topGroup();
   updateTeamBanner();
@@ -2595,7 +2615,7 @@ const PTABS = [['seguiment', 'Seguiment dels equips', 'Seguiment'], ['obertura',
 // Capçalera del menú lateral: logo (porta a l'inici) i nom de la secció
 // Canvi de vista a la barra lateral del professor: docent o alumne (l'equip es tria després al menú de l'esquerra)
 const rviewHtml = () => `<div class="rview" role="group" aria-label="Veure com"><button type="button" data-rs="prof" aria-pressed="${role === 'prof'}" title="Vista de docent">${ico('<path d="M2 9l10-5 10 5-10 5z"/><path d="M6 11v5c0 1.5 2.7 3 6 3s6-1.5 6-3v-5"/>')}<span>Docent</span></button><button type="button" data-rs="stu" aria-pressed="${role !== 'prof'}" title="Vista d'alumne: veure la web com un equip"${G && G.teams.length ? '' : ' disabled'}>${ico('<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>')}<span>Alumne</span></button></div>`;
-const railHead = l => `<a class="rbrand" href="#" title="Anar a l'inici"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</a><span class="rsec">${l}</span>`;
+const railHead = l => `<a class="rbrand" href="#" title="Anar a l'inici"><span class="logo"><img src="icons/bombeta.png" alt="" width="40" height="46"></span>IPO Emprèn</a>${l ? `<span class="rsec">${l}</span>` : ''}`;
 const tabBtn = (k, l, on, n, sh) => `<button type="button" data-ptab="${k}" aria-selected="${on}" title="${esc(l)}" aria-label="${esc(l)}">${nic(k)}<span class="tl">${sh || l}</span>${n ? `<span class="ncount">${n}</span>` : ''}</button>`;
 // Menú lateral (barra d'icones amb nom): en pantalles petites s'obre amb el botó de dalt a l'esquerra
 const railSet = on => { document.body.classList.toggle('railopen', on); const b = $('#railBtn'); b.setAttribute('aria-expanded', String(on)); b.setAttribute('aria-label', on ? 'Tancar el menú' : 'Obrir el menú'); };
@@ -2606,7 +2626,7 @@ function topGroup() {
   $('#topHead').hidden = false; document.body.classList.add('has-top'); document.body.classList.toggle('has-rail', role === 'prof'); $('#tbRole').hidden = false;
   const cur = tab === 'rubriques' ? 'guia' : tab, pr = role === 'prof';
   $('#tbGrp').innerHTML = admBar() + grpBar();
-  $('#tbTabs').innerHTML = railHead('Docent') + rviewHtml() + PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
+  $('#tbTabs').innerHTML = railHead('') + rviewHtml() + PTABS.map(([k, l, sh]) => tabBtn(k, l, pr && cur === k, 0, sh)).join('');
   $('#tbSub').innerHTML = pr && cur === 'guia' ? `<div class="tsub" role="group" aria-label="Guia i rúbriques">${[['guia', 'Guia i criteris'], ['rubriques', 'Rúbriques']].map(([k, l]) => `<button type="button" data-ptab="${k}" aria-pressed="${tab === k}">${l}</button>`).join('')}</div>` : '';
 }
 // Pestanyes del tauler (fora d'un grup)
@@ -2619,7 +2639,7 @@ function topHome(cur) {
 const admBar = () => ME && ME.adm ? `<div class="admbar">🛡️ <b>Mode administrador</b>: estàs dins del grup de ${esc((GROUP && (GROUP.profs || [])[0]) || 'un altre docent')} com si en fossis docent. Els canvis es desen al seu grup. <a href="#admin">Tornar al panell</a></div>` : '';
 function grpBar() {
   const S = PE.SECTORS[G.sector], alt = G.teams.filter(t => t.data.idea.sector && t.data.idea.sector !== G.sector).length;
-  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><span class="gb-s"><span class="gb-i"><span class="muted">${S && S.group === 'cicle' ? 'Cicle' : 'Sector'}:</span> <b>${esc(S ? S.label : 'Sense triar')}</b></span>${S && S.family ? `<span class="gb-i"><span class="muted">Sector professional:</span> <b>${esc(S.family)}</b></span>` : ''}${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre cicle o sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
+  return `<div class="grpbar"><span class="gb-n">${ico(GICONS.prof)}<b>${esc(G.name)}</b></span><button type="button" class="gb-t" data-gbt aria-expanded="false" aria-label="Mostrar el cicle i el sector">${ico('<path d="m6 9 6 6 6-6"/>')}</button><span class="gb-s"><span class="gb-i"><span class="muted">${S && S.group === 'cicle' ? 'Cicle' : 'Sector'}:</span> <b>${esc(S ? S.label : 'Sense triar')}</b></span>${S && S.family ? `<span class="gb-i"><span class="muted">Sector professional:</span> <b>${esc(S.family)}</b></span>` : ''}${alt ? ` <span class="muted">· ${alt === 1 ? '1 equip' : alt + ' equips'} amb un altre cicle o sector</span>` : ''}</span>${tab !== 'config' ? '<button type="button" class="linkbtn small" data-go="config">Canviar</button>' : ''}</div>`;
 }
 // Desa qualsevol canvi dels camps de l'equip
 function onField(e) {
@@ -2664,12 +2684,17 @@ function teamLogoHtml(t, cls = 'hlogo') {
   const m = t.data.marca, logo = logoSrc(m.logo);
   return `<span class="${cls}" style="--tb1:${col(m.color1, '#f7a21b')}">${logo ? logoImg(m.logo, '', 'Logo de ' + m.nom) : `<b>${esc(m.nom.slice(0, 1).toUpperCase())}</b>`}</span>`;
 }
+// Graella de notes: marca si queden columnes amagades a la dreta (per ensenyar l'ombra)
+function qMore(el) { (el ? [el] : document.querySelectorAll('.qscroll')).forEach(q => q.parentNode.classList.toggle('qmore', q.scrollLeft + q.clientWidth < q.scrollWidth - 2)); }
+document.addEventListener('scroll', e => { if (e.target.classList && e.target.classList.contains('qscroll')) qMore(e.target); }, true);
+addEventListener('resize', () => qMore());
+// Franja del grup al mòbil: es desplega en tocar la fletxa
+document.addEventListener('click', e => { const b = e.target.closest('[data-gbt]'); if (!b) return; const g = b.closest('.grpbar'), o = g.classList.toggle('open'); b.setAttribute('aria-expanded', String(o)); });
 function updateTeamBanner() {
   const v = $('#view'), old = v.querySelector(':scope > .tbanner'), t = bannerTeam();
   const html = t && filled(t.data.marca.nom) ? teamBannerHtml(t) : '';
   const h = v.querySelector(':scope > .head'), oldLogo = h && h.querySelector(':scope > .hlogo');
   if (oldLogo) oldLogo.remove();
-  if (h && html) h.insertAdjacentHTML('beforeend', teamLogoHtml(t));
   if (old && old.outerHTML === html) return;
   if (old) old.remove();
   if (html) v.insertAdjacentHTML('afterbegin', html);
